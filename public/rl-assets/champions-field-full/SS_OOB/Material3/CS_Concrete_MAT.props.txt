@@ -1,0 +1,31 @@
+TwoSided = false
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[4] =
+{
+    ReferencedTextures[0] = Texture2D'Detail_CarbonFiber.CarbonFiber_N'
+    ReferencedTextures[1] = Texture2D'Detail_Matte.Matte_N'
+    ReferencedTextures[2] = Texture2D'Tyler_Test.Textures.Concrete_CLR'
+    ReferencedTextures[3] = TextureCube3'FX_General.Mat.SpecGlow02_Cube'
+}
+Expressions[25] =
+{
+    Expressions[13] = MaterialExpressionScalarParameter'SS_OOB.Mat.CS_Concrete_MAT.MaterialExpressionScalarParameter_0'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Opaque (0)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[1] =
+{
+    CollectedScalarParameters[0] = { Value=0.5, Name=Brightness, Group=None }
+}
+CollectedVectorParameters[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

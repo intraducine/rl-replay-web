@@ -1,0 +1,40 @@
+TwoSided = true
+bDisableDepthTest = false
+bIsMasked = true
+ReferencedTextures[2] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Textures.Gradients.Sphere_Uncompressed_N'
+}
+Expressions[113] =
+{
+    Expressions[8] = MaterialExpressionScalarParameter'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionScalarParameter_0'
+    Expressions[23] = MaterialExpressionScalarParameter'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionScalarParameter_1'
+    Expressions[37] = MaterialExpressionStaticSwitchParameter'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionStaticSwitchParameter_3'
+    Expressions[54] = MaterialExpressionStaticSwitchParameter'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionStaticSwitchParameter_1'
+    Expressions[64] = MaterialExpressionStaticSwitchParameter'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionStaticSwitchParameter_2'
+    Expressions[82] = MaterialExpressionTextureSampleParameter2D'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionTextureSampleParameter2D_8'
+    Expressions[93] = MaterialExpressionStaticSwitchParameter'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionStaticSwitchParameter_0'
+    Expressions[102] = MaterialExpressionScalarParameter'Stadium.Materials.Crowd_V3_Mat.MaterialExpressionScalarParameter_2'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Masked (1)
+OpacityMaskClipValue = 0.1
+CollectedTextureParameters[1] =
+{
+    CollectedTextureParameters[0] = { Texture=None, Name=ColorLookup, Group=None }
+}
+CollectedScalarParameters[3] =
+{
+    CollectedScalarParameters[0] = { Value=1, Name=CrowdSize, Group=None }
+    CollectedScalarParameters[1] = { Value=0.25, Name=Cheer, Group=None }
+    CollectedScalarParameters[2] = { Value=1, Name=CrowdSize, Group=None }
+}
+CollectedVectorParameters[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

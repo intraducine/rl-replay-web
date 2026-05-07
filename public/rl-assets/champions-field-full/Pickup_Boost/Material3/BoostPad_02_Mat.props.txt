@@ -1,0 +1,52 @@
+TwoSided = false
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[2] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Textures.Gradients.Curve_Fire_01_Pack'
+    ReferencedTextures[1] = Texture2D'General_FX.Mat.GradientCircle01'
+}
+Expressions[49] =
+{
+    Expressions[4] = MaterialExpressionVectorParameter'Pickup_Boost.BoostPad_02_Mat.MaterialExpressionVectorParameter_1'
+    Expressions[10] = MaterialExpressionVectorParameter'Pickup_Boost.BoostPad_02_Mat.MaterialExpressionVectorParameter_2'
+    Expressions[15] = MaterialExpressionVectorParameter'Pickup_Boost.BoostPad_02_Mat.MaterialExpressionVectorParameter_4'
+    Expressions[19] = MaterialExpressionScalarParameter'Pickup_Boost.BoostPad_02_Mat.MaterialExpressionScalarParameter_2'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Additive (3)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[1] =
+{
+    CollectedScalarParameters[0] = { Value=1, Name=Brightness, Group=None }
+}
+CollectedVectorParameters[3] =
+{
+    CollectedVectorParameters[0] =
+    {
+        Value = { R=0.88, G=0.42, B=0.05, A=1.5 }
+        Name = ColorA
+        Group = None
+    }
+    CollectedVectorParameters[1] =
+    {
+        Value = { R=1, G=0.779145, B=0.199686, A=1 }
+        Name = ColorB
+        Group = None
+    }
+    CollectedVectorParameters[2] =
+    {
+        Value = { R=1, G=0.876508, B=0.552503, A=1 }
+        Name = ColorC
+        Group = None
+    }
+}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

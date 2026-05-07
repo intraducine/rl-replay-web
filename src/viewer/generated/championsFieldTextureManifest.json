@@ -1,0 +1,74 @@
+{
+  "generatedBy": "scripts/generate-champions-field-textures.mjs",
+  "rocketLeagueRoot": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague",
+  "umodelExportRoot": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel",
+  "umodelTool": "/Users/viburamineni/RocketLeagueMapExtract/tools/umodel/umodel_64.exe",
+  "textures": {
+    "fieldGrass": {
+      "browserPath": "/rl-assets/champions-field-scraped/field-grass-pattern.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_Field.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/CS_FieldAssets01/Texture2D/CS_FieldGrassPattern_Half_D.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/CS_FieldAssets01/MaterialInstanceConstant/CS_Grass_Base_V2_MIC.props.txt"
+    },
+    "stadiumTrim": {
+      "browserPath": "/rl-assets/champions-field-scraped/stadium-trim-01-albedo.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_Field.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/CS_StadiumAssets_01/Texture2D/CS_Trim_01_D.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/CS_StadiumAssets_01/MaterialInstanceConstant/MIC_CS_GC_Trim01.props.txt"
+    },
+    "stadiumWallMetal": {
+      "browserPath": "/rl-assets/champions-field-scraped/stadium-wall-metal-02-albedo.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_P.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/CS_StadiumAssets_01/Texture2D/CS_WallMetal_02_D.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/CS_StadiumAssets_01/MaterialInstanceConstant/MIC_CS_WallMetal02.props.txt"
+    },
+    "bannerPack": {
+      "browserPath": "/rl-assets/champions-field-scraped/banner-pack.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_OOB.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/SS_OOB/Texture2D/RLCS_WinnerBanners_01_D.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/SS_OOB/Material3/CS_OOB_RLCS_Mat.props.txt"
+    },
+    "countryFlags": {
+      "browserPath": "/rl-assets/champions-field-scraped/country-flags.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_Lights.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/Stadium_CountryFlags_Textures/Texture2D/CountryFlagsCombined.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/SS_OOB/Material3/CS_OOB_CountryFlags_Mat.props.txt"
+    },
+    "buildingPack": {
+      "browserPath": "/rl-assets/champions-field-scraped/building-pack.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_OOB.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/City_Textures/Texture2D/Building_A_Pack.tga",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/City/MaterialInstanceConstant/Building_MIC.props.txt"
+    },
+    "windowBarred": {
+      "browserPath": "/rl-assets/champions-field-scraped/window-barred-pack.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_OOB.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/City_Textures/Texture2D/Window_Barred_Pack.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/City/MaterialInstanceConstant/Window_Barred_Team1_MIC.props.txt"
+    },
+    "tentFabric": {
+      "browserPath": "/rl-assets/champions-field-scraped/tent-fabric.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_OOB2.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/SS_OOB/Texture2D/CS_TentFabric_D.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/SS_OOB/Material3/CS_TentFabric_Mat.props.txt"
+    },
+    "advertStrip": {
+      "browserPath": "/rl-assets/champions-field-scraped/advert-strip.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_OOB2.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/Adverts_Textures/Texture2D/Advert_Strip.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/Adverts/MaterialInstanceConstant/4x1_A_MIC.props.txt"
+    },
+    "stairsPack": {
+      "browserPath": "/rl-assets/champions-field-scraped/stairs-pack.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_Grounds.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/Stadium_Textures/Texture2D/Stairs_Pack.tga",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/SS_OOB/Material3/CS_Stairs_Mat.props.txt"
+    },
+    "handrail": {
+      "browserPath": "/rl-assets/champions-field-scraped/handrail.png",
+      "packageFile": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/CS_OOB2.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/Stadium_Textures/Texture2D/HandRail_D.dds",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/ChampionsField_umodel/Stadium/Material3/HandRail_Mat.props.txt"
+    }
+  }
+}

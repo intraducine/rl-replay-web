@@ -1,0 +1,1 @@
+export const ROCKET_LEAGUE_BLOOM_LAYER = 1;

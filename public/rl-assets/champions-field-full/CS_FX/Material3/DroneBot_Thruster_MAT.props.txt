@@ -1,0 +1,74 @@
+TwoSided = true
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[2] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Water_Tex.Water_02_N'
+    ReferencedTextures[1] = Texture2D'Boost_Tests.Textures.ParticleSheet_T'
+}
+Expressions[112] =
+{
+    Expressions[2] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_3'
+    Expressions[13] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_6'
+    Expressions[14] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_5'
+    Expressions[55] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_9'
+    Expressions[56] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_1'
+    Expressions[59] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_11'
+    Expressions[61] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_7'
+    Expressions[67] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_2'
+    Expressions[68] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_0'
+    Expressions[77] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_8'
+    Expressions[78] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_10'
+    Expressions[93] = MaterialExpressionVectorParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionVectorParameter_2'
+    Expressions[95] = MaterialExpressionVectorParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionVectorParameter_0'
+    Expressions[98] = MaterialExpressionVectorParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionVectorParameter_1'
+    Expressions[101] = MaterialExpressionScalarParameter'CS_FX.Mat.DroneBot_Thruster_MAT.MaterialExpressionScalarParameter_12'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Translucent (2)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[12] =
+{
+    CollectedScalarParameters[0] = { Value=8, Name=Distortion, Group=None }
+    CollectedScalarParameters[1] = { Value=1, Name=Inner_Speed, Group=None }
+    CollectedScalarParameters[2] = { Value=1, Name=Outer_Speed, Group=None }
+    CollectedScalarParameters[3] = { Value=3, Name=FresnelBase, Group=None }
+    CollectedScalarParameters[4] = { Value=6, Name=FresnelEnd, Group=None }
+    CollectedScalarParameters[5] = { Value=2, Name=GradientSharpness, Group=None }
+    CollectedScalarParameters[6] = { Value=8, Name=GradientAmount, Group=None }
+    CollectedScalarParameters[7] = { Value=1, Name=Inner_Sparks, Group=None }
+    CollectedScalarParameters[8] = { Value=1, Name=Outer_Sparks, Group=None }
+    CollectedScalarParameters[9] = { Value=1, Name=TileY, Group=None }
+    CollectedScalarParameters[10] = { Value=1, Name=TileX, Group=None }
+    CollectedScalarParameters[11] = { Value=8, Name=WorldPositionMask, Group=WPO }
+}
+CollectedVectorParameters[3] =
+{
+    CollectedVectorParameters[0] =
+    {
+        Value = { R=2, G=0.2, B=0.2, A=1 }
+        Name = Inner_Color
+        Group = None
+    }
+    CollectedVectorParameters[1] =
+    {
+        Value = { R=1, G=1, B=1, A=1 }
+        Name = Outer_Color
+        Group = None
+    }
+    CollectedVectorParameters[2] =
+    {
+        Value = { R=0, G=0, B=-100, A=1 }
+        Name = Gravity
+        Group = WPO
+    }
+}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

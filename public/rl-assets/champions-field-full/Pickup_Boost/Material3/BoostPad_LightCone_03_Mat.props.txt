@@ -1,0 +1,38 @@
+TwoSided = true
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[2] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Textures.Gradients.Curve_Shockwaves_Pack'
+    ReferencedTextures[1] = Texture2D'FX_Textures.Noise.Noise_Smoke_03_Pack'
+}
+Expressions[22] =
+{
+    Expressions[2] = MaterialExpressionScalarParameter'Pickup_Boost.BoostPad_LightCone_03_Mat.MaterialExpressionScalarParameter_0'
+    Expressions[15] = MaterialExpressionVectorParameter'Pickup_Boost.BoostPad_LightCone_03_Mat.MaterialExpressionVectorParameter_0'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Translucent (2)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[1] =
+{
+    CollectedScalarParameters[0] = { Value=1, Name=Brightness, Group=None }
+}
+CollectedVectorParameters[1] =
+{
+    CollectedVectorParameters[0] =
+    {
+        Value = { R=1, G=0.321743, B=0, A=5 }
+        Name = SwirlColor
+        Group = None
+    }
+}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

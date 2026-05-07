@@ -1,0 +1,32 @@
+TwoSided = false
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[2] =
+{
+    ReferencedTextures[1] = Texture2D'FX_Textures.Noise.Noise_Shapes_01_Pack'
+}
+Expressions[41] =
+{
+    Expressions[0] = MaterialExpressionStaticSwitchParameter'Scoreboard.Materials.Scoreboard_Mat.MaterialExpressionStaticSwitchParameter_6'
+    Expressions[4] = MaterialExpressionTextureSampleParameter2D'Scoreboard.Materials.Scoreboard_Mat.MaterialExpressionTextureSampleParameter2D_0'
+    Expressions[5] = MaterialExpressionStaticSwitchParameter'Scoreboard.Materials.Scoreboard_Mat.MaterialExpressionStaticSwitchParameter_5'
+    Expressions[14] = MaterialExpressionStaticSwitchParameter'Scoreboard.Materials.Scoreboard_Mat.MaterialExpressionStaticSwitchParameter_1'
+    Expressions[17] = MaterialExpressionStaticSwitchParameter'Scoreboard.Materials.Scoreboard_Mat.MaterialExpressionStaticSwitchParameter_3'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Opaque (0)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[1] =
+{
+    CollectedTextureParameters[0] = { Texture=None, Name=AdTexture, Group=None }
+}
+CollectedScalarParameters[0] = {}
+CollectedVectorParameters[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

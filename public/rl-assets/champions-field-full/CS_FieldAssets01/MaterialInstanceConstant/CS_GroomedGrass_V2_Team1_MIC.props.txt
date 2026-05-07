@@ -1,0 +1,52 @@
+Parent = Material3'Grass.Materials.GroomedGrass_FakeLight_V6_Mat'
+ScalarParameterValues[1] =
+{
+    ScalarParameterValues[0] =
+    {
+        ParameterInfo = 
+        ParameterValue = 0.5
+        ParameterName = ENVAmount
+    }
+}
+TextureParameterValues[3] =
+{
+    TextureParameterValues[0] =
+    {
+        ParameterInfo = 
+        ParameterValue = None
+        ParameterName = CubeMap
+    }
+    TextureParameterValues[1] =
+    {
+        ParameterInfo = 
+        ParameterValue = Texture2D'CS_FieldAssets01.Texture.CS_FieldGrassPattern_Half_D'
+        ParameterName = FieldSkin
+    }
+    TextureParameterValues[2] =
+    {
+        ParameterInfo = 
+        ParameterValue = Texture2D'CS_FieldAssets01.Texture.CS_FieldGrassPattern_Half_D_Unfiltered'
+        ParameterName = FieldSkinUnfiltered
+    }
+}
+VectorParameterValues[1] =
+{
+    VectorParameterValues[0] =
+    {
+        ParameterInfo = 
+        ParameterValue = { R=0.227137, G=0.280124, B=0.358654, A=1 }
+        ParameterName = LightColor
+    }
+}
+BasePropertyOverrides = 
+StaticParameters = 
+RuntimeVirtualTextureParameterValues[0] = {}
+FontParameterValues[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

@@ -1,0 +1,42 @@
+TwoSided = true
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[1] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Textures.Gradients.LightCone_Pack'
+}
+Expressions[60] =
+{
+    Expressions[1] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_1'
+    Expressions[12] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_2'
+    Expressions[17] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_0'
+    Expressions[27] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_3'
+    Expressions[29] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_6'
+    Expressions[31] = MaterialExpressionTextureSampleParameter2D'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionTextureSampleParameter2D_5'
+    Expressions[33] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_4'
+    Expressions[41] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_7'
+    Expressions[43] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_5'
+    Expressions[44] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_8'
+    Expressions[46] = MaterialExpressionTextureSampleParameter2D'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionTextureSampleParameter2D_2'
+    Expressions[48] = MaterialExpressionTextureSampleParameter2D'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionTextureSampleParameter2D_3'
+    Expressions[51] = MaterialExpressionStaticSwitchParameter'FX_Lighting.Materials.LightCone_Mat.MaterialExpressionStaticSwitchParameter_9'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Translucent (2)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[3] =
+{
+    CollectedTextureParameters[0] = { Texture=None, Name=ColorLookup, Group=None }
+    CollectedTextureParameters[1] = { Texture=None, Name=ColorLookup, Group=None }
+    CollectedTextureParameters[2] = { Texture=None, Name=ColorLookup, Group=None }
+}
+CollectedScalarParameters[0] = {}
+CollectedVectorParameters[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

@@ -1,0 +1,74 @@
+{
+  "generatedBy": "scripts/generate-demo-explosion-assets.mjs",
+  "rocketLeagueRoot": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague",
+  "umodelExportRoot": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel",
+  "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+  "textures": {
+    "smoke": {
+      "browserPath": "/rl-assets/demo-explosion/smoke-plume-01-pack.png",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Explosion_Default_SF/Texture2D/Smoke_Plume_01_Pack.png"
+    },
+    "smokeNoise": {
+      "browserPath": "/rl-assets/demo-explosion/noise-smoke-03-pack.png",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Startup/Texture2D/Noise_Smoke_03_Pack.png"
+    },
+    "fire": {
+      "browserPath": "/rl-assets/demo-explosion/noise-fire-02-pack.png",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Startup/Texture2D/Noise_Fire_02_Pack.png"
+    },
+    "lightning": {
+      "browserPath": "/rl-assets/demo-explosion/lightning-pack.png",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Startup/Texture2D/Lightning_Pack.png"
+    },
+    "glow": {
+      "browserPath": "/rl-assets/demo-explosion/gradient-circle-01.png",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "extractedTexture": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Startup/Texture2D/GradientCircle01.png"
+    }
+  },
+  "materials": {
+    "electricity": {
+      "exportName": "Electricity_Mat",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Explosion_Default_SF/Material3/Electricity_Mat.props.txt",
+      "blendMode": "BLEND_Additive",
+      "referencedTextures": [
+        "FX_Textures.Noise.Noise_Fire_01_N",
+        "FX_Textures.Noise.Lightning_Pack",
+        "FX_Textures.Noise.Noise_Fire_02_Pack"
+      ]
+    },
+    "glow": {
+      "exportName": "Glow02_Mat",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Explosion_Default_SF/Material3/Glow02_Mat.props.txt",
+      "blendMode": "BLEND_Additive",
+      "referencedTextures": [
+        "General_FX.Mat.GradientCircle01"
+      ]
+    },
+    "smoke": {
+      "exportName": "Smoke_Explosion_Mat",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Explosion_Default_SF/Material3/Smoke_Explosion_Mat.props.txt",
+      "blendMode": "BLEND_Translucent",
+      "referencedTextures": [
+        "FX_Textures.Noise.Noise_Smoke_02_Pack"
+      ]
+    },
+    "smokeTrail": {
+      "exportName": "SmokeTrail_Explosion_Mat",
+      "sourcePackage": "/Users/viburamineni/Library/Application Support/CrossOver/Bottles/Rocket League/drive_c/Program Files/Epic Games/rocketleague/TAGame/CookedPCConsole/Explosion_Default_SF.upk",
+      "materialProps": "/Users/viburamineni/RocketLeagueMapExtract/output/DemoExplosion_umodel/Explosion_Default_SF/Material3/SmokeTrail_Explosion_Mat.props.txt",
+      "blendMode": "BLEND_Translucent",
+      "referencedTextures": [
+        "FX_Textures.Noise.Noise_Smoke_03_Pack",
+        "FX_Smoke_Tex.Smoke_Plume_01_Pack"
+      ]
+    }
+  }
+}

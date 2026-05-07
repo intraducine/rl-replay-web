@@ -1,0 +1,343 @@
+import { clamp, lerpVec3, slerpQuat } from "../math/interpolation";
+import type { CarFrame, ReplayTimeline, RigidBodyFrame, SampledReplayState, TimelineFrame } from "./types";
+
+type MotionKeyframe<T extends RigidBodyFrame> = {
+  t: number;
+  frame: T;
+};
+
+type TimelineSamplingIndex = {
+  ball: MotionKeyframe<RigidBodyFrame>[];
+  cars: Map<string, MotionKeyframe<CarFrame>[]>;
+};
+
+const MOTION_EPSILON_SQ = 0.01;
+const ROTATION_DOT_EPSILON = 0.99999;
+const MAX_SMOOTH_SPAN_SECONDS = 0.25;
+const CAR_RESET_DISTANCE = 1800;
+const CAR_MAX_SPEED = 9000;
+const BALL_RESET_DISTANCE = 2600;
+const BALL_MAX_SPEED = 18000;
+const samplingIndexCache = new WeakMap<ReplayTimeline, TimelineSamplingIndex>();
+
+function interpolateRigidBody(a: RigidBodyFrame, b: RigidBodyFrame, alpha: number): RigidBodyFrame {
+  return {
+    position: lerpVec3(a.position, b.position, alpha),
+    rotation: slerpQuat(a.rotation, b.rotation, alpha),
+    velocity: a.velocity && b.velocity ? lerpVec3(a.velocity, b.velocity, alpha) : a.velocity ?? b.velocity,
+    angularVelocity:
+      a.angularVelocity && b.angularVelocity
+        ? lerpVec3(a.angularVelocity, b.angularVelocity, alpha)
+        : a.angularVelocity ?? b.angularVelocity
+  };
+}
+
+function interpolateCar(a: CarFrame, b: CarFrame, alpha: number): CarFrame {
+  return {
+    ...interpolateRigidBody(a, b, alpha),
+    boost: a.boost !== undefined && b.boost !== undefined ? a.boost + (b.boost - a.boost) * alpha : a.boost ?? b.boost,
+    boostActive: alpha < 0.5 ? a.boostActive ?? b.boostActive : b.boostActive ?? a.boostActive,
+    demolished: alpha < 0.5 ? a.demolished : b.demolished,
+    supersonic: alpha < 0.5 ? a.supersonic : b.supersonic
+  };
+}
+
+function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
+  const cached = samplingIndexCache.get(timeline);
+  if (cached) return cached;
+
+  const index: TimelineSamplingIndex = {
+    ball: [],
+    cars: new Map()
+  };
+
+  for (const frame of timeline.frames) {
+    if (frame.ball) appendMotionKeyframe(index.ball, frame.t, frame.ball);
+
+    for (const [id, car] of Object.entries(frame.cars)) {
+      let track = index.cars.get(id);
+      if (!track) {
+        track = [];
+        index.cars.set(id, track);
+      }
+      appendMotionKeyframe(track, frame.t, car);
+    }
+  }
+
+  samplingIndexCache.set(timeline, index);
+  return index;
+}
+
+function appendMotionKeyframe<T extends RigidBodyFrame>(track: MotionKeyframe<T>[], t: number, frame: T) {
+  if (track.length === 0 || !sameRigidBodyPose(track[track.length - 1].frame, frame)) {
+    track.push({ t, frame });
+  }
+}
+
+function sameRigidBodyPose(a: RigidBodyFrame, b: RigidBodyFrame): boolean {
+  return positionDistanceSq(a, b) <= MOTION_EPSILON_SQ && Math.abs(quatDot(a.rotation, b.rotation)) >= ROTATION_DOT_EPSILON;
+}
+
+function positionDistanceSq(a: RigidBodyFrame, b: RigidBodyFrame): number {
+  const dx = a.position[0] - b.position[0];
+  const dy = a.position[1] - b.position[1];
+  const dz = a.position[2] - b.position[2];
+  return dx * dx + dy * dy + dz * dz;
+}
+
+function quatDot(a: RigidBodyFrame["rotation"], b: RigidBodyFrame["rotation"]): number {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+}
+
+function sampleMotionTrack<T extends RigidBodyFrame>(
+  track: MotionKeyframe<T>[] | undefined,
+  t: number,
+  interpolate: (a: T, b: T, alpha: number) => T,
+  maxDistance: number,
+  maxSpeed: number
+): T | undefined {
+  if (!track?.length) return undefined;
+  if (track.length === 1 || t <= track[0].t) return track[0].frame;
+  if (t >= track[track.length - 1].t) return track[track.length - 1].frame;
+
+  let low = 0;
+  let high = track.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (track[mid].t < t) low = mid + 1;
+    else high = mid - 1;
+  }
+
+  const next = track[low];
+  const previous = track[low - 1];
+  const span = next.t - previous.t;
+  if (span <= 0) return previous.frame;
+
+  const distance = Math.sqrt(positionDistanceSq(previous.frame, next.frame));
+  if (distance > maxDistance || distance / span > maxSpeed) {
+    return t < next.t ? previous.frame : next.frame;
+  }
+  if (span > MAX_SMOOTH_SPAN_SECONDS) return undefined;
+
+  return interpolate(previous.frame, next.frame, (t - previous.t) / span);
+}
+
+function findFramePair(frames: TimelineFrame[], t: number): [TimelineFrame, TimelineFrame, number] {
+  const [previousIndex, nextIndex, alpha] = findFramePairIndices(frames, t);
+  return [frames[previousIndex], frames[nextIndex], alpha];
+}
+
+function findFramePairIndices(frames: TimelineFrame[], t: number): [number, number, number] {
+  if (frames.length === 0) {
+    throw new Error("Cannot sample an empty replay timeline.");
+  }
+
+  const clamped = clamp(t, frames[0].t, frames[frames.length - 1].t);
+  let low = 0;
+  let high = frames.length - 1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (frames[mid].t < clamped) low = mid + 1;
+    else high = mid - 1;
+  }
+
+  const nextIndex = clamp(low, 0, frames.length - 1);
+  const prevIndex = clamp(nextIndex - 1, 0, frames.length - 1);
+  const previous = frames[prevIndex];
+  const next = frames[nextIndex];
+  const span = next.t - previous.t;
+  const alpha = span > 0 ? (clamped - previous.t) / span : 0;
+
+  return [prevIndex, nextIndex, alpha];
+}
+
+function nearestCarState(previous: TimelineFrame, next: TimelineFrame, id: string, alpha: number): CarFrame | undefined {
+  const a = previous.cars[id];
+  const b = next.cars[id];
+  if (a && b) return interpolateCar(a, b, alpha);
+  return alpha < 0.5 ? a ?? b : b ?? a;
+}
+
+export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): SampledReplayState {
+  const [previousIndex, nextIndex, alpha] = findFramePairIndices(timeline.frames, timeSeconds);
+  const previous = timeline.frames[previousIndex];
+  const next = timeline.frames[nextIndex];
+  const sampledTime = previous.t + (next.t - previous.t) * alpha;
+  const samplingIndex = buildSamplingIndex(timeline);
+  const carIds = new Set([...Object.keys(previous.cars), ...Object.keys(next.cars)]);
+  const cars: Record<string, CarFrame> = {};
+
+  for (const id of carIds) {
+    const nearest = nearestCarState(previous, next, id, alpha);
+    const motion = sampleMotionTrack(samplingIndex.cars.get(id), sampledTime, interpolateCar, CAR_RESET_DISTANCE, CAR_MAX_SPEED);
+    const car =
+      nearest && motion
+        ? {
+            ...motion,
+            boost: nearest.boost ?? motion.boost,
+            boostActive: nearest.boostActive ?? motion.boostActive,
+            demolished: nearest.demolished,
+            supersonic: nearest.supersonic
+          }
+        : nearest ?? motion;
+    if (car && !car.demolished) cars[id] = car;
+  }
+
+  const adjacentBall =
+    previous.ball && next.ball
+      ? interpolateRigidBody(previous.ball, next.ball, alpha)
+      : alpha < 0.5
+        ? previous.ball ?? next.ball
+        : next.ball ?? previous.ball;
+  const ball = sampleMotionTrack(samplingIndex.ball, sampledTime, interpolateRigidBody, BALL_RESET_DISTANCE, BALL_MAX_SPEED) ?? adjacentBall;
+
+  return {
+    t: sampledTime,
+    ball,
+    cars
+  };
+}
+
+export function timelineDuration(timeline: ReplayTimeline): number {
+  return timeline.frames.at(-1)?.t ?? timeline.metadata.durationSeconds;
+}
+
+export function sampleCarDistanceWindow(timeline: ReplayTimeline, carId: string, endTimeSeconds: number, windowSeconds: number): number {
+  return carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds).distance;
+}
+
+export function sampleCarSpawnPerUnitAgesWindow(
+  timeline: ReplayTimeline,
+  carId: string,
+  endTimeSeconds: number,
+  windowSeconds: number,
+  spawnPerUnit: number,
+  spawnRateScalar: number,
+  emitterStartTimeSeconds?: number
+): number[] {
+  const interval = 1 / (spawnPerUnit * spawnRateScalar);
+  if (!(interval > 0)) return [];
+
+  if (typeof emitterStartTimeSeconds === "number") {
+    return sampleCarSpawnPerUnitAgesFromEmitterStart(
+      timeline,
+      carId,
+      endTimeSeconds,
+      windowSeconds,
+      interval,
+      emitterStartTimeSeconds
+    );
+  }
+
+  const { samples } = carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds);
+  const ages: number[] = [];
+  let nextSpawnDistance = interval;
+  let distanceFromEnd = 0;
+
+  for (let index = samples.length - 1; index > 0; index--) {
+    const current = samples[index];
+    const previous = samples[index - 1];
+    if (!current.position || !previous.position) continue;
+
+    const segmentDistance = vec3Distance(previous.position, current.position);
+    if (segmentDistance <= 0) continue;
+
+    while (distanceFromEnd + segmentDistance >= nextSpawnDistance) {
+      const distanceIntoReverseSegment = nextSpawnDistance - distanceFromEnd;
+      const alphaBack = distanceIntoReverseSegment / segmentDistance;
+      const spawnTime = current.t + (previous.t - current.t) * alphaBack;
+      ages.push(roundSampleAge(endTimeSeconds - spawnTime));
+      nextSpawnDistance += interval;
+    }
+
+    distanceFromEnd += segmentDistance;
+  }
+
+  return ages.filter((age) => age <= windowSeconds);
+}
+
+function sampleCarSpawnPerUnitAgesFromEmitterStart(
+  timeline: ReplayTimeline,
+  carId: string,
+  endTimeSeconds: number,
+  windowSeconds: number,
+  interval: number,
+  emitterStartTimeSeconds: number
+) {
+  if (timeline.frames.length === 0 || !(windowSeconds > 0)) return [];
+
+  const timelineStart = timeline.frames[0].t;
+  const timelineEnd = timeline.frames[timeline.frames.length - 1].t;
+  const emitterStartTime = clamp(emitterStartTimeSeconds, timelineStart, timelineEnd);
+  const endTime = clamp(endTimeSeconds, timelineStart, timelineEnd);
+  const windowStartTime = clamp(endTime - windowSeconds, timelineStart, timelineEnd);
+  if (endTime <= emitterStartTime) return [];
+
+  const { samples } = carWindowSamples(timeline, carId, endTime, endTime - emitterStartTime);
+  const ages: number[] = [];
+  let cumulativeDistance = 0;
+  let nextSpawnDistance = interval;
+
+  for (let index = 1; index < samples.length; index++) {
+    const previous = samples[index - 1];
+    const current = samples[index];
+    if (!previous.position || !current.position) continue;
+
+    const segmentDistance = vec3Distance(previous.position, current.position);
+    if (segmentDistance <= 0) continue;
+
+    while (cumulativeDistance + segmentDistance >= nextSpawnDistance) {
+      const distanceIntoSegment = nextSpawnDistance - cumulativeDistance;
+      const alpha = distanceIntoSegment / segmentDistance;
+      const spawnTime = previous.t + (current.t - previous.t) * alpha;
+      if (spawnTime >= windowStartTime && spawnTime < endTime) {
+        ages.push(roundSampleAge(endTime - spawnTime));
+      }
+      nextSpawnDistance += interval;
+    }
+
+    cumulativeDistance += segmentDistance;
+  }
+
+  return ages.reverse();
+}
+
+function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSeconds: number, windowSeconds: number) {
+  if (timeline.frames.length === 0 || !(windowSeconds > 0)) return { samples: [], distance: 0 };
+
+  const startTime = clamp(endTimeSeconds - windowSeconds, timeline.frames[0].t, timeline.frames[timeline.frames.length - 1].t);
+  const endTime = clamp(endTimeSeconds, timeline.frames[0].t, timeline.frames[timeline.frames.length - 1].t);
+  if (endTime <= startTime) return { samples: [], distance: 0 };
+
+  const sampleTimes = [
+    startTime,
+    ...timeline.frames.map((frame) => frame.t).filter((time) => time > startTime && time < endTime),
+    endTime
+  ];
+  let distance = 0;
+  const samples = sampleTimes.map((sampleTime) => ({
+    t: sampleTime,
+    position: sampleTimeline(timeline, sampleTime).cars[carId]?.position
+  }));
+  let previous = samples[0]?.position;
+
+  for (const sample of samples.slice(1)) {
+    const current = sample.position;
+    if (previous && current) distance += vec3Distance(previous, current);
+    previous = current;
+  }
+
+  return { samples, distance };
+}
+
+function vec3Distance(a: [number, number, number], b: [number, number, number]) {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  const dz = a[2] - b[2];
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+function roundSampleAge(value: number) {
+  return Math.round(value * 1_000_000) / 1_000_000;
+}

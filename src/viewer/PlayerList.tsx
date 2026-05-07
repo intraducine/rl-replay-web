@@ -1,0 +1,50 @@
+import type { ReplayTimeline } from "../replay/types";
+import { useViewerStore } from "../state/viewerStore";
+import { teamClassName } from "./teamColors";
+
+export function PlayerList({ timeline, boostByPlayer = {} }: { timeline: ReplayTimeline; boostByPlayer?: Record<string, number | undefined> }) {
+  const selectedPlayerId = useViewerStore((state) => state.selectedPlayerId);
+  const setSelectedPlayerId = useViewerStore((state) => state.setSelectedPlayerId);
+
+  return (
+    <div className="player-list">
+      {timeline.metadata.players.map((player) => {
+        const boost = boostByPlayer[player.id];
+        const stats = player.stats;
+        return (
+          <button
+            key={player.id}
+            className={`${teamClassName(player.team)} ${selectedPlayerId === player.id ? "selected" : ""}`}
+            onClick={() => setSelectedPlayerId(player.id)}
+          >
+            <span className="player-row">
+              <span>{player.name}</span>
+              <span className="boost-value">{boost === undefined ? "--" : Math.round(boost)}</span>
+            </span>
+            {stats ? (
+              <span className="player-stats">
+                <b>{stats.score}</b>
+                <span>{stats.goals}G</span>
+                <span>{stats.assists}A</span>
+                <span>{stats.saves}S</span>
+                <span>{stats.shots}Sh</span>
+                {stats.demos !== undefined ? <span>{stats.demos}D</span> : null}
+              </span>
+            ) : null}
+            <span className="player-context">
+              {displayPlatform(player.platform)}
+              {player.ping !== undefined ? <span>{player.ping} ping</span> : null}
+              {player.cosmetics?.teamPaint ? <span>Paint {player.cosmetics.teamPaint.primaryColor}/{player.cosmetics.teamPaint.accentColor}</span> : null}
+            </span>
+            <meter min={0} max={100} value={boost ?? 0} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function displayPlatform(platform?: string) {
+  if (!platform) return null;
+  return <span>{platform.replace(/^OnlinePlatform_/, "")}</span>;
+}

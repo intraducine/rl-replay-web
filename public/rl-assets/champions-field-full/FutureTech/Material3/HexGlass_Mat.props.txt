@@ -1,0 +1,43 @@
+TwoSided = false
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[2] =
+{
+    ReferencedTextures[0] = Texture2D'Vehicle_Parent_Textures.ENVPack'
+    ReferencedTextures[1] = Texture2D'TiledPatterns.Hexagons_Pack'
+}
+Expressions[50] =
+{
+    Expressions[0] = MaterialExpressionStaticSwitchParameter'FutureTech.Materials.HexGlass_Mat.MaterialExpressionStaticSwitchParameter_7'
+    Expressions[30] = MaterialExpressionStaticSwitchParameter'FutureTech.Materials.HexGlass_Mat.MaterialExpressionStaticSwitchParameter_1'
+    Expressions[31] = MaterialExpressionVectorParameter'FutureTech.Materials.HexGlass_Mat.MaterialExpressionVectorParameter_3'
+    Expressions[33] = MaterialExpressionTextureSampleParameter2D'FutureTech.Materials.HexGlass_Mat.MaterialExpressionTextureSampleParameter2D_1'
+    Expressions[40] = MaterialExpressionStaticSwitchParameter'FutureTech.Materials.HexGlass_Mat.MaterialExpressionStaticSwitchParameter_2'
+    Expressions[42] = MaterialExpressionStaticSwitchParameter'FutureTech.Materials.HexGlass_Mat.MaterialExpressionStaticSwitchParameter_4'
+    Expressions[43] = MaterialExpressionStaticSwitchParameter'FutureTech.Materials.HexGlass_Mat.MaterialExpressionStaticSwitchParameter_3'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Translucent (2)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[1] =
+{
+    CollectedTextureParameters[0] = { Texture=None, Name=ColorLookup, Group=None }
+}
+CollectedScalarParameters[0] = {}
+CollectedVectorParameters[1] =
+{
+    CollectedVectorParameters[0] =
+    {
+        Value = { R=1.10595, G=0.18212, B=0.116132, A=1 }
+        Name = Color1
+        Group = None
+    }
+}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

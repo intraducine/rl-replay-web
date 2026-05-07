@@ -1,0 +1,36 @@
+TwoSided = false
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[6] =
+{
+    ReferencedTextures[0] = Texture2D'TiledPatterns.Hexagons_Pack'
+    ReferencedTextures[1] = Texture2D'TiledPatterns.Hexagons_N'
+}
+Expressions[45] =
+{
+    Expressions[5] = MaterialExpressionStaticSwitchParameter'SS_OOB.Mat.CS_Field_Hexagons_Mat.MaterialExpressionStaticSwitchParameter_2'
+    Expressions[12] = MaterialExpressionStaticSwitchParameter'SS_OOB.Mat.CS_Field_Hexagons_Mat.MaterialExpressionStaticSwitchParameter_4'
+    Expressions[24] = MaterialExpressionScalarParameter'SS_OOB.Mat.CS_Field_Hexagons_Mat.MaterialExpressionScalarParameter_1'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Opaque (0)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[1] =
+{
+    CollectedScalarParameters[0] =
+    {
+        Value = 0.000976
+        Name = TeamColor Distance
+        Group = None
+    }
+}
+CollectedVectorParameters[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

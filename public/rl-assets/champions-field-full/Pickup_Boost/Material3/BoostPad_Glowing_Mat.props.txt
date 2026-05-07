@@ -1,0 +1,40 @@
+TwoSided = true
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[2] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Textures.Gradients.Curve_Shockwaves_Pack'
+    ReferencedTextures[1] = Texture2D'FX_Textures.Noise.Noise_Smoke_03_Pack'
+}
+Expressions[31] =
+{
+    Expressions[5] = MaterialExpressionScalarParameter'Pickup_Boost.QOL.BoostPad_Glowing_Mat.MaterialExpressionScalarParameter_9'
+    Expressions[23] = MaterialExpressionVectorParameter'Pickup_Boost.QOL.BoostPad_Glowing_Mat.MaterialExpressionVectorParameter_0'
+    Expressions[26] = MaterialExpressionScalarParameter'Pickup_Boost.QOL.BoostPad_Glowing_Mat.MaterialExpressionScalarParameter_3'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Translucent (2)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[2] =
+{
+    CollectedScalarParameters[0] = { Value=1, Name=Brightness, Group=None }
+    CollectedScalarParameters[1] = { Value=0.5, Name=PanAnimate, Group=None }
+}
+CollectedVectorParameters[1] =
+{
+    CollectedVectorParameters[0] =
+    {
+        Value = { R=1, G=0.471412, B=0.0468068, A=1 }
+        Name = BoostPad_Color
+        Group = None
+    }
+}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

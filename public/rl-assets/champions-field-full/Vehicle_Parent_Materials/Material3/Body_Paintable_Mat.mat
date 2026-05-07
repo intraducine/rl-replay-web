@@ -1,0 +1,9 @@
+Diffuse=Octane_Body_D
+Normal=CarbonFiber_Flipped_N
+Other[0]=Import_Body_BlankSkin
+Other[1]=Body_Octane_Curvature
+Other[2]=Pepe_Flames
+Other[3]=Fur_N
+Other[4]=Sparkle_N
+Other[5]=LightFalloffArray
+Other[6]=ENVPack

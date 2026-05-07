@@ -1,0 +1,28 @@
+TwoSided = false
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[1] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Textures.Gradients.Radial_Generic_01_Pack'
+}
+Expressions[20] =
+{
+    Expressions[4] = MaterialExpressionStaticSwitchParameter'Pickup_Boost.Materials.Glow_Mat.MaterialExpressionStaticSwitchParameter_0'
+    Expressions[11] = MaterialExpressionStaticSwitchParameter'Pickup_Boost.Materials.Glow_Mat.MaterialExpressionStaticSwitchParameter_1'
+    Expressions[13] = MaterialExpressionStaticSwitchParameter'Pickup_Boost.Materials.Glow_Mat.MaterialExpressionStaticSwitchParameter_3'
+    Expressions[14] = MaterialExpressionStaticSwitchParameter'Pickup_Boost.Materials.Glow_Mat.MaterialExpressionStaticSwitchParameter_5'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Additive (3)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[0] = {}
+CollectedVectorParameters[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

@@ -1,0 +1,24 @@
+TwoSided = true
+bDisableDepthTest = false
+bIsMasked = true
+ReferencedTextures[3] =
+{
+    ReferencedTextures[0] = Texture2D'FX_Textures.Gradients.Sphere_Uncompressed_N'
+    ReferencedTextures[1] = Texture2D'Detail_Sparkle.Sparkle_N'
+    ReferencedTextures[2] = Texture2D'FX_Textures.Noise.Noise_Smoke_03_Pack'
+}
+Expressions[81] = {  }
+CachedExpressionData = 
+BlendMode = BLEND_Masked (1)
+OpacityMaskClipValue = 0.5
+CollectedTextureParameters[0] = {}
+CollectedScalarParameters[0] = {}
+CollectedVectorParameters[0] = {}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}

@@ -1,0 +1,263 @@
+TwoSided = false
+bDisableDepthTest = false
+bIsMasked = false
+ReferencedTextures[10] =
+{
+    ReferencedTextures[0] = Texture2D'body_ron.CarbonFiber_Flipped_N'
+    ReferencedTextures[1] = Texture2D'Body_Import.Import_Body_BlankSkin'
+    ReferencedTextures[2] = Texture2D'Body_Octane_Textures.Body_Octane_Curvature'
+    ReferencedTextures[3] = Texture2D'Skin_Octane_Flames.Pepe_Flames'
+    ReferencedTextures[4] = Texture2D'Detail_Fur.Fur_N'
+    ReferencedTextures[5] = Texture2D'Detail_Sparkle.Sparkle_N'
+    ReferencedTextures[6] = Texture2D'Vehicle_Parent_Textures.LightFalloffArray'
+    ReferencedTextures[7] = Texture2D'Body_Octane_Textures.Octane_Body_D'
+    ReferencedTextures[8] = Texture2D'Vehicle_Parent_Textures.ENVPack'
+}
+Expressions[302] =
+{
+    Expressions[1] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_28'
+    Expressions[3] = MaterialExpressionScalarParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionScalarParameter_69'
+    Expressions[5] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_35'
+    Expressions[6] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_34'
+    Expressions[7] = MaterialExpressionScalarParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionScalarParameter_68'
+    Expressions[8] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_33'
+    Expressions[9] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_37'
+    Expressions[18] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_115'
+    Expressions[19] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_42'
+    Expressions[22] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_113'
+    Expressions[24] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_114'
+    Expressions[29] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_96'
+    Expressions[34] = MaterialExpressionScalarParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionScalarParameter_7'
+    Expressions[39] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_112'
+    Expressions[47] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_27'
+    Expressions[48] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_26'
+    Expressions[55] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_47'
+    Expressions[56] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_120'
+    Expressions[59] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_117'
+    Expressions[65] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_46'
+    Expressions[66] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_44'
+    Expressions[67] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_116'
+    Expressions[69] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_45'
+    Expressions[72] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_95'
+    Expressions[75] = MaterialExpressionScalarParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionScalarParameter_6'
+    Expressions[80] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_109'
+    Expressions[85] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_1'
+    Expressions[103] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_118'
+    Expressions[104] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_119'
+    Expressions[111] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_43'
+    Expressions[116] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_105'
+    Expressions[117] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_100'
+    Expressions[118] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_104'
+    Expressions[119] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_102'
+    Expressions[120] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_106'
+    Expressions[125] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_29'
+    Expressions[126] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_28'
+    Expressions[132] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_103'
+    Expressions[133] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_25'
+    Expressions[134] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_39'
+    Expressions[136] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_98'
+    Expressions[137] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_23'
+    Expressions[138] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_38'
+    Expressions[141] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_107'
+    Expressions[142] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_41'
+    Expressions[143] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_24'
+    Expressions[147] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_36'
+    Expressions[151] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_97'
+    Expressions[154] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_40'
+    Expressions[156] = MaterialExpressionVectorParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionVectorParameter_2'
+    Expressions[158] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_124'
+    Expressions[176] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_125'
+    Expressions[192] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_122'
+    Expressions[193] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_121'
+    Expressions[207] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_101'
+    Expressions[231] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_108'
+    Expressions[238] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_99'
+    Expressions[252] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_123'
+    Expressions[284] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_110'
+    Expressions[289] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_1'
+    Expressions[294] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_0'
+    Expressions[295] = MaterialExpressionTextureSampleParameter2D'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionTextureSampleParameter2D_4'
+    Expressions[297] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_2'
+    Expressions[299] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_3'
+    Expressions[301] = MaterialExpressionStaticSwitchParameter'Vehicle_Parent_Materials.Body_Paintable_Mat.MaterialExpressionStaticSwitchParameter_4'
+}
+CachedExpressionData = 
+BlendMode = BLEND_Opaque (0)
+OpacityMaskClipValue = 0.333
+CollectedTextureParameters[15] =
+{
+    CollectedTextureParameters[0] =
+    {
+        Texture = Texture2D'Body_Import.Import_Body_BlankSkin'
+        Name = BodyMasks
+        Group = BaseTextures
+    }
+    CollectedTextureParameters[1] =
+    {
+        Texture = Texture2D'Body_Octane_Textures.Octane_Body_D'
+        Name = Diffuse
+        Group = None
+    }
+    CollectedTextureParameters[2] =
+    {
+        Texture = Texture2D'Skin_Octane_Flames.Pepe_Flames'
+        Name = Skin
+        Group = None
+    }
+    CollectedTextureParameters[3] =
+    {
+        Texture = Texture2D'Detail_Sparkle.Sparkle_N'
+        Name = F2DetailNormal
+        Group = None
+    }
+    CollectedTextureParameters[4] =
+    {
+        Texture = Texture2D'Detail_Sparkle.Sparkle_N'
+        Name = F2DetailNormal
+        Group = None
+    }
+    CollectedTextureParameters[5] =
+    {
+        Texture = Texture2D'Detail_Fur.Fur_N'
+        Name = F1DetailNormal
+        Group = None
+    }
+    CollectedTextureParameters[6] =
+    {
+        Texture = Texture2D'Detail_Fur.Fur_N'
+        Name = F1DetailNormal
+        Group = None
+    }
+    CollectedTextureParameters[7] =
+    {
+        Texture = Texture2D'Body_Octane_Textures.Body_Octane_Curvature'
+        Name = CurvaturePack
+        Group = None
+    }
+    CollectedTextureParameters[8] =
+    {
+        Texture = Texture2D'Body_Backfire_Textures.Backfire_Parts_N'
+        Name = Normal
+        Group = None
+    }
+    CollectedTextureParameters[9] = { Texture=None, Name=ColorLookup, Group=None }
+    CollectedTextureParameters[10] = { Texture=None, Name=ColorLookup, Group=None }
+    CollectedTextureParameters[11] =
+    {
+        Texture = Texture2D'Skin_Octane_Flames.Pepe_Flames'
+        Name = Skin_M
+        Group = None
+    }
+    CollectedTextureParameters[12] =
+    {
+        Texture = Texture2D'Skin_Octane_Flames.Pepe_Flames'
+        Name = Skin
+        Group = None
+    }
+    CollectedTextureParameters[13] =
+    {
+        Texture = Texture2D'Body_Octane_Textures.Body_Octane_Curvature'
+        Name = CurvaturePack
+        Group = None
+    }
+    CollectedTextureParameters[14] =
+    {
+        Texture = Texture2D'Body_Octane_Textures.Octane_Body_D'
+        Name = Diffuse
+        Group = None
+    }
+}
+CollectedScalarParameters[4] =
+{
+    CollectedScalarParameters[0] =
+    {
+        Value = 64
+        Name = TertiaryNormalTiling
+        Group = TertiaryMaterial
+    }
+    CollectedScalarParameters[1] =
+    {
+        Value = 2
+        Name = TertiaryMaterial_Type
+        Group = TertiaryMaterial
+    }
+    CollectedScalarParameters[2] = { Value=1, Name=F2Type, Group=None }
+    CollectedScalarParameters[3] = { Value=1, Name=F1Type, Group=None }
+}
+CollectedVectorParameters[11] =
+{
+    CollectedVectorParameters[0] =
+    {
+        Value = { R=6, G=0.5, B=32, A=0.15 }
+        Name = TertiaryMaterial_ControlB
+        Group = TertiaryMaterial
+    }
+    CollectedVectorParameters[1] =
+    {
+        Value = { R=0.75, G=0.15, B=3, A=0.03125 }
+        Name = TertiaryMaterial_ControlA
+        Group = TertiaryMaterial
+    }
+    CollectedVectorParameters[2] =
+    {
+        Value = { R=0.0657539, G=0.0657539, B=0.0657539, A=1 }
+        Name = TertiaryMaterial_Color
+        Group = TertiaryMaterial
+    }
+    CollectedVectorParameters[3] =
+    {
+        Value = { R=0.75, G=0.5, B=0.125, A=0.25 }
+        Name = F2ControlA
+        Group = None
+    }
+    CollectedVectorParameters[4] =
+    {
+        Value = { R=0.125, G=0.125, B=0.25, A=0.0625 }
+        Name = F1ControlA
+        Group = None
+    }
+    CollectedVectorParameters[5] =
+    {
+        Value = { R=4, G=2, B=8, A=0 }
+        Name = F2ControlB
+        Group = None
+    }
+    CollectedVectorParameters[6] =
+    {
+        Value = { R=2, G=1, B=1, A=0 }
+        Name = F1ControlB
+        Group = None
+    }
+    CollectedVectorParameters[7] =
+    {
+        Value = { R=0, G=0.535757, B=1, A=1 }
+        Name = CustomColor
+        Group = None
+    }
+    CollectedVectorParameters[8] =
+    {
+        Value = { R=0.51, G=0.226958, B=0.109498, A=1 }
+        Name = TeamColor
+        Group = None
+    }
+    CollectedVectorParameters[9] =
+    {
+        Value = { R=1, G=0.598797, B=0, A=1 }
+        Name = PaintColor
+        Group = None
+    }
+    CollectedVectorParameters[10] =
+    {
+        Value = { R=0.12, G=0.12, B=0.12, A=1 }
+        Name = TrimColor
+        Group = None
+    }
+}
+FlattenedTexture = None
+MobileBaseTexture = None
+MobileNormalTexture = None
+bUseMobileSpecular = false
+MobileSpecularPower = 16
+MobileSpecularMask = MSM_Constant (0)
+MobileMaskTexture = None
+TextureStreamingData[0] = {}
