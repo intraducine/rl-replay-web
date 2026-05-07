@@ -6,7 +6,9 @@ import { useViewerStore } from "../state/viewerStore";
 import { setCarAlphaBoostActive } from "../viewer/carAlphaBoost";
 
 describe("boost rendering toggle", () => {
-  it("defaults boost rendering on and exposes a setter", () => {
+  it("defaults boost rendering off on startup and exposes a setter", () => {
+    expect(useViewerStore.getInitialState().boostRenderingEnabled).toBe(false);
+
     useViewerStore.getState().setBoostRenderingEnabled(true);
 
     expect(useViewerStore.getState().boostRenderingEnabled).toBe(true);

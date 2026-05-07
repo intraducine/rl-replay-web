@@ -1,6 +1,6 @@
 import { Environment, Lightformer } from "@react-three/drei";
 
-const SKYBOX_BLUE = "#78a9c4";
+const SKYBOX_BLUE = "#8fc0dc";
 
 export function RocketLeagueLighting() {
   return (

@@ -31,7 +31,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   duration: 0,
   speed: 1,
   cameraMode: "free",
-  boostRenderingEnabled: true,
+  boostRenderingEnabled: false,
   coordinateOptions: {},
   setPlaying: (playing) => set({ playing }),
   setCurrentTime: (currentTime) => set({ currentTime: Math.max(0, Math.min(get().duration, currentTime)) }),

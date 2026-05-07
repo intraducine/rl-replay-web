@@ -35,6 +35,7 @@ describe("Rocket League stadium set contract", () => {
     expect(championsFieldSource).toContain("CS_OOB2_combined.gltf");
     expect(championsFieldSource).toContain("HIDDEN_EFFECT_MESH");
     expect(championsFieldSource).toContain("SkyDome01");
+    expect(championsFieldSource).not.toContain("HIDDEN_EFFECT_MESH = /(Body_Octane|BoostPad|Circle_Sprite|CS_FieldFog|CS_FieldGlow|CS_LightCones|CS_StadiumLightBar_Cone|DroneBotThruster|Quad01|S_EV_SimpleLightBeam|SkyDome01");
     expect(championsFieldSource).not.toContain("CHAMPIONS_FIELD_ASSETS.map");
     expect(lightingSource).not.toContain("<fog attach=\"fog\"");
   });
@@ -69,9 +70,9 @@ describe("Rocket League stadium set contract", () => {
 
     expect(championsFieldSource).not.toContain("FieldHexShell|Grass");
     expect(championsFieldSource).toContain("TRANSPARENT_FIELD_WALL_MESH");
-    expect(championsFieldSource).toContain("/CS_FieldWallsGlass|CS_FieldWallsRL|FieldHexShell/i");
+    expect(championsFieldSource).toContain("/CS_FieldWalls(?:Glass|RL)?|FieldHexShell/i");
     expect(championsFieldSource).not.toContain("CS_FieldWallsGlass|CS_FieldWallsRL|CS_LightCones");
-    expect(championsFieldSource).toContain("opacity: 0.055");
+    expect(championsFieldSource).toContain("opacity: 0.035");
     expect(championsFieldSource).toContain("depthWrite: false");
   });
 

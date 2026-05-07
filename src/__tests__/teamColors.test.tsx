@@ -26,8 +26,8 @@ describe("team colors", () => {
   it("maps Rocket League team ids to the app colors", () => {
     expect(teamClassName(0)).toBe("blue");
     expect(teamClassName(1)).toBe("orange");
-    expect(teamCarPaint(0)).toBe("#1976ff");
-    expect(teamCarPaint(1)).toBe("#ff6b1f");
+    expect(teamCarPaint(0)).toBe("#006cff");
+    expect(teamCarPaint(1)).toBe("#ff7a18");
   });
 
   it("looks up teams by id instead of metadata array order", () => {

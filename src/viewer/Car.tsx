@@ -18,18 +18,20 @@ import {
   updateLiquidGoldParticleMaterial
 } from "./alphaBoostMaterial";
 import { alphaBoostBloomEnabled, alphaBoostComponentEnabled } from "./alphaBoostDebugFlags";
+import { publicAsset } from "./publicAsset";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
-import { rocketLeaguePaintColor, teamCarPaint, teamClassName } from "./teamColors";
+import { teamCarPaint, teamClassName } from "./teamColors";
 
-const OCTANE_ASSET = "/rl-assets/octane/Body_OctaneWheels_SM.gltf";
-const OCTANE_BODY_TEXTURE = "/rl-assets/octane/Pepe_Body_D.png";
-const OCTANE_CHASSIS_TEXTURE = "/rl-assets/octane/Chasis_Pepe_D.png";
+const OCTANE_ASSET = publicAsset("/rl-assets/octane/Body_OctaneWheels_SM.gltf");
+const OCTANE_BODY_TEXTURE = publicAsset("/rl-assets/octane/Pepe_Body_D.png");
+const OCTANE_CHASSIS_TEXTURE = publicAsset("/rl-assets/octane/Chasis_Pepe_D.png");
 const OCTANE_SCALE = 100;
 const ALPHA_BOOST_OBJECT_NAME = "alphaBoost";
 const SUPERSONIC_TRAIL_OBJECT_NAME = "supersonicTrail";
-const ALPHA_BOOST_MESH_ASSET = ALPHA_BOOST_CASCADE.boostMesh.assetPath;
-const ALPHA_BOOST_WATER_NORMAL_TEXTURE = "/rl-assets/alpha-boost/Water_02_N.png";
-const ALPHA_BOOST_LENS_FLARE_TEXTURE = ALPHA_BOOST_CASCADE.lensFlare.material.referencedTexturePath;
+const ALPHA_BOOST_MESH_ASSET = publicAsset(ALPHA_BOOST_CASCADE.boostMesh.assetPath);
+const ALPHA_BOOST_TEXTURES = ALPHA_BOOST_TEXTURE_PATHS.map(publicAsset);
+const ALPHA_BOOST_WATER_NORMAL_TEXTURE = publicAsset("/rl-assets/alpha-boost/Water_02_N.png");
+const ALPHA_BOOST_LENS_FLARE_TEXTURE = publicAsset(ALPHA_BOOST_CASCADE.lensFlare.material.referencedTexturePath);
 const ALPHA_LENS_FLARE_COLOR = new THREE.Color(
   ALPHA_BOOST_CASCADE.lensFlare.sourceColorRgba[0],
   ALPHA_BOOST_CASCADE.lensFlare.sourceColorRgba[1],
@@ -135,7 +137,7 @@ function AlphaBoost() {
   const boostMeshRefs = useRef<THREE.Group[]>([]);
   const { scene: boostMeshScene } = useGLTF(ALPHA_BOOST_MESH_ASSET);
   const [coneMap, cloudMap, dustMap, particleMap, smokeNoiseMap, waterNormalMap, lensFlareMap] = useTexture([
-    ...ALPHA_BOOST_TEXTURE_PATHS,
+    ...ALPHA_BOOST_TEXTURES,
     ALPHA_BOOST_WATER_NORMAL_TEXTURE,
     ALPHA_BOOST_LENS_FLARE_TEXTURE
   ]);
@@ -1013,7 +1015,7 @@ function OctaneModel({ player }: { player: ReplayPlayer }) {
     chassisMap.flipY = false;
 
     const clone = scene.clone(true);
-    const teamPaint = rocketLeaguePaintColor(player.cosmetics?.teamPaint?.primaryColor, player.team, teamCarPaint(player.team));
+    const teamPaint = teamCarPaint(player.team);
 
     clone.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
@@ -1029,7 +1031,7 @@ function OctaneModel({ player }: { player: ReplayPlayer }) {
     });
 
     return clone;
-  }, [bodyMap, chassisMap, player.cosmetics?.teamPaint?.primaryColor, player.team, scene]);
+  }, [bodyMap, chassisMap, player.team, scene]);
 
   return <primitive object={octane} scale={OCTANE_SCALE} />;
 }
@@ -1076,4 +1078,4 @@ function buildOctaneMaterial(material: THREE.Material, teamPaint: string, bodyMa
 useGLTF.preload(OCTANE_ASSET);
 useGLTF.preload(ALPHA_BOOST_MESH_ASSET);
 useTexture.preload([OCTANE_BODY_TEXTURE, OCTANE_CHASSIS_TEXTURE]);
-useTexture.preload([...ALPHA_BOOST_TEXTURE_PATHS, ALPHA_BOOST_WATER_NORMAL_TEXTURE, ALPHA_BOOST_LENS_FLARE_TEXTURE]);
+useTexture.preload([...ALPHA_BOOST_TEXTURES, ALPHA_BOOST_WATER_NORMAL_TEXTURE, ALPHA_BOOST_LENS_FLARE_TEXTURE]);

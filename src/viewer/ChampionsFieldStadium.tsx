@@ -2,10 +2,11 @@ import { useGLTF, useTexture } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
 import championsFieldTextureManifest from "./generated/championsFieldTextureManifest.json";
+import { publicAsset } from "./publicAsset";
 
 const FIELD_SCALE = 100;
 
-const CHAMPIONS_FIELD_PLACED_ROOT = "/rl-assets/champions-field-placed";
+const CHAMPIONS_FIELD_PLACED_ROOT = publicAsset("/rl-assets/champions-field-placed");
 export const CHAMPIONS_FIELD_PLACED_SCENE = `${CHAMPIONS_FIELD_PLACED_ROOT}/CS_P_combined.gltf`;
 export const CHAMPIONS_FIELD_PLACED_SCENES = [
   CHAMPIONS_FIELD_PLACED_SCENE,
@@ -30,15 +31,15 @@ const CHAMPIONS_FIELD_TEXTURE_NAMES = [
 ] as const;
 type ChampionsFieldTextureName = (typeof CHAMPIONS_FIELD_TEXTURE_NAMES)[number];
 const CHAMPIONS_FIELD_TEXTURES = Object.fromEntries(
-  CHAMPIONS_FIELD_TEXTURE_NAMES.map((name) => [name, championsFieldTextureManifest.textures[name].browserPath])
+  CHAMPIONS_FIELD_TEXTURE_NAMES.map((name) => [name, publicAsset(championsFieldTextureManifest.textures[name].browserPath)])
 ) as Record<ChampionsFieldTextureName, string>;
 
 const FIELD_SURFACE_WIDTH = 76.45;
 const FIELD_SURFACE_LENGTH = 117.75;
 const FIELD_SURFACE_HEIGHT = 0.035;
-const HIDDEN_EFFECT_MESH = /(Body_Octane|BoostPad|Circle_Sprite|CS_FieldFog|CS_FieldGlow|CS_LightCones|CS_StadiumLightBar_Cone|DroneBotThruster|Quad01|S_EV_SimpleLightBeam|SkyDome01|SpotLightBeam|Stadium_LightCones|TexPropPlane)/i;
+const HIDDEN_EFFECT_MESH = /(Body_Octane|BoostPad|Circle_Sprite|CS_FieldFog|CS_FieldGlow|CS_LightCones|CS_StadiumLightBar_Cone|DroneBotThruster|Quad01|S_EV_SimpleLightBeam|SpotLightBeam|Stadium_LightCones|TexPropPlane)/i;
 const HIDDEN_FIELD_SURFACE_MESH = /^Grass_Base(?:_Flat)?$/i;
-const TRANSPARENT_FIELD_WALL_MESH = /CS_FieldWallsGlass|CS_FieldWallsRL|FieldHexShell/i;
+const TRANSPARENT_FIELD_WALL_MESH = /CS_FieldWalls(?:Glass|RL)?|FieldHexShell/i;
 const GOAL_MESH_BOX = new THREE.Box3();
 const GOAL_MESH_CENTER = new THREE.Vector3();
 
@@ -64,16 +65,16 @@ const MATERIALS = {
     envMapIntensity: 1.4
   }),
   fieldWallGlass: new THREE.MeshStandardMaterial({
-    color: "#ffffff",
-    emissive: "#ffffff",
-    emissiveIntensity: 0.01,
-    roughness: 0.08,
+    color: "#d8f4ff",
+    emissive: "#88cfff",
+    emissiveIntensity: 0.035,
+    roughness: 0.04,
     metalness: 0.01,
     transparent: true,
-    opacity: 0.055,
+    opacity: 0.035,
     depthWrite: false,
     side: THREE.DoubleSide,
-    envMapIntensity: 1.35
+    envMapIntensity: 1.65
   }),
   grass: new THREE.MeshStandardMaterial({
     color: "#1f6f3b",
@@ -174,9 +175,11 @@ const MATERIALS = {
     side: THREE.DoubleSide
   }),
   sky: new THREE.MeshBasicMaterial({
-    color: "#78a9c4",
+    color: "#8fc0dc",
     side: THREE.BackSide,
     depthWrite: false,
+    depthTest: false,
+    transparent: false,
     fog: false
   }),
   trim: new THREE.MeshStandardMaterial({

@@ -3,10 +3,11 @@ import { forwardRef, Suspense, useMemo } from "react";
 import * as THREE from "three";
 import type { Group } from "three";
 import type { RigidBodyFrame } from "../replay/types";
+import { publicAsset } from "./publicAsset";
 
-const BALL_ASSET = "/rl-assets/ball/Ball_DefaultBall00.gltf";
-const BALL_DIFFUSE = "/rl-assets/ball/Ball_Default00_D.png";
-const BALL_NORMAL = "/rl-assets/ball/Ball_Default00_N.png";
+const BALL_ASSET = publicAsset("/rl-assets/ball/Ball_DefaultBall00.gltf");
+const BALL_DIFFUSE = publicAsset("/rl-assets/ball/Ball_Default00_D.png");
+const BALL_NORMAL = publicAsset("/rl-assets/ball/Ball_Default00_N.png");
 const BALL_SCALE = 100;
 
 export const Ball = forwardRef<Group, { frame?: RigidBodyFrame }>(function Ball({ frame }, ref) {

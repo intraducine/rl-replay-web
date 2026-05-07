@@ -8,8 +8,8 @@ export const DEFAULT_TEAMS: Record<TeamId, ReplayTeam> = {
 };
 
 export const TEAM_COLORS: Record<TeamId, { className: "blue" | "orange"; carPaint: string }> = {
-  0: { className: "blue", carPaint: "#1976ff" },
-  1: { className: "orange", carPaint: "#ff6b1f" }
+  0: { className: "blue", carPaint: "#006cff" },
+  1: { className: "orange", carPaint: "#ff7a18" }
 };
 
 export function teamClassName(team: TeamId) {
