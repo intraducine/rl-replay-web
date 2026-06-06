@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { ReplayTimeline } from "../replay/types";
 import { MatchMetadataBar } from "../viewer/MatchMetadataBar";
 import { PlayerList } from "../viewer/PlayerList";
-import { TimelineControls } from "../viewer/TimelineControls";
+import { clampSpeed, snapSpeedToStop, TimelineControls } from "../viewer/TimelineControls";
 import { livePlayerStatsAt } from "../viewer/playerStats";
 
 const timeline: ReplayTimeline = {
@@ -116,6 +116,17 @@ describe("replay insights UI", () => {
     expect(source).toContain('type="range"');
     expect(source).toContain('type="number"');
     expect(source).toContain("clampSpeed");
+    expect(source).toContain("snapSpeedToStop");
+    expect(source).toContain('aria-label="Speed stops"');
     expect(source).not.toContain("<Select");
+  });
+
+  it("snaps slider speed to sticky stops while clamping typed values", () => {
+    expect(snapSpeedToStop(0.3)).toBe(0.25);
+    expect(snapSpeedToStop(0.74)).toBe(0.5);
+    expect(snapSpeedToStop(1.6)).toBe(2);
+    expect(snapSpeedToStop(3.3)).toBe(4);
+    expect(clampSpeed(99)).toBe(4);
+    expect(clampSpeed(0)).toBe(0.25);
   });
 });

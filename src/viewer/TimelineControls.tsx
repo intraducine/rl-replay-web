@@ -79,16 +79,23 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
               type="range"
               min={MIN_SPEED}
               max={MAX_SPEED}
-              step={0.25}
+              step={0.01}
               list="speed-stops"
               value={speed}
-              onChange={(event) => setSpeed(clampSpeed(Number(event.currentTarget.value)))}
+              onChange={(event) => setSpeed(snapSpeedToStop(Number(event.currentTarget.value)))}
             />
             <datalist id="speed-stops">
               {SPEED_STOPS.map((value) => (
                 <option key={value} value={value} label={`${value}x`} />
               ))}
             </datalist>
+            <span className="speed-stops" aria-label="Speed stops">
+              {SPEED_STOPS.map((value) => (
+                <button key={value} type="button" onClick={() => setSpeed(value)} aria-label={`Set speed to ${value}x`}>
+                  {value}x
+                </button>
+              ))}
+            </span>
             <TooltipBubble>Playback speed</TooltipBubble>
           </label>
           <label className="speed-input tooltip-target">
@@ -175,9 +182,14 @@ function eventLabel(event: { t: number; type: string; label?: string }) {
   return event.label ? `${event.type}: ${event.label}` : event.type;
 }
 
-function clampSpeed(value: number): number {
+export function clampSpeed(value: number): number {
   if (!Number.isFinite(value)) return 1;
   return Math.min(MAX_SPEED, Math.max(MIN_SPEED, value));
+}
+
+export function snapSpeedToStop(value: number): number {
+  const clamped = clampSpeed(value);
+  return SPEED_STOPS.reduce((closest, stop) => (Math.abs(stop - clamped) < Math.abs(closest - clamped) ? stop : closest), SPEED_STOPS[0]);
 }
 
 export function formatTime(seconds: number): string {

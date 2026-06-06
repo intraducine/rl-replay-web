@@ -534,6 +534,30 @@ progress {
   accent-color: #9df2d0;
 }
 
+.speed-stops {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  align-items: center;
+}
+
+.speed-stops button {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: #a8bbb8;
+  background: transparent;
+  font: inherit;
+  font-size: 0.68rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.speed-stops button:hover,
+.speed-stops button:focus-visible {
+  color: #eef6f3;
+}
+
 .speed-input {
   display: inline-flex;
   align-items: center;
