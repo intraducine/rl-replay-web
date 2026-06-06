@@ -1,17 +1,18 @@
 import { Activity, Bug, FolderOpen, Upload } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useReplayStore } from "./state/replayStore";
 import { Button } from "./ui/Button";
-import { DebugReplayPage } from "./pages/DebugReplayPage";
 import { ReplayLibraryPage } from "./pages/ReplayLibraryPage";
-import { ReplayPage } from "./pages/ReplayPage";
 import { UploadPage } from "./pages/UploadPage";
 
 type Page = "upload" | "library" | "replay" | "debug";
+const ReplayPage = lazy(() => import("./pages/ReplayPage").then((module) => ({ default: module.ReplayPage })));
+const DebugReplayPage = lazy(() => import("./pages/DebugReplayPage").then((module) => ({ default: module.DebugReplayPage })));
 
 export function App() {
   const [page, setPage] = useState<Page>("upload");
   const timeline = useReplayStore((state) => state.timeline);
+  const showDebugTools = import.meta.env.DEV;
 
   return (
     <div className="app">
@@ -30,15 +31,19 @@ export function App() {
           <Button variant={page === "replay" ? "primary" : "ghost"} onClick={() => setPage("replay")}>
             Viewer
           </Button>
-          <Button variant={page === "debug" ? "primary" : "ghost"} icon={<Bug size={16} />} onClick={() => setPage("debug")}>
-            Debug
-          </Button>
+          {showDebugTools ? (
+            <Button variant={page === "debug" ? "primary" : "ghost"} icon={<Bug size={16} />} onClick={() => setPage("debug")}>
+              Debug
+            </Button>
+          ) : null}
         </nav>
       </header>
       {page === "upload" ? <UploadPage onOpenReplay={() => setPage("replay")} /> : null}
       {page === "library" ? <ReplayLibraryPage onOpenReplay={() => setPage("replay")} /> : null}
-      {page === "replay" ? <ReplayPage timeline={timeline} /> : null}
-      {page === "debug" ? <DebugReplayPage /> : null}
+      <Suspense fallback={<main className="empty-state">Loading viewer...</main>}>
+        {page === "replay" ? <ReplayPage timeline={timeline} /> : null}
+        {showDebugTools && page === "debug" ? <DebugReplayPage /> : null}
+      </Suspense>
     </div>
   );
 }

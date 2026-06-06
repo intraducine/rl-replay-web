@@ -1,6 +1,6 @@
 use crate::normalize::{identity_quat, now_ms, quat, vec3, vec3i};
 use crate::types::*;
-use boxcars::{Attribute, ParserBuilder, Replay};
+use boxcars::{Attribute, CamSettings, ParserBuilder, Replay};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use wasm_bindgen::prelude::*;
 
@@ -29,15 +29,20 @@ pub fn parse_replay_timeline(
         .parse()
         .map_err(parse_error)?;
     let mut metadata = metadata_from_replay(&replay, file_name);
-    let network_insights = extract_network_insights(&replay, &metadata);
-    merge_network_metadata(&mut metadata, network_insights.metadata);
-    merge_player_insights(&mut metadata.players, network_insights.players);
+    let NetworkInsights {
+        metadata: network_metadata,
+        players: network_players,
+        events: network_events,
+        camera,
+    } = extract_network_insights(&replay, &metadata);
+    merge_network_metadata(&mut metadata, network_metadata);
+    merge_player_insights(&mut metadata.players, network_players);
     let frames = extract_timeline_frames(&replay, &metadata);
     let clock = extract_clock_samples(&replay);
     metadata.match_length_seconds = match_length_seconds_from_clock(&clock);
     let mut events = goal_events(&replay);
     events.extend(highlight_events(&replay));
-    events.extend(network_insights.events);
+    events.extend(network_events);
     events.sort_by(|a, b| event_time(a).total_cmp(&event_time(b)));
 
     Ok(ReplayTimeline {
@@ -46,6 +51,7 @@ pub fn parse_replay_timeline(
         frames,
         events,
         clock,
+        camera,
     })
 }
 
@@ -171,7 +177,8 @@ fn extract_timeline_frames(replay: &Replay, metadata: &ReplayMetadata) -> Vec<Ti
                 entry.kind = classify_actor(&entry.object_name);
             }
 
-            let is_boost_component_active_attr = object == "TAGame.CarComponent_TA:ReplicatedActive"
+            let is_boost_component_active_attr = object
+                == "TAGame.CarComponent_TA:ReplicatedActive"
                 && entry
                     .object_name
                     .to_ascii_lowercase()
@@ -512,6 +519,7 @@ struct NetworkInsights {
     metadata: NetworkMetadata,
     players: HashMap<String, ReplayPlayer>,
     events: Vec<ReplayEvent>,
+    camera: Vec<ReplayCameraSample>,
 }
 
 #[derive(Default)]
@@ -533,6 +541,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
     let mut actors: HashMap<i32, String> = HashMap::new();
     let mut pri_to_player: HashMap<i32, String> = HashMap::new();
     let mut player_car: HashMap<i32, String> = HashMap::new();
+    let mut camera_actor_pri: HashMap<i32, i32> = HashMap::new();
     let mut car_team_paint: HashMap<i32, ReplayTeamPaint> = HashMap::new();
     let mut insights = NetworkInsights::default();
 
@@ -650,6 +659,129 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         insights.events.push(event);
                     }
                 }
+                (
+                    "TAGame.CameraSettingsActor_TA:ProfileSettings"
+                    | "TAGame.PRI_TA:CameraSettings",
+                    Attribute::CamSettings(settings),
+                ) => {
+                    if let Some(player_id) = camera_player_id(
+                        &attribute,
+                        updated.actor_id.0,
+                        &camera_actor_pri,
+                        &pri_to_player,
+                    ) {
+                        insights.camera.push(ReplayCameraSample {
+                            t: frame.time,
+                            player_id,
+                            settings: Some(camera_settings_from_boxcars(settings)),
+                            ..ReplayCameraSample::default()
+                        });
+                    }
+                }
+                (
+                    "TAGame.CameraSettingsActor_TA:bUsingSecondaryCamera"
+                    | "TAGame.PRI_TA:bUsingSecondaryCamera",
+                    Attribute::Boolean(value),
+                ) => {
+                    if let Some(player_id) = camera_player_id(
+                        &attribute,
+                        updated.actor_id.0,
+                        &camera_actor_pri,
+                        &pri_to_player,
+                    ) {
+                        insights.camera.push(ReplayCameraSample {
+                            t: frame.time,
+                            player_id,
+                            using_secondary_camera: Some(*value),
+                            ..ReplayCameraSample::default()
+                        });
+                    }
+                }
+                (
+                    "TAGame.CameraSettingsActor_TA:bUsingBehindView"
+                    | "TAGame.PRI_TA:bUsingBehindView",
+                    Attribute::Boolean(value),
+                ) => {
+                    if let Some(player_id) = camera_player_id(
+                        &attribute,
+                        updated.actor_id.0,
+                        &camera_actor_pri,
+                        &pri_to_player,
+                    ) {
+                        insights.camera.push(ReplayCameraSample {
+                            t: frame.time,
+                            player_id,
+                            using_behind_view: Some(*value),
+                            ..ReplayCameraSample::default()
+                        });
+                    }
+                }
+                ("TAGame.CameraSettingsActor_TA:bUsingFreecam", Attribute::Boolean(value)) => {
+                    if let Some(player_id) = camera_player_id(
+                        &attribute,
+                        updated.actor_id.0,
+                        &camera_actor_pri,
+                        &pri_to_player,
+                    ) {
+                        insights.camera.push(ReplayCameraSample {
+                            t: frame.time,
+                            player_id,
+                            using_freecam: Some(*value),
+                            ..ReplayCameraSample::default()
+                        });
+                    }
+                }
+                ("TAGame.CameraSettingsActor_TA:bUsingSwivel", Attribute::Boolean(value)) => {
+                    if let Some(player_id) = camera_player_id(
+                        &attribute,
+                        updated.actor_id.0,
+                        &camera_actor_pri,
+                        &pri_to_player,
+                    ) {
+                        insights.camera.push(ReplayCameraSample {
+                            t: frame.time,
+                            player_id,
+                            using_swivel: Some(*value),
+                            ..ReplayCameraSample::default()
+                        });
+                    }
+                }
+                (
+                    "TAGame.CameraSettingsActor_TA:CameraYaw" | "TAGame.PRI_TA:CameraYaw",
+                    Attribute::Byte(value),
+                ) => {
+                    if let Some(player_id) = camera_player_id(
+                        &attribute,
+                        updated.actor_id.0,
+                        &camera_actor_pri,
+                        &pri_to_player,
+                    ) {
+                        insights.camera.push(ReplayCameraSample {
+                            t: frame.time,
+                            player_id,
+                            camera_yaw: Some(*value),
+                            ..ReplayCameraSample::default()
+                        });
+                    }
+                }
+                (
+                    "TAGame.CameraSettingsActor_TA:CameraPitch" | "TAGame.PRI_TA:CameraPitch",
+                    Attribute::Byte(value),
+                ) => {
+                    if let Some(player_id) = camera_player_id(
+                        &attribute,
+                        updated.actor_id.0,
+                        &camera_actor_pri,
+                        &pri_to_player,
+                    ) {
+                        insights.camera.push(ReplayCameraSample {
+                            t: frame.time,
+                            player_id,
+                            camera_pitch: Some(*value),
+                            ..ReplayCameraSample::default()
+                        });
+                    }
+                }
                 ("TAGame.Car_TA:ReplicatedDemolishExtended", Attribute::DemolishExtended(demo)) => {
                     let attacker_id = player_car.get(&demo.attacker.actor.0).cloned();
                     let victim_id = player_car.get(&demo.victim.actor.0).cloned();
@@ -711,6 +843,10 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                                 );
                             }
                         }
+                    } else if name == "TAGame.PRI_TA:PersistentCamera" {
+                        camera_actor_pri.insert(active.actor.0, updated.actor_id.0);
+                    } else if name == "TAGame.CameraSettingsActor_TA:PRI" {
+                        camera_actor_pri.insert(updated.actor_id.0, active.actor.0);
                     }
                 }
                 _ => {}
@@ -718,7 +854,38 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
         }
     }
 
+    insights.camera.sort_by(|a, b| {
+        a.t.total_cmp(&b.t)
+            .then_with(|| a.player_id.cmp(&b.player_id))
+    });
     insights
+}
+
+fn camera_player_id(
+    attribute: &str,
+    actor_id: i32,
+    camera_actor_pri: &HashMap<i32, i32>,
+    pri_to_player: &HashMap<i32, String>,
+) -> Option<String> {
+    if attribute.starts_with("TAGame.PRI_TA:") {
+        return pri_to_player.get(&actor_id).cloned();
+    }
+    camera_actor_pri
+        .get(&actor_id)
+        .and_then(|pri_actor_id| pri_to_player.get(pri_actor_id))
+        .cloned()
+}
+
+fn camera_settings_from_boxcars(settings: &CamSettings) -> ReplayCameraSettings {
+    ReplayCameraSettings {
+        fov: settings.fov,
+        height: settings.height,
+        angle: settings.angle,
+        distance: settings.distance,
+        stiffness: settings.stiffness,
+        swivel: settings.swivel,
+        transition: settings.transition,
+    }
 }
 
 fn match_length_seconds_from_clock(clock: &[ReplayClockSample]) -> Option<i32> {
@@ -1122,6 +1289,20 @@ mod tests {
                 .flat_map(|frame| frame.cars.values())
                 .any(|car| car.boost.is_some()),
             "expected car boost values copied from boost components"
+        );
+        assert!(
+            timeline.camera.iter().any(|sample| sample
+                .settings
+                .as_ref()
+                .is_some_and(|settings| settings.fov > 0.0)),
+            "expected player camera settings from replay camera actors"
+        );
+        assert!(
+            timeline
+                .camera
+                .iter()
+                .any(|sample| sample.using_secondary_camera.is_some()),
+            "expected ball cam toggle samples from replay camera actors"
         );
     }
 }

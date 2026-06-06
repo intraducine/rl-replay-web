@@ -108,7 +108,76 @@ nav {
 .upload-page {
   display: grid;
   align-content: start;
-  gap: 18px;
+  gap: 20px;
+}
+
+.portfolio-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.86fr) minmax(360px, 1fr);
+  gap: 22px;
+  align-items: stretch;
+  width: min(1120px, 100%);
+}
+
+.portfolio-hero > div:first-child {
+  display: grid;
+  align-content: center;
+  min-height: 280px;
+  padding: 28px;
+  border: 1px solid rgba(238, 246, 243, 0.12);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(157, 242, 208, 0.09), rgba(22, 118, 211, 0.08)),
+    rgba(238, 246, 243, 0.045);
+}
+
+.project-label {
+  margin: 0 0 10px;
+  color: #9df2d0;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.portfolio-hero h1 {
+  max-width: 720px;
+  margin: 0;
+  font-size: clamp(2rem, 4.2vw, 4.4rem);
+  line-height: 0.98;
+}
+
+.portfolio-hero p:not(.project-label) {
+  max-width: 620px;
+  margin: 16px 0 0;
+  color: #b7c9c5;
+  font-size: 1.04rem;
+  line-height: 1.6;
+}
+
+.capability-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: min(1120px, 100%);
+}
+
+.capability-strip div {
+  display: grid;
+  gap: 7px;
+  min-height: 112px;
+  padding: 15px;
+  border: 1px solid rgba(238, 246, 243, 0.1);
+  border-radius: 8px;
+  background: rgba(238, 246, 243, 0.045);
+}
+
+.capability-strip strong {
+  color: #f3fff9;
+}
+
+.capability-strip span {
+  color: #a8bbb8;
+  line-height: 1.45;
 }
 
 .dropzone {
@@ -304,6 +373,20 @@ progress {
   background: rgba(238, 246, 243, 0.08);
   font-size: 0.78rem;
   font-weight: 750;
+}
+
+.ball-cam-indicator {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 9px 13px;
+  border: 1px solid rgba(157, 242, 208, 0.58);
+  border-radius: 7px;
+  color: #071014;
+  background: #9df2d0;
+  box-shadow: 0 8px 22px rgba(7, 16, 20, 0.24);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .scoreboard > div {
@@ -604,6 +687,38 @@ pre {
   .app-header,
   nav {
     flex-wrap: wrap;
+  }
+
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .brand {
+    min-height: 36px;
+  }
+
+  .button {
+    min-height: 34px;
+    padding: 0 10px;
+  }
+
+  .page,
+  .empty-state {
+    padding: 18px;
+  }
+
+  .portfolio-hero,
+  .capability-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-hero > div:first-child,
+  .dropzone {
+    min-height: auto;
+  }
+
+  .portfolio-hero > div:first-child {
+    padding: 22px;
   }
 
   .viewer {

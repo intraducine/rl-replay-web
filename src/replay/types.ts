@@ -112,12 +112,35 @@ export type ReplayEvent =
   | { type: "shot"; t: number; playerId?: string; label?: string }
   | { type: "save"; t: number; playerId?: string; label?: string };
 
+export type ReplayCameraSettings = {
+  fov: number;
+  height: number;
+  angle: number;
+  distance: number;
+  stiffness: number;
+  swivel: number;
+  transition?: number;
+};
+
+export type ReplayCameraSample = {
+  t: number;
+  playerId: string;
+  settings?: ReplayCameraSettings;
+  usingSecondaryCamera?: boolean;
+  usingBehindView?: boolean;
+  usingFreecam?: boolean;
+  usingSwivel?: boolean;
+  cameraYaw?: number;
+  cameraPitch?: number;
+};
+
 export type ReplayTimeline = {
   version: 1;
   metadata: ReplayMetadata;
   frames: TimelineFrame[];
   events: ReplayEvent[];
   clock?: ReplayClockSample[];
+  camera?: ReplayCameraSample[];
 };
 
 export type ReplayClockSample = {

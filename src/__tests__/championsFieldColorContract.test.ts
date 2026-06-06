@@ -45,14 +45,17 @@ describe("Champions Field color contract", () => {
     const importableManifestPath = resolve(process.cwd(), "src/viewer/generated/championsFieldTextureManifest.json");
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as ScrapedTextureManifest;
     const importableManifest = JSON.parse(readFileSync(importableManifestPath, "utf8")) as ScrapedTextureManifest;
+    const verifyLocalSourceAssets = process.env.VERIFY_LOCAL_RL_ASSETS === "1";
 
     expect(manifest.generatedBy).toBe("scripts/generate-champions-field-textures.mjs");
     expect(importableManifest).toEqual(manifest);
     expect(manifest.rocketLeagueRoot).toContain("Epic Games/rocketleague");
     expect(manifest.umodelExportRoot).toContain("RocketLeagueMapExtract/output/ChampionsField_umodel");
-    expect(existsSync(manifest.umodelExportRoot)).toBe(true);
     expect(manifest.umodelTool).toContain("RocketLeagueMapExtract/tools/umodel/umodel_64.exe");
-    expect(existsSync(manifest.umodelTool)).toBe(true);
+    if (verifyLocalSourceAssets) {
+      expect(existsSync(manifest.umodelExportRoot), "UModel export root exists").toBe(true);
+      expect(existsSync(manifest.umodelTool), "UModel tool exists").toBe(true);
+    }
     expect(Object.keys(manifest.textures).sort()).toEqual(
       [
         "advertStrip",
@@ -72,9 +75,11 @@ describe("Champions Field color contract", () => {
     for (const [name, texture] of Object.entries(manifest.textures)) {
       expect(texture.browserPath, `${name} browser path`).toContain("/rl-assets/champions-field-scraped/");
       expect(texture.packageFile, `${name} package provenance`).toMatch(/TAGame\/CookedPCConsole\/.+\.upk$/);
-      expect(existsSync(texture.packageFile), `${name} package exists`).toBe(true);
       expect(texture.extractedTexture, `${name} UModel texture`).toContain("RocketLeagueMapExtract/output/ChampionsField_umodel/");
-      expect(existsSync(texture.extractedTexture), `${name} UModel texture exists`).toBe(true);
+      if (verifyLocalSourceAssets) {
+        expect(existsSync(texture.packageFile), `${name} package exists`).toBe(true);
+        expect(existsSync(texture.extractedTexture), `${name} UModel texture exists`).toBe(true);
+      }
     }
   });
 

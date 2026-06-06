@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
+import { samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
 import type { ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { Select } from "../ui/Select";
@@ -23,6 +23,8 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const setCoordinateOption = useViewerStore((state) => state.setCoordinateOption);
   const coordinateOptions = useViewerStore((state) => state.coordinateOptions);
   const sample = sampleTimeline(timeline, currentTime);
+  const playerCameraState = samplePlayerCameraState(timeline, selectedPlayerId, currentTime);
+  const showDebugControls = import.meta.env.DEV;
   const boostByPlayer = Object.fromEntries(
     timeline.metadata.players.map((player) => [player.id, sample.cars[player.id]?.boost])
   );
@@ -47,6 +49,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
           <Scoreboard timeline={timeline} />
           <MatchMetadataBar timeline={timeline} />
         </div>
+        {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">BALL CAM</div> : null}
         <div className="viewer-selectors">
           <Select
             label="Camera"
@@ -74,30 +77,32 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       <div className="viewer-overlay side">
         <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} />
       </div>
-      <div className="viewer-overlay debug">
-        <details>
-          <summary>Coordinates</summary>
-          {[
-            ["swapYZ", "Swap Y/Z"],
-            ["invertX", "Flip X"],
-            ["invertY", "Flip Y"],
-            ["invertZ", "Flip Z"],
-            ["invertQuatX", "Quat X"],
-            ["invertQuatY", "Quat Y"],
-            ["invertQuatZ", "Quat Z"],
-            ["invertQuatW", "Quat W"]
-          ].map(([key, label]) => (
-            <label key={key}>
-              <input
-                type="checkbox"
-                checked={Boolean(coordinateOptions[key as keyof typeof coordinateOptions])}
-                onChange={(event) => setCoordinateOption(key as keyof typeof coordinateOptions, event.currentTarget.checked)}
-              />
-              {label}
-            </label>
-          ))}
-        </details>
-      </div>
+      {showDebugControls ? (
+        <div className="viewer-overlay debug">
+          <details>
+            <summary>Coordinates</summary>
+            {[
+              ["swapYZ", "Swap Y/Z"],
+              ["invertX", "Flip X"],
+              ["invertY", "Flip Y"],
+              ["invertZ", "Flip Z"],
+              ["invertQuatX", "Quat X"],
+              ["invertQuatY", "Quat Y"],
+              ["invertQuatZ", "Quat Z"],
+              ["invertQuatW", "Quat W"]
+            ].map(([key, label]) => (
+              <label key={key}>
+                <input
+                  type="checkbox"
+                  checked={Boolean(coordinateOptions[key as keyof typeof coordinateOptions])}
+                  onChange={(event) => setCoordinateOption(key as keyof typeof coordinateOptions, event.currentTarget.checked)}
+                />
+                {label}
+              </label>
+            ))}
+          </details>
+        </div>
+      ) : null}
       <div className="viewer-overlay bottom">
         <TimelineControls events={timeline.events} />
       </div>

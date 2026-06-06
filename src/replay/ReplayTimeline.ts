@@ -1,5 +1,5 @@
 import { clamp, lerpVec3, slerpQuat } from "../math/interpolation";
-import type { CarFrame, ReplayTimeline, RigidBodyFrame, SampledReplayState, TimelineFrame } from "./types";
+import type { CarFrame, ReplayCameraSample, ReplayTimeline, RigidBodyFrame, SampledReplayState, TimelineFrame } from "./types";
 
 type MotionKeyframe<T extends RigidBodyFrame> = {
   t: number;
@@ -9,6 +9,7 @@ type MotionKeyframe<T extends RigidBodyFrame> = {
 type TimelineSamplingIndex = {
   ball: MotionKeyframe<RigidBodyFrame>[];
   cars: Map<string, MotionKeyframe<CarFrame>[]>;
+  camera: Map<string, ReplayCameraSample[]>;
 };
 
 const MOTION_EPSILON_SQ = 0.01;
@@ -48,7 +49,8 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
 
   const index: TimelineSamplingIndex = {
     ball: [],
-    cars: new Map()
+    cars: new Map(),
+    camera: new Map()
   };
 
   for (const frame of timeline.frames) {
@@ -62,6 +64,26 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
       }
       appendMotionKeyframe(track, frame.t, car);
     }
+  }
+
+  const rawCameraTracks = new Map<string, ReplayCameraSample[]>();
+  for (const sample of timeline.camera ?? []) {
+    let track = rawCameraTracks.get(sample.playerId);
+    if (!track) {
+      track = [];
+      rawCameraTracks.set(sample.playerId, track);
+    }
+    track.push(sample);
+  }
+
+  for (const [playerId, track] of rawCameraTracks) {
+    track.sort((a, b) => a.t - b.t);
+    const cumulative: ReplayCameraSample[] = [];
+    for (const sample of track) {
+      const previous = cumulative.at(-1);
+      cumulative.push({ ...previous, ...sample, settings: sample.settings ?? previous?.settings });
+    }
+    index.camera.set(playerId, cumulative);
   }
 
   samplingIndexCache.set(timeline, index);
@@ -197,6 +219,24 @@ export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): S
     ball,
     cars
   };
+}
+
+export function samplePlayerCameraState(timeline: ReplayTimeline, playerId: string | undefined, timeSeconds: number): ReplayCameraSample | undefined {
+  if (!playerId) return undefined;
+  const track = buildSamplingIndex(timeline).camera.get(playerId);
+  if (!track?.length) return undefined;
+  if (timeSeconds <= track[0].t) return track[0];
+  if (timeSeconds >= track[track.length - 1].t) return track[track.length - 1];
+
+  let low = 0;
+  let high = track.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (track[mid].t <= timeSeconds) low = mid + 1;
+    else high = mid - 1;
+  }
+
+  return track[Math.max(0, high)];
 }
 
 export function timelineDuration(timeline: ReplayTimeline): number {

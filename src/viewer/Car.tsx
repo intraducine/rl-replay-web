@@ -421,13 +421,13 @@ function sourceParticleSystemTime(time: number) {
 }
 
 function sourceActiveFlameParticlesPerExhaust(spawnRate: number) {
-  const activeParticles = Math.ceil(Math.max(1, spawnRate * ALPHA_BOOST_CASCADE.flame.lifetimeSeconds));
-  return THREE.MathUtils.clamp(activeParticles, 1, ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST);
+  const activeParticles = Math.ceil(Math.max(0, spawnRate * ALPHA_BOOST_CASCADE.flame.lifetimeSeconds));
+  return THREE.MathUtils.clamp(activeParticles, 0, ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST);
 }
 
 function sourceSpawnPerUnitRateFromDistance(distanceWindow: number, lifetimeSeconds: number, spawnPerUnit: number, spawnRateScalar: number) {
   const distanceRate = Math.max(0, distanceWindow) / Math.max(0.001, lifetimeSeconds);
-  return Math.max(1 / ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, distanceRate * spawnPerUnit * spawnRateScalar);
+  return distanceRate * spawnPerUnit * spawnRateScalar;
 }
 
 function sourceCascadeSpawnAccumulatorActiveParticles(
@@ -766,7 +766,7 @@ function integrateFlameVelocityOverLife(phase: number): [number, number, number]
   const clampedPhase = THREE.MathUtils.clamp(phase, 0, 1);
   if (clampedPhase <= 0) return sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.velocityOverLife, 0);
 
-  const steps = 6;
+  const steps = Math.max(1, ALPHA_BOOST_CASCADE.flame.velocityOverLife.samples.length - 1);
   let x = 0;
   let y = 0;
   let z = 0;

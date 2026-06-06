@@ -26,7 +26,31 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
 
   return (
     <main className="page upload-page">
-      <FileDropzone onFile={parseFile} />
+      <section className="portfolio-hero">
+        <div>
+          <p className="project-label">Rocket League replay analysis</p>
+          <h1>Browser replay parsing with a real-time 3D match viewer.</h1>
+          <p>
+            Upload a Rocket League replay file to parse match metadata, player movement, boost usage, goals, demos, and camera state
+            locally in the browser.
+          </p>
+        </div>
+        <FileDropzone onFile={parseFile} />
+      </section>
+      <section className="capability-strip" aria-label="Project capabilities">
+        <div>
+          <strong>Rust/WASM parser</strong>
+          <span>Replay parsing runs off the main thread in a Web Worker.</span>
+        </div>
+        <div>
+          <strong>Three.js playback</strong>
+          <span>Cars, ball physics, boost pads, scoreboard, nameplates, and timeline controls.</span>
+        </div>
+        <div>
+          <strong>Private by default</strong>
+          <span>Files stay local, and parsed timelines can be saved in browser storage.</span>
+        </div>
+      </section>
       {parsing ? (
         <Panel title="Parsing">
           <div className="progress-row">

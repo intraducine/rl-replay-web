@@ -10,7 +10,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import type { Group, Mesh } from "three";
 import { Vector3 } from "three";
 import { normalizeTimelineCoordinates } from "../replay/ReplayNormalizer";
-import { sampleCarDistanceWindow, sampleCarSpawnPerUnitAgesWindow, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
+import { sampleCarDistanceWindow, sampleCarSpawnPerUnitAgesWindow, samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
 import type { ReplayPlayer, ReplayTimeline, SampledReplayState } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { Ball } from "./Ball";
@@ -18,7 +18,14 @@ import { BoostPads } from "./BoostPads";
 import { Car } from "./Car";
 import { DemoExplosions } from "./DemoExplosions";
 import { RocketLeagueLighting } from "./RocketLeagueLighting";
-import { cameraRigForMode, cameraSmoothingAlpha, freeCameraKeyboardDisplacement, freeCameraMoveIntentForCode, type FreeCameraMoveIntent } from "./SpectatorCamera";
+import {
+  cameraRigForMode,
+  cameraSmoothingAlpha,
+  directorTargetPlayerId,
+  freeCameraKeyboardDisplacement,
+  freeCameraMoveIntentForCode,
+  type FreeCameraMoveIntent
+} from "./SpectatorCamera";
 import { StandardArena } from "./StandardArena";
 import { ALPHA_BOOST_CASCADE } from "./alphaBoostConfig";
 import { carBoostSegmentStartTime, isCarBoostingAt } from "./boostActivity";
@@ -33,6 +40,10 @@ const PROJECTED_SHADOW_BASE_OPACITY = 0.48;
 const SHADOW_LIGHT_DIRECTION = new Vector3(2600, 6200, 3400).normalize();
 const SHADOW_QUATERNION = new THREE.Quaternion();
 const SHADOW_EULER = new THREE.Euler();
+const FREE_CAMERA_INITIAL_POSITION: [number, number, number] = [0, 160, 0];
+const FREE_CAMERA_TARGET: [number, number, number] = [0, 160, -1];
+const FREE_CAMERA_MIN_DISTANCE = 1;
+const FREE_CAMERA_MAX_DISTANCE = 12000;
 type RocketLeagueRendererParameters = THREE.WebGLRendererParameters & {
   outputBufferType: THREE.TextureDataType;
 };
@@ -61,7 +72,7 @@ export function SceneRoot({ timeline }: { timeline: ReplayTimeline }) {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 0.96;
       }}
-      camera={{ position: [0, 2400, 6200], fov: 58, near: 0.1, far: 30000 }}
+      camera={{ position: FREE_CAMERA_INITIAL_POSITION, fov: 58, near: 0.1, far: 30000 }}
     >
       <RocketLeagueLighting />
       <StandardArena />
@@ -69,7 +80,14 @@ export function SceneRoot({ timeline }: { timeline: ReplayTimeline }) {
       <BoostPads />
       <ReplayObjects timeline={normalized} initialSample={initialSample} selectedPlayerId={selectedPlayerId} cameraMode={cameraMode} />
       <FreeCameraKeyboardControls enabled={cameraMode === "free"} controlsRef={orbitControlsRef} />
-      <OrbitControls ref={orbitControlsRef} makeDefault enabled={cameraMode === "free"} target={[0, 0, 0]} />
+      <OrbitControls
+        ref={orbitControlsRef}
+        makeDefault
+        enabled={cameraMode === "free"}
+        target={FREE_CAMERA_TARGET}
+        minDistance={FREE_CAMERA_MIN_DISTANCE}
+        maxDistance={FREE_CAMERA_MAX_DISTANCE}
+      />
       <RocketLeaguePostprocess />
     </Canvas>
   );
@@ -281,10 +299,23 @@ function ReplayObjects({
 
     if (state.cameraMode === "free") return;
 
-    const rig = cameraRigForMode(state.cameraMode, sample, state.selectedPlayerId, timeline.events);
+    const cameraPlayerId =
+      state.cameraMode === "director" ? directorTargetPlayerId(sample, timeline.events) ?? state.selectedPlayerId : state.selectedPlayerId;
+    const rig = cameraRigForMode(
+      state.cameraMode,
+      sample,
+      state.selectedPlayerId,
+      timeline.events,
+      samplePlayerCameraState(timeline, cameraPlayerId, sample.t)
+    );
     camera.up.fromArray(rig.up);
     tmpDesired.fromArray(rig.position);
     tmpTarget.fromArray(rig.target);
+
+    if ("fov" in camera && typeof rig.fov === "number" && camera.fov !== rig.fov) {
+      camera.fov = rig.fov;
+      camera.updateProjectionMatrix();
+    }
 
     camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, 7.7));
     smoothedTarget.current.lerp(tmpTarget, cameraSmoothingAlpha(delta, 11.9));
@@ -320,7 +351,7 @@ function ReplayObjects({
 }
 
 function shouldShowNameplate(cameraMode: string, selected: boolean): boolean {
-  return selected || (cameraMode !== "player-chase" && cameraMode !== "player-follow");
+  return selected || cameraMode !== "player";
 }
 
 type ProjectedCarShadowProps = object;

@@ -227,6 +227,40 @@ pub struct ReplayClockSample {
 }
 
 #[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplayCameraSettings {
+    pub fov: f32,
+    pub height: f32,
+    pub angle: f32,
+    pub distance: f32,
+    pub stiffness: f32,
+    pub swivel: f32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transition: Option<f32>,
+}
+
+#[derive(Debug, Default, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplayCameraSample {
+    pub t: f32,
+    pub player_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub settings: Option<ReplayCameraSettings>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub using_secondary_camera: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub using_behind_view: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub using_freecam: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub using_swivel: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub camera_yaw: Option<u8>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub camera_pitch: Option<u8>,
+}
+
+#[derive(Debug, Serialize, Clone)]
 pub struct ReplayTimeline {
     pub version: u8,
     pub metadata: ReplayMetadata,
@@ -234,6 +268,8 @@ pub struct ReplayTimeline {
     pub events: Vec<ReplayEvent>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub clock: Vec<ReplayClockSample>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub camera: Vec<ReplayCameraSample>,
 }
 
 #[derive(Debug, Serialize)]

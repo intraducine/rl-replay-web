@@ -1,10 +1,11 @@
-import type { CarFrame, ReplayTimeline, RigidBodyFrame, TimelineFrame, Vec3, Quat } from "./types";
+import type { CarFrame, ReplayCameraSample, ReplayTimeline, RigidBodyFrame, TimelineFrame, Vec3, Quat } from "./types";
 
 const TIME_DECIMALS = 3;
 const POSITION_DECIMALS = 2;
 const VELOCITY_DECIMALS = 2;
 const ROTATION_DECIMALS = 5;
 const BOOST_DECIMALS = 2;
+const CAMERA_DECIMALS = 3;
 
 export function prepareTimelineForTransfer(timeline: ReplayTimeline): ReplayTimeline {
   const metadata = {
@@ -26,8 +27,29 @@ export function prepareTimelineForTransfer(timeline: ReplayTimeline): ReplayTime
   if (timeline.clock) {
     prepared.clock = timeline.clock.map((sample) => ({ ...sample, t: roundNumber(sample.t, TIME_DECIMALS) }));
   }
+  if (timeline.camera) {
+    prepared.camera = timeline.camera.map(prepareCameraForTransfer);
+  }
 
   return prepared;
+}
+
+function prepareCameraForTransfer(sample: ReplayCameraSample): ReplayCameraSample {
+  return {
+    ...sample,
+    t: roundNumber(sample.t, TIME_DECIMALS),
+    settings: sample.settings
+      ? {
+          fov: roundNumber(sample.settings.fov, CAMERA_DECIMALS),
+          height: roundNumber(sample.settings.height, CAMERA_DECIMALS),
+          angle: roundNumber(sample.settings.angle, CAMERA_DECIMALS),
+          distance: roundNumber(sample.settings.distance, CAMERA_DECIMALS),
+          stiffness: roundNumber(sample.settings.stiffness, CAMERA_DECIMALS),
+          swivel: roundNumber(sample.settings.swivel, CAMERA_DECIMALS),
+          transition: sample.settings.transition === undefined ? undefined : roundNumber(sample.settings.transition, CAMERA_DECIMALS)
+        }
+      : undefined
+  };
 }
 
 function prepareFrameForTransfer(frame: TimelineFrame): TimelineFrame {

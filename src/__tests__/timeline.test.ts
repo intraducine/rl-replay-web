@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sampleCarDistanceWindow, sampleCarSpawnPerUnitAgesWindow, sampleTimeline } from "../replay/ReplayTimeline";
+import { sampleCarDistanceWindow, sampleCarSpawnPerUnitAgesWindow, samplePlayerCameraState, sampleTimeline } from "../replay/ReplayTimeline";
 import type { ReplayTimeline } from "../replay/types";
 
 const timeline: ReplayTimeline = {
@@ -30,6 +30,36 @@ const timeline: ReplayTimeline = {
 };
 
 describe("sampleTimeline", () => {
+  it("samples player camera state as the latest replay camera update", () => {
+    const cameraTimeline: ReplayTimeline = {
+      ...timeline,
+      camera: [
+        {
+          t: 0,
+          playerId: "p1",
+          usingSecondaryCamera: false,
+          settings: { fov: 110, height: 100, angle: -3, distance: 270, stiffness: 0.35, swivel: 7, transition: 1.5 }
+        },
+        { t: 1, playerId: "p1", usingSecondaryCamera: true },
+        { t: 1.5, playerId: "p1", usingSecondaryCamera: false, cameraYaw: 140 }
+      ]
+    };
+
+    expect(samplePlayerCameraState(cameraTimeline, "p1", 0.5)).toMatchObject({
+      usingSecondaryCamera: false,
+      settings: { distance: 270, height: 100 }
+    });
+    expect(samplePlayerCameraState(cameraTimeline, "p1", 1.25)).toMatchObject({
+      usingSecondaryCamera: true,
+      settings: { distance: 270, height: 100 }
+    });
+    expect(samplePlayerCameraState(cameraTimeline, "p1", 1.75)).toMatchObject({
+      usingSecondaryCamera: false,
+      cameraYaw: 140,
+      settings: { distance: 270, height: 100 }
+    });
+  });
+
   it("linearly interpolates positions", () => {
     const sample = sampleTimeline(timeline, 1);
     expect(sample.ball?.position).toEqual([1, 2, 3]);

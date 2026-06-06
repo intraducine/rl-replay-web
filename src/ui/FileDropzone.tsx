@@ -34,7 +34,7 @@ export function FileDropzone({ onFile }: { onFile: (file: File) => void }) {
       />
       <Upload size={34} />
       <div>
-        <h2>Select a `.replay` file</h2>
+        <h2>Select a replay file</h2>
         <p>Parsing runs in a Web Worker and saved timelines stay in this browser.</p>
       </div>
       <Button variant="primary" onClick={() => inputRef.current?.click()}>

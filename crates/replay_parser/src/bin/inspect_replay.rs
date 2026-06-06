@@ -19,6 +19,7 @@ fn main() {
     let mut frames_with_cars = 0usize;
     let print_links = std::env::var("PRINT_LINKS").is_ok();
     let print_boost = std::env::var("PRINT_BOOST").is_ok();
+    let print_camera = std::env::var("PRINT_CAMERA").is_ok();
 
     if let Some(network) = &replay.network_frames {
         for frame in &network.frames {
@@ -35,6 +36,32 @@ fn main() {
                 );
             }
             for update in &frame.updated_actors {
+                if print_camera {
+                    let actor_name = actor_objects
+                        .get(&update.actor_id.0)
+                        .cloned()
+                        .unwrap_or_else(|| "unknown-actor".into());
+                    let attr_name = replay
+                        .objects
+                        .get(update.object_id.0 as usize)
+                        .cloned()
+                        .unwrap_or_else(|| format!("attr-{}", update.object_id.0));
+                    if actor_name.contains("CameraSettingsActor")
+                        || attr_name.contains("CameraSettings")
+                        || attr_name.contains("Camera")
+                        || attr_name.contains("PersistentCamera")
+                        || attr_name.contains("SecondaryCamera")
+                        || attr_name.contains("BehindView")
+                        || attr_name.contains("Freecam")
+                        || attr_name.contains("ProfileSettings")
+                    {
+                        println!(
+                            "t={:.3} actor {} ({}) attr {} -> {:?}",
+                            frame.time, update.actor_id.0, actor_name, attr_name, update.attribute
+                        );
+                    }
+                }
+
                 if print_boost {
                     let actor_name = actor_objects
                         .get(&update.actor_id.0)

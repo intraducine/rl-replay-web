@@ -85,12 +85,22 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("sourceSpawnPerUnitParticleAge(emitterIndex, flameSpawnAges, flameSpawnRate, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds)");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.runtimeParameters.particleSize");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar");
+    expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.velocityOverLife.samples.length - 1");
     expect(carSource).not.toContain("flameSpread");
     expect(carSource).not.toContain("flameTaper");
     expect(carSource).not.toContain("lateralDrift");
     expect(carSource).not.toContain("Math.sin(t * 18");
     expect(carSource).not.toContain("Math.sin(t * 29");
     expect(carSource).not.toContain("const phase = (t * flameSpawnRate + emitterIndex / activeFlameParticlesPerExhaust) % 1");
+    expect(carSource).not.toContain("const steps = 6");
+  });
+
+  it("does not force distance-based Flame SpawnPerUnit to emit when replay distance is zero", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+
+    expect(carSource).toContain("distanceRate * spawnPerUnit * spawnRateScalar");
+    expect(carSource).not.toContain("Math.max(1, spawnRate * ALPHA_BOOST_CASCADE.flame.lifetimeSeconds)");
+    expect(carSource).not.toContain("return Math.max(1 / ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, distanceRate * spawnPerUnit * spawnRateScalar)");
   });
 
   it("keeps boost glow on decoded particles, lens flare, and bloom instead of a web-only light", () => {
