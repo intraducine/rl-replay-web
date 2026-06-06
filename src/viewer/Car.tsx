@@ -18,6 +18,7 @@ import {
   updateLiquidGoldParticleMaterial
 } from "./alphaBoostMaterial";
 import { alphaBoostBloomEnabled, alphaBoostComponentEnabled } from "./alphaBoostDebugFlags";
+import { carRenderPosition } from "./carPlacement";
 import { publicAsset } from "./publicAsset";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 import { teamCarPaint, teamClassName } from "./teamColors";
@@ -106,7 +107,7 @@ export const Car = forwardRef<Group, { frame?: CarFrame; player: ReplayPlayer; s
   ref
 ) {
   return (
-    <group ref={ref} position={frame?.position ?? [0, 0, 0]} quaternion={frame?.rotation ?? [0, 0, 0, 1]} visible={Boolean(frame)}>
+    <group ref={ref} position={frame ? carRenderPosition(frame.position) : [0, 0, 0]} quaternion={frame?.rotation ?? [0, 0, 0, 1]} visible={Boolean(frame)}>
       <Suspense fallback={null}>
         <OctaneModel player={player} />
         <AlphaBoost />

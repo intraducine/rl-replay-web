@@ -49,29 +49,31 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
           <Scoreboard timeline={timeline} />
           <MatchMetadataBar timeline={timeline} />
         </div>
-        {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">BALL CAM</div> : null}
-        <div className="viewer-selectors">
-          <Select
-            label="Camera"
-            value={cameraMode}
-            options={cameraModeOptions}
-            onChange={(event) => setCameraMode(event.currentTarget.value as CameraMode)}
-          />
-          <Select
-            label="Player"
-            value={selectedPlayerId ?? ""}
-            options={timeline.metadata.players.map((player) => ({ value: player.id, label: player.name }))}
-            onChange={(event) => setSelectedPlayerId(event.currentTarget.value)}
-          />
-          <label className="viewer-toggle">
-            <input
-              type="checkbox"
-              aria-label="Toggle boost rendering"
-              checked={boostRenderingEnabled}
-              onChange={(event) => setBoostRenderingEnabled(event.currentTarget.checked)}
+        <div className="viewer-control-panel">
+          {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">BALL CAM</div> : null}
+          <div className="viewer-selectors">
+            <Select
+              label="Camera"
+              value={cameraMode}
+              options={cameraModeOptions}
+              onChange={(event) => setCameraMode(event.currentTarget.value as CameraMode)}
             />
-            Boost
-          </label>
+            <Select
+              label="Player"
+              value={selectedPlayerId ?? ""}
+              options={timeline.metadata.players.map((player) => ({ value: player.id, label: player.name }))}
+              onChange={(event) => setSelectedPlayerId(event.currentTarget.value)}
+            />
+            <label className="viewer-toggle">
+              <input
+                type="checkbox"
+                aria-label="Toggle boost rendering"
+                checked={boostRenderingEnabled}
+                onChange={(event) => setBoostRenderingEnabled(event.currentTarget.checked)}
+              />
+              Boost
+            </label>
+          </div>
         </div>
       </div>
       <div className="viewer-overlay side">

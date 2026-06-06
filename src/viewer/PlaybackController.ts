@@ -5,8 +5,8 @@ export type PlaybackState = {
   speed: number;
 };
 
-export function stepFrame(currentTime: number, direction: -1 | 1, fps = 30): number {
-  return Math.max(0, currentTime + direction / fps);
+export function stepFrame(currentTime: number, direction: -1 | 1, duration = Number.POSITIVE_INFINITY, fps = 30): number {
+  return Math.max(0, Math.min(duration, currentTime + direction / fps));
 }
 
 export function advancePlayback(state: PlaybackState, deltaSeconds: number): PlaybackState {

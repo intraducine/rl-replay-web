@@ -30,13 +30,14 @@ import { StandardArena } from "./StandardArena";
 import { ALPHA_BOOST_CASCADE } from "./alphaBoostConfig";
 import { carBoostSegmentStartTime, isCarBoostingAt } from "./boostActivity";
 import { setCarAlphaBoostActive, setCarSupersonicTrailVisible } from "./carAlphaBoost";
+import { carRenderPosition } from "./carPlacement";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 
 const PLAYBACK_UI_COMMIT_INTERVAL_SECONDS = 0.1;
 const EXTERNAL_SEEK_EPSILON_SECONDS = 0.05;
 const FIELD_SHADOW_CATCHER_Y = 2;
-const PROJECTED_SHADOW_Y = 4;
-const PROJECTED_SHADOW_BASE_OPACITY = 0.48;
+const PROJECTED_SHADOW_Y = FIELD_SHADOW_CATCHER_Y + 0.6;
+const PROJECTED_SHADOW_BASE_OPACITY = 0.28;
 const SHADOW_LIGHT_DIRECTION = new Vector3(2600, 6200, 3400).normalize();
 const SHADOW_QUATERNION = new THREE.Quaternion();
 const SHADOW_EULER = new THREE.Euler();
@@ -450,7 +451,7 @@ function updateCars(
       continue;
     }
     group.visible = true;
-    group.position.fromArray(frame.position);
+    group.position.fromArray(carRenderPosition(frame.position));
     group.quaternion.fromArray(frame.rotation);
     const boosting = boostRenderingEnabled && isCarBoostingAt(timeline, id, time);
     const flameDistanceWindow = sampleCarDistanceWindow(timeline, id, time, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds);
@@ -472,14 +473,15 @@ function updateCars(
 }
 
 function updateProjectedCarShadow(shadow: Mesh, frame: SampledReplayState["cars"][string]) {
-  const height = Math.max(0, frame.position[1]);
+  const renderPosition = carRenderPosition(frame.position);
+  const height = Math.max(0, renderPosition[1] - PROJECTED_SHADOW_Y);
   const lightOffsetX = -(height * SHADOW_LIGHT_DIRECTION.x) / Math.max(0.001, SHADOW_LIGHT_DIRECTION.y);
   const lightOffsetZ = -(height * SHADOW_LIGHT_DIRECTION.z) / Math.max(0.001, SHADOW_LIGHT_DIRECTION.y);
   const liftScale = 1 + Math.min(height * 0.0001, 0.28);
   const opacity = Math.max(0.2, PROJECTED_SHADOW_BASE_OPACITY - height * 0.0001);
 
   shadow.visible = true;
-  shadow.position.set(frame.position[0] + lightOffsetX, PROJECTED_SHADOW_Y, frame.position[2] + lightOffsetZ);
+  shadow.position.set(renderPosition[0] + lightOffsetX, PROJECTED_SHADOW_Y, renderPosition[2] + lightOffsetZ);
   SHADOW_QUATERNION.fromArray(frame.rotation);
   SHADOW_EULER.setFromQuaternion(SHADOW_QUATERNION, "YXZ");
   shadow.rotation.set(0, SHADOW_EULER.y, 0);

@@ -1,18 +1,19 @@
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { clearReplays, deleteReplay, estimateStorageUsage, listReplays, loadReplay, type StoredReplayRecord } from "../replay/ReplayStorage";
+import { clearReplays, deleteReplay, listReplays, loadReplay, replayLibraryStorageBytes, type StoredReplayRecord } from "../replay/ReplayStorage";
 import { useReplayStore } from "../state/replayStore";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
 
 export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }) {
   const [records, setRecords] = useState<StoredReplayRecord[]>([]);
-  const [usage, setUsage] = useState<StorageEstimate>();
+  const [usageBytes, setUsageBytes] = useState(0);
   const setTimeline = useReplayStore((state) => state.setTimeline);
 
   const refresh = async () => {
-    setRecords(await listReplays());
-    setUsage(await estimateStorageUsage());
+    const nextRecords = await listReplays();
+    setRecords(nextRecords);
+    setUsageBytes(replayLibraryStorageBytes(nextRecords));
   };
 
   useEffect(() => {
@@ -36,7 +37,8 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
             variant="danger"
             onClick={async () => {
               await clearReplays();
-              await refresh();
+              setRecords([]);
+              setUsageBytes(0);
             }}
           >
             Clear all
@@ -66,11 +68,7 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
             </article>
           ))}
         </div>
-        {usage ? (
-          <p className="muted">
-            Storage: {formatBytes(usage.usage ?? 0)} used of {formatBytes(usage.quota ?? 0)} available.
-          </p>
-        ) : null}
+        <p className="muted">Replay library storage: {formatBytes(usageBytes)}.</p>
       </Panel>
     </main>
   );

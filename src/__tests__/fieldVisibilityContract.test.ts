@@ -26,7 +26,20 @@ describe("field visibility contract", () => {
     expect(sceneRootSource).toContain("ProjectedCarShadow");
     expect(sceneRootSource).toContain("createProjectedCarShadowTexture");
     expect(sceneRootSource).toContain("shadow.rotation.set(0, SHADOW_EULER.y, 0)");
+    expect(sceneRootSource).toContain("const PROJECTED_SHADOW_BASE_OPACITY = 0.28");
+    expect(sceneRootSource).toContain("PROJECTED_SHADOW_Y = FIELD_SHADOW_CATCHER_Y + 0.6");
     expect(sceneRootSource).not.toContain("CarGroundShadow");
     expect(sceneRootSource).not.toContain("setGroundShadow(shadow, frame.position[0], frame.position[2], 340, 190, 0.34)");
+  });
+
+  it("uses a shared visual ground offset for initial and animated car placement", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+    const placementSource = readFileSync(resolve(process.cwd(), "src/viewer/carPlacement.ts"), "utf8");
+
+    expect(placementSource).toContain("CAR_VISUAL_GROUND_OFFSET_Y = -34");
+    expect(carSource).toContain("carRenderPosition(frame.position)");
+    expect(sceneRootSource).toContain("group.position.fromArray(carRenderPosition(frame.position))");
+    expect(sceneRootSource).toContain("const renderPosition = carRenderPosition(frame.position)");
   });
 });

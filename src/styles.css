@@ -286,6 +286,7 @@ progress {
 .viewer {
   position: relative;
   min-height: 0;
+  overflow: hidden;
 }
 
 .viewer canvas {
@@ -313,9 +314,11 @@ progress {
 }
 
 .viewer-overlay.side {
-  top: 88px;
+  top: 104px;
   left: 12px;
-  width: 230px;
+  bottom: 168px;
+  width: min(260px, 26vw);
+  overflow: hidden;
 }
 
 .viewer-overlay.bottom {
@@ -326,8 +329,10 @@ progress {
 
 .viewer-overlay.debug {
   right: 12px;
-  top: 146px;
-  width: 170px;
+  left: auto;
+  top: auto;
+  bottom: 168px;
+  width: 190px;
   padding: 10px;
   border: 1px solid rgba(238, 246, 243, 0.14);
   border-radius: 8px;
@@ -351,7 +356,8 @@ progress {
 
 .scoreboard {
   display: grid;
-  grid-template-columns: 58px 90px 58px;
+  grid-template-columns: 48px minmax(72px, auto) 48px;
+  width: max-content;
   overflow: hidden;
   border: 1px solid rgba(238, 246, 243, 0.18);
   border-radius: 8px;
@@ -388,7 +394,7 @@ progress {
 }
 
 .ball-cam-indicator {
-  align-self: flex-start;
+  justify-self: end;
   min-height: 36px;
   padding: 9px 13px;
   border: 1px solid rgba(157, 242, 208, 0.58);
@@ -415,6 +421,14 @@ progress {
 
 .clock {
   color: #f3fff9;
+}
+
+.viewer-control-panel {
+  display: grid;
+  justify-items: end;
+  align-items: end;
+  gap: 8px;
+  max-width: min(520px, 44vw);
 }
 
 .viewer-selectors,
@@ -446,6 +460,7 @@ progress {
 
 .viewer-toggle {
   display: inline-flex;
+  align-self: end;
   align-items: center;
   gap: 7px;
   min-height: 36px;
@@ -530,6 +545,13 @@ progress {
 .player-list {
   display: grid;
   gap: 8px;
+}
+
+.player-list-scroll {
+  max-height: 100%;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(157, 242, 208, 0.6) rgba(7, 16, 20, 0.3);
 }
 
 .player-list button {

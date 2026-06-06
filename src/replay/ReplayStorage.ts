@@ -1,4 +1,4 @@
-import { deleteDB, openDB, type DBSchema } from "idb";
+import { openDB, type DBSchema } from "idb";
 import type { ReplayMetadata, ReplayTimeline } from "./types";
 
 export type StoredReplayRecord = {
@@ -67,9 +67,10 @@ export async function deleteReplay(id: string): Promise<void> {
 }
 
 export async function clearReplays(): Promise<void> {
-  await deleteDB(DB_NAME);
+  const database = await db();
+  await database.clear("replays");
 }
 
-export async function estimateStorageUsage(): Promise<StorageEstimate | undefined> {
-  return navigator.storage?.estimate ? navigator.storage.estimate() : undefined;
+export function replayLibraryStorageBytes(records: StoredReplayRecord[]): number {
+  return records.reduce((total, record) => total + record.timelineBlob.size + (record.originalReplayBlob?.size ?? 0), 0);
 }

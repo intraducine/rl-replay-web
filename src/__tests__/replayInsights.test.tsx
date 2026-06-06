@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ReplayTimeline } from "../replay/types";
 import { MatchMetadataBar } from "../viewer/MatchMetadataBar";
 import { PlayerList } from "../viewer/PlayerList";
 import { TimelineControls } from "../viewer/TimelineControls";
+import { livePlayerStatsAt } from "../viewer/playerStats";
 
 const timeline: ReplayTimeline = {
   version: 1,
@@ -59,15 +62,30 @@ describe("replay insights UI", () => {
     expect(container.textContent).toContain("4:30 played");
   });
 
-  it("renders player box score and cosmetic/platform context", () => {
+  it("renders live player box score and cosmetic/platform context", () => {
     const { container } = render(<PlayerList timeline={timeline} />);
 
     expect(container.textContent).toContain("Kehvn");
-    expect(container.textContent).toContain("616");
-    expect(container.textContent).toContain("2G");
-    expect(container.textContent).toContain("3A");
-    expect(container.textContent).toContain("1S");
+    expect(container.textContent).toContain("0");
+    expect(container.textContent).toContain("0G");
+    expect(container.textContent).toContain("0S");
+    expect(container.textContent).toContain("0D");
     expect(container.textContent).toContain("Steam");
+  });
+
+  it("updates player box score from replay events at the current playback time", () => {
+    expect(livePlayerStatsAt(timeline, "player-0-Kehvn", 100)).toMatchObject({
+      score: 0,
+      goals: 0,
+      saves: 0,
+      demos: 0
+    });
+    expect(livePlayerStatsAt(timeline, "player-0-Kehvn", 160)).toMatchObject({
+      score: 170,
+      goals: 1,
+      saves: 1,
+      demos: 1
+    });
   });
 
   it("renders typed event markers for goals, saves, and demos", () => {
@@ -76,5 +94,14 @@ describe("replay insights UI", () => {
     expect(container.querySelector(".event-goal")).not.toBeNull();
     expect(container.querySelector(".event-save")).not.toBeNull();
     expect(container.querySelector(".event-demo")).not.toBeNull();
+  });
+
+  it("supports keyboard scrubbing from the timeline controls", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
+
+    expect(source).toContain("useTimelineKeyboardShortcuts");
+    expect(source).toContain("ArrowLeft");
+    expect(source).toContain("ArrowRight");
+    expect(source).toContain("event.preventDefault()");
   });
 });

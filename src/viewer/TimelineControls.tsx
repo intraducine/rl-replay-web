@@ -1,4 +1,5 @@
 import { Pause, Play, RotateCcw, StepBack, StepForward } from "lucide-react";
+import { useEffect } from "react";
 import { useViewerStore } from "../state/viewerStore";
 import { Button } from "../ui/Button";
 import { Select } from "../ui/Select";
@@ -8,6 +9,7 @@ import { stepFrame } from "./PlaybackController";
 export function TimelineControls({ events = [] }: { events?: Array<{ t: number; type: string }> }) {
   const { playing, currentTime, duration, speed, setPlaying, setCurrentTime, setSpeed, seekBy } = useViewerStore();
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  useTimelineKeyboardShortcuts();
 
   return (
     <div className="timeline-controls">
@@ -36,11 +38,11 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
       <div className="control-row">
         <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart" />
         <Button onClick={() => seekBy(-5)}>−5s</Button>
-        <Button icon={<StepBack size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1))} aria-label="Previous frame" />
+        <Button icon={<StepBack size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" />
         <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)}>
           {playing ? "Pause" : "Play"}
         </Button>
-        <Button icon={<StepForward size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1))} aria-label="Next frame" />
+        <Button icon={<StepForward size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" />
         <Button onClick={() => seekBy(5)}>+5s</Button>
         <Select
           label="Speed"
@@ -51,6 +53,35 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
       </div>
     </div>
   );
+}
+
+export function useTimelineKeyboardShortcuts() {
+  const seekBy = useViewerStore((state) => state.seekBy);
+  const setCurrentTime = useViewerStore((state) => state.setCurrentTime);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditableEventTarget(event.target)) return;
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        seekBy(event.shiftKey ? -1 : -5);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        seekBy(event.shiftKey ? 1 : 5);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        setCurrentTime(0);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [seekBy, setCurrentTime]);
+}
+
+function isEditableEventTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
 }
 
 function eventLabel(event: { t: number; type: string; label?: string }) {
