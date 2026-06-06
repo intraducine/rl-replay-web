@@ -253,13 +253,14 @@ nav {
 
 .metadata-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
   margin: 0;
 }
 
 .metadata-grid div {
-  padding: 12px;
+  min-width: 0;
+  padding: 10px;
   border: 1px solid rgba(238, 246, 243, 0.1);
   border-radius: 7px;
 }
@@ -272,6 +273,11 @@ nav {
 .metadata-grid dd {
   margin: 4px 0 0;
   font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.replay-summary-grid {
+  grid-template-columns: minmax(180px, 2fr) repeat(3, minmax(96px, 1fr));
 }
 
 .progress-row {
@@ -463,6 +469,10 @@ progress {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
+}
+
+.mobile-transport-controls {
+  display: none;
 }
 
 .speed-control {
@@ -727,6 +737,10 @@ meter {
   gap: 10px;
 }
 
+.library-page .panel {
+  max-width: 900px;
+}
+
 .library-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -740,6 +754,7 @@ meter {
 .library-row > button:first-child {
   display: grid;
   gap: 5px;
+  min-width: 0;
   border: 0;
   background: transparent;
   color: #eef6f3;
@@ -750,6 +765,7 @@ meter {
 .library-row span {
   color: #a8bbb8;
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 .debug-grid {
@@ -826,6 +842,10 @@ pre {
     grid-template-columns: 1fr;
   }
 
+  .replay-summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .portfolio-hero > div:first-child,
   .dropzone {
     min-height: auto;
@@ -839,6 +859,16 @@ pre {
     min-height: calc(100vh - 110px);
   }
 
+  .viewer-overlay.top {
+    right: 12px;
+    bottom: 204px;
+    overflow: hidden;
+  }
+
+  .viewer-overlay.bottom {
+    bottom: 8px;
+  }
+
   .viewer-overlay.debug {
     display: none;
   }
@@ -848,7 +878,20 @@ pre {
   }
 
   .viewer-top-left {
-    width: min(100%, 420px);
+    width: min(100%, 360px);
+  }
+
+  .viewer-control-panel {
+    max-width: 100%;
+    justify-items: start;
+  }
+
+  .viewer-selectors {
+    justify-content: flex-start;
+  }
+
+  .viewer-selectors .select select {
+    min-width: 118px;
   }
 
   .control-row {
@@ -862,9 +905,23 @@ pre {
     justify-self: start;
   }
 
+  .transport-controls {
+    display: none;
+  }
+
+  .mobile-transport-controls {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
   .speed-control {
     grid-template-columns: 1fr auto;
     width: min(100%, 280px);
     min-width: 0;
+  }
+
+  .control-help {
+    justify-content: flex-start;
   }
 }

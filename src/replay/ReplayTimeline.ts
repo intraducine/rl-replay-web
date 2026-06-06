@@ -14,7 +14,7 @@ type TimelineSamplingIndex = {
 
 const MOTION_EPSILON_SQ = 0.01;
 const ROTATION_DOT_EPSILON = 0.99999;
-const MAX_SMOOTH_SPAN_SECONDS = 0.25;
+const MAX_SMOOTH_SPAN_SECONDS = 0.75;
 const CAR_RESET_DISTANCE = 1800;
 const CAR_MAX_SPEED = 9000;
 const BALL_RESET_DISTANCE = 2600;
@@ -38,9 +38,16 @@ function interpolateCar(a: CarFrame, b: CarFrame, alpha: number): CarFrame {
     ...interpolateRigidBody(a, b, alpha),
     boost: a.boost !== undefined && b.boost !== undefined ? a.boost + (b.boost - a.boost) * alpha : a.boost ?? b.boost,
     boostActive: alpha < 0.5 ? a.boostActive ?? b.boostActive : b.boostActive ?? a.boostActive,
-    demolished: alpha < 0.5 ? a.demolished : b.demolished,
+    demolished: sampleDemolishedState(a.demolished, b.demolished, alpha),
     supersonic: alpha < 0.5 ? a.supersonic : b.supersonic
   };
+}
+
+function sampleDemolishedState(a: boolean | undefined, b: boolean | undefined, alpha: number): boolean | undefined {
+  if (a === b) return a;
+  if (a && !b) return alpha < 1 ? true : b;
+  if (!a && b) return alpha >= 1 ? true : a;
+  return alpha < 0.5 ? a : b;
 }
 
 function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {

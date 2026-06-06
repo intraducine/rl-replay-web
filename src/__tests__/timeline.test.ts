@@ -104,6 +104,37 @@ describe("sampleTimeline", () => {
     expect(sample.cars.p1.boost).toBeCloseTo(35);
   });
 
+  it("smoothly interpolates car motion across modest replay sample gaps", () => {
+    const sparseTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 80 } } },
+        { t: 0.5, cars: { p1: { position: [500, 0, 0], rotation: [0, 0, 0, 1], boost: 60 } } }
+      ]
+    };
+
+    const sample = sampleTimeline(sparseTimeline, 0.25);
+
+    expect(sample.cars.p1.position[0]).toBeCloseTo(250);
+    expect(sample.cars.p1.boost).toBeCloseTo(70);
+  });
+
+  it("removes demolished cars until their respawn frame is available", () => {
+    const demoTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 40 } } },
+        { t: 1, cars: { p1: { position: [100, 0, 0], rotation: [0, 0, 0, 1], boost: 0, demolished: true } } },
+        { t: 3, cars: { p1: { position: [-2048, 2560, 18], rotation: [0, 0, 0, 1], boost: 33, demolished: false } } }
+      ]
+    };
+
+    expect(sampleTimeline(demoTimeline, 1).cars.p1).toBeUndefined();
+    expect(sampleTimeline(demoTimeline, 2).cars.p1).toBeUndefined();
+    expect(sampleTimeline(demoTimeline, 3).cars.p1?.position).toEqual([-2048, 2560, 18]);
+    expect(sampleTimeline(demoTimeline, 3).cars.p1?.boost).toBe(33);
+  });
+
   it("samples boost active as a nearest replicated boolean instead of interpolating it", () => {
     const activeTimeline: ReplayTimeline = {
       ...timeline,

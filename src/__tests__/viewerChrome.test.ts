@@ -33,6 +33,8 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("grid-column: 3");
     expect(css).toContain(".speed-slider");
     expect(css).toContain(".speed-input");
+    expect(css).toContain(".mobile-transport-controls");
+    expect(css).toContain("display: none");
   });
 
   it("docks development coordinate controls instead of floating them over the field", () => {

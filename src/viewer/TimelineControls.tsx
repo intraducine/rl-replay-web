@@ -95,6 +95,17 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
           </label>
         </div>
       </div>
+      <div className="mobile-transport-controls" aria-label="Mobile playback controls">
+        <Button onClick={() => seekBy(-5)} title="Jump backward 5 seconds">
+          −5s
+        </Button>
+        <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)} title="Play or pause replay">
+          {playing ? "Pause" : "Play"}
+        </Button>
+        <Button onClick={() => seekBy(5)} title="Jump forward 5 seconds">
+          +5s
+        </Button>
+      </div>
       <div className="control-help" aria-label="Playback shortcuts">
         <span title="Press Space to pause or resume playback">Space Play/Pause</span>
         <span title="Press Left or Right to jump five seconds">←/→ 5s</span>

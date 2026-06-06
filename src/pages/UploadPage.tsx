@@ -20,7 +20,7 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
       setTimeline(parsed);
       onOpenReplay();
     } catch (parseError) {
-      setError(parseError instanceof Error ? parseError.message : "Replay parsing failed.");
+      setError(parseError instanceof Error ? parseError.message : "Could not open replay.");
     } finally {
       setParsing(false);
     }
@@ -80,17 +80,17 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
         </div>
       </section>
       {parsing ? (
-        <Panel title="Parsing">
+        <Panel title="Opening replay">
           <div className="progress-row">
             <progress max={1} value={progress ?? 0.15} />
-            <span>{progressStage || "Starting parser"}</span>
+            <span>{progressStage || "Reading replay file"}</span>
           </div>
         </Panel>
       ) : null}
       {error ? <div className="error-box">{error}</div> : null}
       {timeline ? (
         <Panel title="Last parsed replay">
-          <dl className="metadata-grid">
+          <dl className="metadata-grid replay-summary-grid">
             <div>
               <dt>Name</dt>
               <dd>{timeline.metadata.replayName ?? timeline.metadata.fileName}</dd>

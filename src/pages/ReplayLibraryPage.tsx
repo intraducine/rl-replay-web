@@ -29,7 +29,7 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
   };
 
   return (
-    <main className="page">
+    <main className="page library-page">
       <Panel
         title="Local replay library"
         actions={

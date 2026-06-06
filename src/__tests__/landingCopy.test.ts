@@ -10,6 +10,8 @@ describe("landing page copy and favicon", () => {
     expect(source).toContain("Drop in a replay file");
     expect(source).not.toContain("Browser replay parsing");
     expect(source).not.toContain("Rust/WASM parser");
+    expect(source).not.toContain('title="Parsing"');
+    expect(source).toContain('title="Opening replay"');
   });
 
   it("ships an actual favicon asset", () => {
