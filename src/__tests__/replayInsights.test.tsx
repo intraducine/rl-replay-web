@@ -74,6 +74,7 @@ describe("replay insights UI", () => {
     expect(container.textContent).not.toContain("Paint");
     expect(container.textContent).not.toContain("ping");
     expect(container.textContent).toContain("Rank/MMR unavailable");
+    expect(container.querySelector(".tooltip-bubble")).not.toBeNull();
   });
 
   it("updates player box score from replay events at the current playback time", () => {
@@ -106,6 +107,7 @@ describe("replay insights UI", () => {
     expect(source).toContain('event.code === "Space"');
     expect(source).toContain("event.preventDefault()");
     expect(source).toContain("Space Play/Pause");
+    expect(source).toContain("TooltipBubble");
   });
 
   it("uses a bounded speed slider and numeric input instead of a dropdown", () => {

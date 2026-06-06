@@ -18,6 +18,8 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("overflow-y: auto");
     expect(css).not.toContain("32vh");
     expect(css).toContain("box-shadow: inset 0 0 0 2px #9df2d0");
+    expect(css).toContain(".tooltip-bubble");
+    expect(css).toContain(".tooltip-target:hover > .tooltip-bubble");
   });
 
   it("uses compact scoreboard columns and aligned viewer controls", () => {

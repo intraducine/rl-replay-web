@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useViewerStore } from "../state/viewerStore";
 import { Button } from "../ui/Button";
 import { Slider } from "../ui/Slider";
+import { TooltipBubble } from "../ui/Tooltip";
 import { stepFrame } from "./PlaybackController";
 
 const MIN_SPEED = 0.25;
@@ -40,16 +41,21 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
       </div>
       <div className="control-row">
         <div className="transport-controls">
-          <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart" title="Restart replay" />
-          <Button onClick={() => seekBy(-5)} title="Jump backward 5 seconds">
+          <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart" className="tooltip-target">
+            <TooltipBubble>Restart replay</TooltipBubble>
+          </Button>
+          <Button onClick={() => seekBy(-5)} className="tooltip-target">
             −5s
+            <TooltipBubble>Jump backward 5 seconds</TooltipBubble>
           </Button>
           <Button
             icon={<StepBack size={16} />}
             onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))}
             aria-label="Previous frame"
-            title="Previous frame"
-          />
+            className="tooltip-target"
+          >
+            <TooltipBubble>Previous frame</TooltipBubble>
+          </Button>
           <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)}>
             {playing ? "Pause" : "Play"}
           </Button>
@@ -57,14 +63,17 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
             icon={<StepForward size={16} />}
             onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))}
             aria-label="Next frame"
-            title="Next frame"
-          />
-          <Button onClick={() => seekBy(5)} title="Jump forward 5 seconds">
+            className="tooltip-target"
+          >
+            <TooltipBubble>Next frame</TooltipBubble>
+          </Button>
+          <Button onClick={() => seekBy(5)} className="tooltip-target">
             +5s
+            <TooltipBubble>Jump forward 5 seconds</TooltipBubble>
           </Button>
         </div>
         <div className="speed-control">
-          <label className="speed-slider" title="Playback speed">
+          <label className="speed-slider tooltip-target">
             <span>Speed</span>
             <input
               type="range"
@@ -80,8 +89,9 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
                 <option key={value} value={value} label={`${value}x`} />
               ))}
             </datalist>
+            <TooltipBubble>Playback speed</TooltipBubble>
           </label>
-          <label className="speed-input" title="Enter playback speed from 0.25x to 4x">
+          <label className="speed-input tooltip-target">
             <span className="sr-only">Playback speed value</span>
             <input
               type="number"
@@ -92,24 +102,37 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
               onChange={(event) => setSpeed(clampSpeed(Number(event.currentTarget.value)))}
             />
             <span>x</span>
+            <TooltipBubble>Enter playback speed from 0.25x to 4x</TooltipBubble>
           </label>
         </div>
       </div>
       <div className="mobile-transport-controls" aria-label="Mobile playback controls">
-        <Button onClick={() => seekBy(-5)} title="Jump backward 5 seconds">
+        <Button onClick={() => seekBy(-5)} className="tooltip-target">
           −5s
+          <TooltipBubble>Jump backward 5 seconds</TooltipBubble>
         </Button>
-        <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)} title="Play or pause replay">
+        <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)} className="tooltip-target">
           {playing ? "Pause" : "Play"}
+          <TooltipBubble>Play or pause replay</TooltipBubble>
         </Button>
-        <Button onClick={() => seekBy(5)} title="Jump forward 5 seconds">
+        <Button onClick={() => seekBy(5)} className="tooltip-target">
           +5s
+          <TooltipBubble>Jump forward 5 seconds</TooltipBubble>
         </Button>
       </div>
       <div className="control-help" aria-label="Playback shortcuts">
-        <span title="Press Space to pause or resume playback">Space Play/Pause</span>
-        <span title="Press Left or Right to jump five seconds">←/→ 5s</span>
-        <span title="Hold Shift with Left or Right to scrub one second">Shift + ←/→ 1s</span>
+        <span className="tooltip-target">
+          Space Play/Pause
+          <TooltipBubble>Press Space to pause or resume playback</TooltipBubble>
+        </span>
+        <span className="tooltip-target">
+          ←/→ 5s
+          <TooltipBubble>Press Left or Right to jump five seconds</TooltipBubble>
+        </span>
+        <span className="tooltip-target">
+          Shift + ←/→ 1s
+          <TooltipBubble>Hold Shift with Left or Right to scrub one second</TooltipBubble>
+        </span>
       </div>
     </div>
   );
