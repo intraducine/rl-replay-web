@@ -36,20 +36,24 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
         </div>
       </div>
       <div className="control-row">
-        <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart" />
-        <Button onClick={() => seekBy(-5)}>−5s</Button>
-        <Button icon={<StepBack size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" />
-        <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)}>
-          {playing ? "Pause" : "Play"}
-        </Button>
-        <Button icon={<StepForward size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" />
-        <Button onClick={() => seekBy(5)}>+5s</Button>
-        <Select
-          label="Speed"
-          value={speed}
-          options={[0.25, 0.5, 1, 2, 4].map((value) => ({ value, label: `${value}x` }))}
-          onChange={(event) => setSpeed(Number(event.currentTarget.value))}
-        />
+        <div className="transport-controls">
+          <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart" />
+          <Button onClick={() => seekBy(-5)}>−5s</Button>
+          <Button icon={<StepBack size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" />
+          <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)}>
+            {playing ? "Pause" : "Play"}
+          </Button>
+          <Button icon={<StepForward size={16} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" />
+          <Button onClick={() => seekBy(5)}>+5s</Button>
+        </div>
+        <div className="speed-control">
+          <Select
+            label="Speed"
+            value={speed}
+            options={[0.25, 0.5, 1, 2, 4].map((value) => ({ value, label: `${value}x` }))}
+            onChange={(event) => setSpeed(Number(event.currentTarget.value))}
+          />
+        </div>
       </div>
     </div>
   );

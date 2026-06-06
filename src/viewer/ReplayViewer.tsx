@@ -48,6 +48,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         <div className="viewer-top-left">
           <Scoreboard timeline={timeline} />
           <MatchMetadataBar timeline={timeline} />
+          <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} />
         </div>
         <div className="viewer-control-panel">
           {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">BALL CAM</div> : null}
@@ -75,9 +76,6 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
             </label>
           </div>
         </div>
-      </div>
-      <div className="viewer-overlay side">
-        <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} />
       </div>
       {showDebugControls ? (
         <div className="viewer-overlay debug">

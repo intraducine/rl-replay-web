@@ -8,14 +8,15 @@ describe("viewer chrome layout", () => {
   it("keeps the player list inside a scrollable side rail", () => {
     const css = styles();
 
-    expect(css).toContain(".viewer-overlay.side");
-    expect(css).toContain("top: 136px");
+    expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr)");
     expect(css).toContain("bottom: 168px");
     expect(css).toContain("overflow: hidden");
     expect(css).toContain(".player-list-scroll");
     expect(css).toContain("height: 100%");
+    expect(css).toContain("min-height: 0");
     expect(css).toContain("overflow-y: auto");
-    expect(css).toContain("top: clamp(136px, 32vh, 252px)");
+    expect(css).not.toContain("32vh");
+    expect(css).toContain("box-shadow: inset 0 0 0 2px #9df2d0");
   });
 
   it("uses compact scoreboard columns and aligned viewer controls", () => {
@@ -24,6 +25,11 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("grid-template-columns: 48px minmax(72px, auto) 48px");
     expect(css).toContain(".viewer-control-panel");
     expect(css).toContain("align-items: end");
+    expect(css).toContain("grid-template-columns: 1fr auto 1fr");
+    expect(css).toContain(".transport-controls");
+    expect(css).toContain("grid-column: 2");
+    expect(css).toContain(".speed-control");
+    expect(css).toContain("grid-column: 3");
   });
 
   it("docks development coordinate controls instead of floating them over the field", () => {
