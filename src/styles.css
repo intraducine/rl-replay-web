@@ -324,7 +324,7 @@ progress {
   top: 12px;
   left: 12px;
   right: 12px;
-  bottom: 168px;
+  bottom: 190px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -341,7 +341,7 @@ progress {
   right: 12px;
   left: auto;
   top: auto;
-  bottom: 168px;
+  bottom: 190px;
   width: 190px;
   max-height: calc(100% - 192px);
   overflow-y: auto;
@@ -383,7 +383,7 @@ progress {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 8px;
-  width: clamp(300px, 42vw, 460px);
+  width: clamp(280px, 36vw, 420px);
   max-height: 100%;
   min-height: 0;
   overflow: hidden;
@@ -688,6 +688,16 @@ progress {
   font-variant-numeric: tabular-nums;
 }
 
+.player-rank {
+  width: fit-content;
+  padding: 3px 7px;
+  border: 1px solid rgba(238, 246, 243, 0.1);
+  border-radius: 5px;
+  color: #a8bbb8;
+  background: rgba(7, 16, 20, 0.34);
+  font-size: 0.76rem;
+}
+
 .player-list meter {
   transition: value 120ms linear;
 }
@@ -878,7 +888,7 @@ pre {
   }
 
   .viewer-top-left {
-    width: min(100%, 360px);
+    width: min(100%, 300px);
   }
 
   .viewer-control-panel {

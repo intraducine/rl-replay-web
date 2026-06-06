@@ -73,6 +73,7 @@ describe("replay insights UI", () => {
     expect(container.textContent).not.toContain("616");
     expect(container.textContent).not.toContain("Paint");
     expect(container.textContent).not.toContain("ping");
+    expect(container.textContent).toContain("Rank/MMR unavailable");
   });
 
   it("updates player box score from replay events at the current playback time", () => {

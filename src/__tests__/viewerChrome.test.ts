@@ -9,8 +9,8 @@ describe("viewer chrome layout", () => {
     const css = styles();
 
     expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr)");
-    expect(css).toContain("width: clamp(300px, 42vw, 460px)");
-    expect(css).toContain("bottom: 168px");
+    expect(css).toContain("width: clamp(280px, 36vw, 420px)");
+    expect(css).toContain("bottom: 190px");
     expect(css).toContain("overflow: hidden");
     expect(css).toContain(".player-list-scroll");
     expect(css).toContain("height: 100%");
@@ -42,7 +42,7 @@ describe("viewer chrome layout", () => {
 
     expect(css).toContain(".viewer-overlay.debug");
     expect(css).toContain("left: auto");
-    expect(css).toContain("bottom: 168px");
+    expect(css).toContain("bottom: 190px");
     expect(css).toContain("overflow-y: auto");
   });
 });

@@ -34,6 +34,9 @@ export function PlayerList({ timeline, boostByPlayer = {} }: { timeline: ReplayT
                 <span title="Shots">{stats.shots} Shots</span>
                 <span title="Demolitions">{stats.demos} Demos</span>
               </span>
+              <span className="player-rank" title="Rank and MMR are not stored in the replay data this parser currently reads.">
+                Rank/MMR unavailable
+              </span>
               <meter min={0} max={100} value={boost ?? 0} title="Interpolated boost meter" />
             </button>
           );
