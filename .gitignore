@@ -12,6 +12,7 @@ thing.txt
 tmp/
 UmodelSaved/
 *.replay
+!public/sample-replays/*.replay
 *.upk
 errors.txt
 plan.md

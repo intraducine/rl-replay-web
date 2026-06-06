@@ -197,6 +197,18 @@ nav {
   background: rgba(157, 242, 208, 0.1);
 }
 
+.sample-replay-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  width: min(1120px, 100%);
+}
+
+.sample-replay-action span {
+  color: #a8bbb8;
+}
+
 .dropzone h2 {
   margin: 0 0 8px;
   font-size: clamp(1.5rem, 2vw, 2.4rem);
