@@ -14,39 +14,31 @@ export function PlayerList({ timeline, boostByPlayer = {} }: { timeline: ReplayT
         {timeline.metadata.players.map((player) => {
           const boost = boostByPlayer[player.id];
           const stats = livePlayerStatsAt(timeline, player.id, currentTime);
+          const boostLabel = boost === undefined ? "--" : boost.toFixed(1);
           return (
             <button
               key={player.id}
               className={`${teamClassName(player.team)} ${selectedPlayerId === player.id ? "selected" : ""}`}
               onClick={() => setSelectedPlayerId(player.id)}
+              title={`Select ${player.name}`}
             >
               <span className="player-row">
                 <span>{player.name}</span>
-                <span className="boost-value">{boost === undefined ? "--" : Math.round(boost)}</span>
+                <span className="boost-value" title="Interpolated boost amount">
+                  {boostLabel}
+                </span>
               </span>
               <span className="player-stats">
-                <b>{stats.score}</b>
-                <span>{stats.goals}G</span>
-                {stats.assists > 0 ? <span>{stats.assists}A</span> : null}
-                <span>{stats.saves}S</span>
-                <span>{stats.shots}Sh</span>
-                <span>{stats.demos}D</span>
+                <span title="Goals">{stats.goals} Goals</span>
+                <span title="Saves">{stats.saves} Saves</span>
+                <span title="Shots">{stats.shots} Shots</span>
+                <span title="Demolitions">{stats.demos} Demos</span>
               </span>
-              <span className="player-context">
-                {displayPlatform(player.platform)}
-                {player.ping !== undefined ? <span>{player.ping} ping</span> : null}
-                {player.cosmetics?.teamPaint ? <span>Paint {player.cosmetics.teamPaint.primaryColor}/{player.cosmetics.teamPaint.accentColor}</span> : null}
-              </span>
-              <meter min={0} max={100} value={boost ?? 0} />
+              <meter min={0} max={100} value={boost ?? 0} title="Interpolated boost meter" />
             </button>
           );
         })}
       </div>
     </div>
   );
-}
-
-function displayPlatform(platform?: string) {
-  if (!platform) return null;
-  return <span>{platform.replace(/^OnlinePlatform_/, "")}</span>;
 }

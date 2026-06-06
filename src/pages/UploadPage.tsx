@@ -51,10 +51,10 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
       <section className="portfolio-hero">
         <div>
           <p className="project-label">Rocket League replay analysis</p>
-          <h1>Browser replay parsing with a real-time 3D match viewer.</h1>
+          <h1>Open a Rocket League replay in a real-time 3D viewer.</h1>
           <p>
-            Upload a Rocket League replay file to parse match metadata, player movement, boost usage, goals, demos, and camera state
-            locally in the browser.
+            Drop in a replay file to inspect the match, player movement, boost usage, goals, demos, saves, shots, and camera changes
+            without sending the file anywhere.
           </p>
         </div>
         <FileDropzone onFile={parseFile} />
@@ -67,8 +67,8 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
       </div>
       <section className="capability-strip" aria-label="Project capabilities">
         <div>
-          <strong>Rust/WASM parser</strong>
-          <span>Replay parsing runs off the main thread in a Web Worker.</span>
+          <strong>Fast local replay reader</strong>
+          <span>The replay opens in your browser and stays on your computer.</span>
         </div>
         <div>
           <strong>Three.js playback</strong>

@@ -9,6 +9,7 @@ describe("viewer chrome layout", () => {
     const css = styles();
 
     expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr)");
+    expect(css).toContain("width: clamp(300px, 42vw, 460px)");
     expect(css).toContain("bottom: 168px");
     expect(css).toContain("overflow: hidden");
     expect(css).toContain(".player-list-scroll");
@@ -30,6 +31,8 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("grid-column: 2");
     expect(css).toContain(".speed-control");
     expect(css).toContain("grid-column: 3");
+    expect(css).toContain(".speed-slider");
+    expect(css).toContain(".speed-input");
   });
 
   it("docks development coordinate controls instead of floating them over the field", () => {
@@ -38,5 +41,6 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".viewer-overlay.debug");
     expect(css).toContain("left: auto");
     expect(css).toContain("bottom: 168px");
+    expect(css).toContain("overflow-y: auto");
   });
 });
