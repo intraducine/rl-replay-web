@@ -314,7 +314,7 @@ progress {
 }
 
 .viewer-overlay.side {
-  top: 104px;
+  top: 136px;
   left: 12px;
   bottom: 168px;
   width: min(260px, 26vw);
@@ -548,6 +548,7 @@ progress {
 }
 
 .player-list-scroll {
+  height: 100%;
   max-height: 100%;
   overflow-y: auto;
   padding-right: 4px;
@@ -773,5 +774,11 @@ pre {
 
   .control-row {
     justify-content: flex-start;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1000px) {
+  .viewer-overlay.side {
+    top: clamp(136px, 32vh, 252px);
   }
 }

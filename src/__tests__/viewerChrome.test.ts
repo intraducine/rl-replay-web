@@ -9,10 +9,13 @@ describe("viewer chrome layout", () => {
     const css = styles();
 
     expect(css).toContain(".viewer-overlay.side");
+    expect(css).toContain("top: 136px");
     expect(css).toContain("bottom: 168px");
     expect(css).toContain("overflow: hidden");
     expect(css).toContain(".player-list-scroll");
+    expect(css).toContain("height: 100%");
     expect(css).toContain("overflow-y: auto");
+    expect(css).toContain("top: clamp(136px, 32vh, 252px)");
   });
 
   it("uses compact scoreboard columns and aligned viewer controls", () => {
