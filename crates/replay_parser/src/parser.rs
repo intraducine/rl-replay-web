@@ -1164,18 +1164,31 @@ fn json_int(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Opti
         .map(|value| value as i32)
 }
 
+fn json_int_any_key(obj: &serde_json::Map<String, serde_json::Value>, keys: &[&str]) -> Option<i32> {
+    keys.iter().find_map(|key| {
+        json_int(obj, key).or_else(|| {
+            obj.iter()
+                .find(|(candidate, _)| normalized_key(candidate) == normalized_key(key))
+                .and_then(|(_, value)| value.as_i64())
+                .map(|value| value as i32)
+        })
+    })
+}
+
+fn normalized_key(key: &str) -> String {
+    key.chars()
+        .filter(|ch| ch.is_ascii_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
 fn player_rank_from_properties(
     object: Option<&serde_json::Map<String, serde_json::Value>>,
 ) -> Option<ReplayPlayerRank> {
     let obj = object?;
     let rank = ReplayPlayerRank {
-        skill_tier: json_int(obj, "SkillTier")
-            .or_else(|| json_int(obj, "Rank"))
-            .or_else(|| json_int(obj, "Tier")),
-        mmr: json_int(obj, "MMR")
-            .or_else(|| json_int(obj, "Mmr"))
-            .or_else(|| json_int(obj, "Elo"))
-            .or_else(|| json_int(obj, "Rating")),
+        skill_tier: json_int_any_key(obj, &["SkillTier", "Rank", "Tier"]),
+        mmr: json_int_any_key(obj, &["MMR", "Mmr", "Elo", "Rating"]),
     };
     if rank.skill_tier.is_some() || rank.mmr.is_some() {
         Some(rank)
@@ -1258,6 +1271,32 @@ pub fn actor_class_names(replay: &Replay) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn player_rank_from_properties_accepts_common_rank_key_casing() {
+        let lower = json!({
+            "skill_tier": 16,
+            "mmr": 1194
+        });
+        let lower = lower.as_object().unwrap();
+
+        let rank = player_rank_from_properties(Some(lower)).unwrap();
+
+        assert_eq!(rank.skill_tier, Some(16));
+        assert_eq!(rank.mmr, Some(1194));
+
+        let elo = json!({
+            "rank": 18,
+            "ELO": 1310
+        });
+        let elo = elo.as_object().unwrap();
+
+        let rank = player_rank_from_properties(Some(elo)).unwrap();
+
+        assert_eq!(rank.skill_tier, Some(18));
+        assert_eq!(rank.mmr, Some(1310));
+    }
 
     #[test]
     fn sample_replay_extracts_car_frames() {
