@@ -42,4 +42,11 @@ describe("ReplayStorage", () => {
     expect(source).toContain("No saved replays");
     expect(source).toContain("Upload a replay or open the bundled sample");
   });
+
+  it("clears the active replay when saved replay records are removed", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/pages/ReplayLibraryPage.tsx"), "utf8");
+
+    expect(source).toContain("setTimeline(undefined)");
+    expect(source).toContain("timeline?.metadata.id === record.id");
+  });
 });

@@ -8,6 +8,7 @@ import { Panel } from "../ui/Panel";
 export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }) {
   const [records, setRecords] = useState<StoredReplayRecord[]>([]);
   const [usageBytes, setUsageBytes] = useState(0);
+  const timeline = useReplayStore((state) => state.timeline);
   const setTimeline = useReplayStore((state) => state.setTimeline);
 
   const refresh = async () => {
@@ -38,6 +39,7 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
             disabled={records.length === 0}
             onClick={async () => {
               await clearReplays();
+              setTimeline(undefined);
               setRecords([]);
               setUsageBytes(0);
             }}
@@ -72,6 +74,7 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
                 aria-label="Delete replay"
                 onClick={async () => {
                   await deleteReplay(record.id);
+                  if (timeline?.metadata.id === record.id) setTimeline(undefined);
                   await refresh();
                 }}
               />
