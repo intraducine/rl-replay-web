@@ -35,7 +35,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
       return;
     }
 
-    post({ id: request.id, type: "progress", stage: "Extracting replay timeline", progress: 0.55 });
+    post({ id: request.id, type: "progress", stage: "Building replay timeline", progress: 0.55 });
     const timeline = wasm?.parse_replay_timeline
       ? wasm.parse_replay_timeline(bytes, request.fileName)
       : createMockTimeline(request.fileName);
@@ -45,7 +45,7 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     post({
       id: request.id,
       type: "error",
-      message: error instanceof Error ? error.message : "Replay parsing failed.",
+      message: error instanceof Error ? error.message : "Replay could not be opened.",
       details: error
     });
   }
@@ -55,7 +55,7 @@ async function loadWasm(id: string): Promise<WasmParser | undefined> {
   if (!wasmPromise) {
     wasmPromise = import(/* @vite-ignore */ "../../crates/replay_parser/pkg/replay_parser.js")
       .then(async (module: WasmParser) => {
-        post({ id, type: "progress", stage: "Loading WASM parser", progress: 0.25 });
+        post({ id, type: "progress", stage: "Preparing replay viewer", progress: 0.25 });
         await module.default?.();
         return module;
       })

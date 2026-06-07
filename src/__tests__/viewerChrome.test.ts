@@ -34,10 +34,12 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("grid-template-columns: 48px minmax(72px, auto) 48px");
     expect(css).toContain(".viewer-control-panel");
     expect(css).toContain("align-items: end");
-    expect(css).toContain("grid-template-columns: minmax(0, 1fr)");
-    expect(css).toContain("justify-items: center");
+    expect(css).toContain("grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)");
     expect(css).toContain(".transport-controls");
+    expect(css).toContain("grid-column: 2");
     expect(css).toContain(".speed-control");
+    expect(css).toContain("grid-column: 3");
+    expect(css).toContain("justify-self: start");
     expect(css).toContain(".speed-slider");
     expect(css).toContain(".speed-input");
     expect(css).toContain(".mobile-transport-controls");

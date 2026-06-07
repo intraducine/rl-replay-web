@@ -18,6 +18,18 @@ describe("landing page copy and favicon", () => {
     expect(source).toContain('title="Opening replay"');
   });
 
+  it("uses plain progress and error messages while opening replays", () => {
+    const loaderSource = readFileSync(resolve(process.cwd(), "src/replay/ReplayLoader.ts"), "utf8");
+    const workerSource = readFileSync(resolve(process.cwd(), "src/replay-worker/replayWorker.ts"), "utf8");
+
+    expect(loaderSource).toContain("Reading replay file");
+    expect(workerSource).toContain("Preparing replay viewer");
+    expect(workerSource).toContain("Building replay timeline");
+    expect(workerSource).toContain("Replay could not be opened.");
+    expect(workerSource).not.toContain("Loading WASM parser");
+    expect(workerSource).not.toContain("Replay parsing failed.");
+  });
+
   it("ships an actual favicon asset", () => {
     const html = readFileSync(resolve(process.cwd(), "index.html"), "utf8");
     const favicon = readFileSync(resolve(process.cwd(), "public/favicon.svg"), "utf8");

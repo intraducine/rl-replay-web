@@ -5,7 +5,7 @@ export class ReplayLoader {
   private client = new ReplayWorkerClient();
 
   async parse(file: File, onProgress?: (stage: string, progress?: number) => void): Promise<ReplayTimeline> {
-    onProgress?.("Reading replay", 0.05);
+    onProgress?.("Reading replay file", 0.05);
     return this.client.parseTimeline(file, onProgress);
   }
 
