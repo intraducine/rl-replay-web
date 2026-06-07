@@ -19,6 +19,11 @@ body {
   overflow: hidden;
 }
 
+#root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
 button,
 input,
 select {
@@ -38,8 +43,10 @@ select {
 
 .app {
   min-height: 100vh;
+  max-width: 100vw;
   display: grid;
   grid-template-rows: 60px 1fr;
+  overflow-x: hidden;
 }
 
 .app-header {
@@ -384,12 +391,15 @@ progress {
 
 .viewer {
   position: relative;
+  width: 100%;
+  max-width: 100vw;
   min-height: 0;
   overflow: hidden;
 }
 
 .viewer canvas {
   display: block;
+  max-width: 100%;
 }
 
 .viewer-overlay {
@@ -683,6 +693,7 @@ progress {
 .timeline-controls {
   display: grid;
   gap: 10px;
+  min-width: 0;
   padding: 12px;
   border: 1px solid rgba(238, 246, 243, 0.16);
   border-radius: 8px;
@@ -982,10 +993,12 @@ pre {
 
 @media (max-width: 760px) {
   body {
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .app {
+    width: 100vw;
     grid-template-rows: auto 1fr;
   }
 
@@ -1046,6 +1059,7 @@ pre {
   }
 
   .viewer {
+    width: 100vw;
     min-height: calc(100vh - 110px);
   }
 

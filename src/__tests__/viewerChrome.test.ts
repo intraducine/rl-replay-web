@@ -56,4 +56,16 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("bottom: 190px");
     expect(css).toContain("overflow-y: auto");
   });
+
+  it("contains mobile viewer chrome inside the viewport width", () => {
+    const css = styles();
+
+    expect(css).toContain("overflow-x: hidden");
+    expect(css).toContain("max-width: 100vw");
+    expect(css).toContain("width: 100vw");
+    expect(css).toContain(".viewer canvas");
+    expect(css).toContain("max-width: 100%");
+    expect(css).toContain(".timeline-controls");
+    expect(css).toContain("min-width: 0");
+  });
 });
