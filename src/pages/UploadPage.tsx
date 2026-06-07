@@ -48,35 +48,26 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
 
   return (
     <main className="page upload-page">
-      <section className="portfolio-hero">
-        <div>
+      <section className="upload-workspace">
+        <FileDropzone onFile={parseFile} />
+        <div className="upload-sidebar">
           <p className="project-label">Rocket League replay analysis</p>
           <h1>Open a Rocket League replay in a real-time 3D viewer.</h1>
           <p>
             Drop in a replay file to inspect the match, player movement, boost usage, goals, demos, saves, shots, and camera changes
             without sending the file anywhere.
           </p>
-        </div>
-        <FileDropzone onFile={parseFile} />
-      </section>
-      <div className="sample-replay-action">
-        <Button variant="primary" onClick={loadSampleReplay} disabled={parsing}>
-          Open sample replay
-        </Button>
-        <span>Try the viewer immediately with the bundled replay.</span>
-      </div>
-      <section className="capability-strip" aria-label="Project capabilities">
-        <div>
-          <strong>Fast local replay reader</strong>
-          <span>The replay opens in your browser and stays on your computer.</span>
-        </div>
-        <div>
-          <strong>Three.js playback</strong>
-          <span>Cars, ball physics, boost pads, scoreboard, nameplates, and timeline controls.</span>
-        </div>
-        <div>
-          <strong>Private by default</strong>
-          <span>Files stay local, and parsed timelines can be saved in browser storage.</span>
+          <div className="sample-replay-action">
+            <Button variant="primary" onClick={loadSampleReplay} disabled={parsing}>
+              Open sample replay
+            </Button>
+            <span>Try the viewer immediately with the bundled replay.</span>
+          </div>
+          <div className="capability-list" aria-label="Project capabilities">
+            <span>Local files stay on this device</span>
+            <span>3D cars, ball, boost, scoreboard, and timeline</span>
+            <span>Saved replays can be reopened from browser storage</span>
+          </div>
         </div>
       </section>
       {parsing ? (

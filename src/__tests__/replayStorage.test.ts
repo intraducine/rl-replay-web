@@ -32,4 +32,14 @@ describe("ReplayStorage", () => {
     expect(storageSource).toContain('database.clear("replays")');
     expect(storageSource).not.toContain("deleteDB");
   });
+
+  it("shows local library count, storage, and empty-state context", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/pages/ReplayLibraryPage.tsx"), "utf8");
+
+    expect(source).toContain("library-summary");
+    expect(source).toContain("saved replays");
+    expect(source).toContain("used");
+    expect(source).toContain("No saved replays");
+    expect(source).toContain("Upload a replay or open the bundled sample");
+  });
 });

@@ -8,6 +8,8 @@ describe("landing page copy and favicon", () => {
 
     expect(source).toContain("Open a Rocket League replay in a real-time 3D viewer.");
     expect(source).toContain("Drop in a replay file");
+    expect(source).toContain("upload-workspace");
+    expect(source).toContain("capability-list");
     expect(source).not.toContain("Browser replay parsing");
     expect(source).not.toContain("Rust/WASM parser");
     expect(source).not.toContain('title="Parsing"');

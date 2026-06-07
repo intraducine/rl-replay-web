@@ -35,6 +35,7 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
         actions={
           <Button
             variant="danger"
+            disabled={records.length === 0}
             onClick={async () => {
               await clearReplays();
               setRecords([]);
@@ -45,8 +46,17 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
           </Button>
         }
       >
+        <div className="library-summary" aria-live="polite">
+          <span>{records.length === 1 ? "1 saved replay" : `${records.length} saved replays`}</span>
+          <span>{formatBytes(usageBytes)} used</span>
+        </div>
         <div className="library-list">
-          {records.length === 0 ? <p className="muted">No saved parsed replays yet.</p> : null}
+          {records.length === 0 ? (
+            <div className="library-empty">
+              <strong>No saved replays</strong>
+              <span>Upload a replay or open the bundled sample, then it will appear here.</span>
+            </div>
+          ) : null}
           {records.map((record) => (
             <article key={record.id} className="library-row">
               <button onClick={() => openReplay(record.id)}>
@@ -68,7 +78,6 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
             </article>
           ))}
         </div>
-        <p className="muted">Replay library storage: {formatBytes(usageBytes)}.</p>
       </Panel>
     </main>
   );

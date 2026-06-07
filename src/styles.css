@@ -156,15 +156,27 @@ nav {
 .upload-page {
   display: grid;
   align-content: start;
-  gap: 20px;
+  gap: 16px;
 }
 
-.portfolio-hero {
+.upload-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1fr);
-  gap: 22px;
-  align-items: stretch;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(280px, 0.72fr);
+  gap: 16px;
+  align-items: start;
   width: min(1120px, 100%);
+}
+
+.upload-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid rgba(238, 246, 243, 0.12);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(157, 242, 208, 0.08), rgba(22, 118, 211, 0.06)),
+    rgba(238, 246, 243, 0.045);
 }
 
 .portfolio-hero > div:first-child {
@@ -187,19 +199,26 @@ nav {
   text-transform: uppercase;
 }
 
-.portfolio-hero h1 {
+.portfolio-hero h1,
+.upload-sidebar h1 {
   max-width: 720px;
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.9rem);
-  line-height: 1;
+  font-size: clamp(1.75rem, 3vw, 3rem);
+  line-height: 1.04;
 }
 
-.portfolio-hero p:not(.project-label) {
+.upload-sidebar h1 {
+  font-size: clamp(1.55rem, 2vw, 2.3rem);
+  line-height: 1.08;
+}
+
+.portfolio-hero p:not(.project-label),
+.upload-sidebar p:not(.project-label) {
   max-width: 620px;
-  margin: 16px 0 0;
+  margin: 0;
   color: #b7c9c5;
-  font-size: 1.04rem;
-  line-height: 1.6;
+  font-size: 0.98rem;
+  line-height: 1.52;
 }
 
 .capability-strip {
@@ -229,12 +248,13 @@ nav {
 }
 
 .dropzone {
-  min-height: 236px;
+  min-height: 274px;
   display: grid;
   place-items: center;
-  gap: 18px;
+  align-content: center;
+  gap: 14px;
   text-align: center;
-  padding: 32px;
+  padding: 24px;
   border: 1px dashed rgba(157, 242, 208, 0.42);
   border-radius: 8px;
   background: rgba(238, 246, 243, 0.05);
@@ -249,17 +269,33 @@ nav {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  width: min(1120px, 100%);
+  gap: 10px;
 }
 
 .sample-replay-action span {
   color: #a8bbb8;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.capability-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.capability-list span {
+  padding: 8px 10px;
+  border: 1px solid rgba(238, 246, 243, 0.1);
+  border-radius: 7px;
+  color: #d7e4e0;
+  background: rgba(7, 16, 20, 0.28);
+  font-size: 0.88rem;
 }
 
 .dropzone h2 {
   margin: 0 0 8px;
-  font-size: clamp(1.5rem, 2vw, 2.4rem);
+  font-size: clamp(1.35rem, 2vw, 2rem);
 }
 
 .dropzone p,
@@ -835,6 +871,16 @@ meter {
   max-width: 900px;
 }
 
+.library-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #a8bbb8;
+  font-size: 0.9rem;
+}
+
 .library-row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -860,6 +906,20 @@ meter {
   color: #a8bbb8;
   font-size: 0.9rem;
   overflow-wrap: anywhere;
+}
+
+.library-empty {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border: 1px dashed rgba(238, 246, 243, 0.16);
+  border-radius: 7px;
+  color: #a8bbb8;
+  background: rgba(7, 16, 20, 0.22);
+}
+
+.library-empty strong {
+  color: #eef6f3;
 }
 
 .debug-grid {
@@ -931,6 +991,7 @@ pre {
     padding: 18px;
   }
 
+  .upload-workspace,
   .portfolio-hero,
   .capability-strip {
     grid-template-columns: 1fr;
@@ -940,13 +1001,27 @@ pre {
     grid-template-columns: 1fr 1fr;
   }
 
+  .upload-sidebar,
   .portfolio-hero > div:first-child,
   .dropzone {
     min-height: auto;
   }
 
+  .upload-sidebar,
   .portfolio-hero > div:first-child {
-    padding: 22px;
+    padding: 18px;
+  }
+
+  .dropzone {
+    padding: 20px;
+  }
+
+  .library-row {
+    grid-template-columns: 1fr;
+  }
+
+  .library-row > .button {
+    justify-self: start;
   }
 
   .viewer {

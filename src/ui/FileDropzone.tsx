@@ -35,7 +35,7 @@ export function FileDropzone({ onFile }: { onFile: (file: File) => void }) {
       <Upload size={34} />
       <div>
         <h2>Select a replay file</h2>
-        <p>Choose or drag in a .replay file. It opens locally and stays on this device.</p>
+        <p>Choose or drag in a .replay file.</p>
       </div>
       <Button variant="primary" onClick={() => inputRef.current?.click()}>
         Choose replay
