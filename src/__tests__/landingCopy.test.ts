@@ -37,4 +37,16 @@ describe("landing page copy and favicon", () => {
     expect(html).toContain('/favicon.svg');
     expect(favicon).toContain("<svg");
   });
+
+  it("adds hover help to primary navigation and upload actions", () => {
+    const appSource = readFileSync(resolve(process.cwd(), "src/App.tsx"), "utf8");
+    const uploadSource = readFileSync(resolve(process.cwd(), "src/pages/UploadPage.tsx"), "utf8");
+    const dropzoneSource = readFileSync(resolve(process.cwd(), "src/ui/FileDropzone.tsx"), "utf8");
+
+    expect(appSource).toContain('tooltip="Upload or open a replay file"');
+    expect(appSource).toContain('tooltip="Open saved local replays"');
+    expect(appSource).toContain('tooltip="View the current replay"');
+    expect(uploadSource).toContain('tooltip="Open the bundled sample replay"');
+    expect(dropzoneSource).toContain('tooltip="Choose a .replay file from this device"');
+  });
 });

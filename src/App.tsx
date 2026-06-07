@@ -2,6 +2,7 @@ import { Activity, Bug, FolderOpen, Upload } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useReplayStore } from "./state/replayStore";
 import { Button } from "./ui/Button";
+import { TooltipBubble } from "./ui/Tooltip";
 import { ReplayLibraryPage } from "./pages/ReplayLibraryPage";
 import { UploadPage } from "./pages/UploadPage";
 
@@ -17,22 +18,38 @@ export function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <button className="brand" onClick={() => setPage("upload")}>
+        <button className="brand tooltip-target" onClick={() => setPage("upload")}>
           <Activity size={22} />
           <span>RL Replay Viewer</span>
+          <TooltipBubble>Return to replay upload</TooltipBubble>
         </button>
         <nav>
-          <Button variant={page === "upload" ? "primary" : "ghost"} icon={<Upload size={16} />} onClick={() => setPage("upload")}>
+          <Button
+            variant={page === "upload" ? "primary" : "ghost"}
+            icon={<Upload size={16} />}
+            tooltip="Upload or open a replay file"
+            onClick={() => setPage("upload")}
+          >
             Upload
           </Button>
-          <Button variant={page === "library" ? "primary" : "ghost"} icon={<FolderOpen size={16} />} onClick={() => setPage("library")}>
+          <Button
+            variant={page === "library" ? "primary" : "ghost"}
+            icon={<FolderOpen size={16} />}
+            tooltip="Open saved local replays"
+            onClick={() => setPage("library")}
+          >
             Library
           </Button>
-          <Button variant={page === "replay" ? "primary" : "ghost"} onClick={() => setPage("replay")}>
+          <Button variant={page === "replay" ? "primary" : "ghost"} tooltip="View the current replay" onClick={() => setPage("replay")}>
             Viewer
           </Button>
           {showDebugTools ? (
-            <Button variant={page === "debug" ? "primary" : "ghost"} icon={<Bug size={16} />} onClick={() => setPage("debug")}>
+            <Button
+              variant={page === "debug" ? "primary" : "ghost"}
+              icon={<Bug size={16} />}
+              tooltip="Inspect replay parser and boost rendering details"
+              onClick={() => setPage("debug")}
+            >
               Debug
             </Button>
           ) : null}

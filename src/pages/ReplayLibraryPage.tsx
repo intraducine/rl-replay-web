@@ -4,6 +4,7 @@ import { clearReplays, deleteReplay, listReplays, loadReplay, replayLibraryStora
 import { useReplayStore } from "../state/replayStore";
 import { Button } from "../ui/Button";
 import { Panel } from "../ui/Panel";
+import { TooltipBubble } from "../ui/Tooltip";
 
 export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }) {
   const [records, setRecords] = useState<StoredReplayRecord[]>([]);
@@ -36,6 +37,7 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
         actions={
           <Button
             variant="danger"
+            tooltip="Remove every saved replay from this browser"
             disabled={records.length === 0}
             onClick={async () => {
               await clearReplays();
@@ -61,17 +63,19 @@ export function ReplayLibraryPage({ onOpenReplay }: { onOpenReplay: () => void }
           ) : null}
           {records.map((record) => (
             <article key={record.id} className="library-row">
-              <button onClick={() => openReplay(record.id)}>
+              <button className="tooltip-target" onClick={() => openReplay(record.id)}>
                 <strong>{record.metadata.replayName ?? record.metadata.fileName}</strong>
                 <span>
                   {record.metadata.mapName ?? "Unknown map"} · {record.metadata.players.length} players ·{" "}
                   {new Date(record.updatedAt).toLocaleString()}
                 </span>
+                <TooltipBubble>Open this saved replay</TooltipBubble>
               </button>
               <Button
                 variant="ghost"
                 icon={<Trash2 size={16} />}
                 aria-label="Delete replay"
+                tooltip="Delete this saved replay"
                 onClick={async () => {
                   await deleteReplay(record.id);
                   if (timeline?.metadata.id === record.id) setTimeline(undefined);

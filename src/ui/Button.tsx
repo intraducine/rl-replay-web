@@ -1,15 +1,18 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { TooltipBubble } from "./Tooltip";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   icon?: ReactNode;
+  tooltip?: ReactNode;
 };
 
-export function Button({ className = "", variant = "secondary", icon, children, ...props }: ButtonProps) {
+export function Button({ className = "", variant = "secondary", icon, children, tooltip, ...props }: ButtonProps) {
   return (
-    <button className={`button button-${variant} ${className}`} {...props}>
+    <button className={`button button-${variant} ${tooltip ? "tooltip-target" : ""} ${className}`} {...props}>
       {icon}
       {children}
+      {tooltip ? <TooltipBubble>{tooltip}</TooltipBubble> : null}
     </button>
   );
 }

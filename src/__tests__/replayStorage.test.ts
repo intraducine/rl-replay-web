@@ -41,6 +41,8 @@ describe("ReplayStorage", () => {
     expect(source).toContain("used");
     expect(source).toContain("No saved replays");
     expect(source).toContain("Upload a replay or open the bundled sample");
+    expect(source).toContain('tooltip="Remove every saved replay from this browser"');
+    expect(source).toContain('tooltip="Delete this saved replay"');
   });
 
   it("clears the active replay when saved replay records are removed", () => {

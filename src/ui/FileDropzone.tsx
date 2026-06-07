@@ -37,7 +37,7 @@ export function FileDropzone({ onFile }: { onFile: (file: File) => void }) {
         <h2>Select a replay file</h2>
         <p>Choose or drag in a .replay file.</p>
       </div>
-      <Button variant="primary" onClick={() => inputRef.current?.click()}>
+      <Button variant="primary" tooltip="Choose a .replay file from this device" onClick={() => inputRef.current?.click()}>
         Choose replay
       </Button>
     </div>

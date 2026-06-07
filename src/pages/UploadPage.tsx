@@ -58,7 +58,7 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
             without sending the file anywhere.
           </p>
           <div className="sample-replay-action">
-            <Button variant="primary" onClick={loadSampleReplay} disabled={parsing}>
+            <Button variant="primary" tooltip="Open the bundled sample replay" onClick={loadSampleReplay} disabled={parsing}>
               Open sample replay
             </Button>
             <span>Try the viewer immediately with the bundled replay.</span>
