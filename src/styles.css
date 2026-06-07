@@ -114,6 +114,7 @@ nav {
   text-align: center;
   transform: translate(-50%, 4px);
   transition: opacity 120ms ease, transform 120ms ease;
+  visibility: hidden;
   white-space: normal;
 }
 
@@ -124,6 +125,7 @@ nav {
 .player-list button:focus-visible > .tooltip-bubble {
   opacity: 1;
   transform: translate(-50%, 0);
+  visibility: visible;
 }
 
 .button-primary {
