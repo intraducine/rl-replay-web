@@ -9,6 +9,8 @@ describe("playback clock contract", () => {
 
     expect(replayViewerSource).not.toContain("requestAnimationFrame(tick)");
     expect(sceneRootSource).toContain("lastPublishedPlaybackTime");
+    expect(sceneRootSource).toContain("PLAYBACK_UI_COMMIT_FPS = 30");
+    expect(sceneRootSource).toContain("1 / PLAYBACK_UI_COMMIT_FPS");
     expect(sceneRootSource).not.toContain("Math.abs(state.currentTime - playbackTime.current) > 0.35");
   });
 });

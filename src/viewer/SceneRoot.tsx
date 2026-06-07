@@ -33,7 +33,8 @@ import { setCarAlphaBoostActive, setCarSupersonicTrailVisible } from "./carAlpha
 import { carRenderPosition } from "./carPlacement";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 
-const PLAYBACK_UI_COMMIT_INTERVAL_SECONDS = 0.1;
+const PLAYBACK_UI_COMMIT_FPS = 30;
+const PLAYBACK_UI_COMMIT_INTERVAL_SECONDS = 1 / PLAYBACK_UI_COMMIT_FPS;
 const EXTERNAL_SEEK_EPSILON_SECONDS = 0.05;
 const FIELD_SHADOW_CATCHER_Y = 2;
 const PROJECTED_SHADOW_Y = FIELD_SHADOW_CATCHER_Y + 0.6;
