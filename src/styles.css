@@ -1061,7 +1061,7 @@ pre {
   }
 
   .viewer-top-left {
-    width: min(100%, 300px);
+    width: min(100%, 260px);
   }
 
   .viewer-control-panel {
