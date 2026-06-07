@@ -768,12 +768,14 @@ progress {
 
 .player-rank {
   width: fit-content;
+  max-width: 100%;
   padding: 3px 7px;
   border: 1px solid rgba(238, 246, 243, 0.1);
   border-radius: 5px;
   color: #a8bbb8;
   background: rgba(7, 16, 20, 0.34);
   font-size: 0.76rem;
+  overflow-wrap: anywhere;
 }
 
 .boost-meter-wrap {

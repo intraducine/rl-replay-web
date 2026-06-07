@@ -75,11 +75,22 @@ pub struct ReplayPlayer {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cosmetics: Option<ReplayPlayerCosmetics>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub rank: Option<ReplayPlayerRank>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ping: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub club_id: Option<String>,
+}
+
+#[derive(Debug, Default, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplayPlayerRank {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub skill_tier: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mmr: Option<i32>,
 }
 
 #[derive(Debug, Serialize, Clone)]

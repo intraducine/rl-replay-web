@@ -368,6 +368,7 @@ fn players_from_properties(properties: &BTreeMap<String, serde_json::Value>) -> 
                     demos: None,
                 }),
                 cosmetics: None,
+                rank: player_rank_from_properties(object),
                 ping: None,
                 title: None,
                 club_id: None,
@@ -574,6 +575,22 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         |player| {
                             player.ping = Some(*ping as i32);
                         },
+                    );
+                }
+                ("TAGame.PRI_TA:SkillTier", Attribute::Byte(value)) => {
+                    update_player_rank(
+                        &mut insights.players,
+                        &pri_to_player,
+                        updated.actor_id.0,
+                        |rank| rank.skill_tier = Some(*value as i32),
+                    );
+                }
+                ("TAGame.PRI_TA:SkillTier", Attribute::Int(value)) => {
+                    update_player_rank(
+                        &mut insights.players,
+                        &pri_to_player,
+                        updated.actor_id.0,
+                        |rank| rank.skill_tier = Some(*value),
                     );
                 }
                 ("TAGame.PRI_TA:MatchScore", Attribute::Int(value)) => {
@@ -931,6 +948,9 @@ fn merge_player_insights(players: &mut [ReplayPlayer], insights: HashMap<String,
         if insight.cosmetics.is_some() {
             player.cosmetics = insight.cosmetics.clone();
         }
+        if insight.rank.is_some() {
+            player.rank = insight.rank.clone();
+        }
         if let Some(next_stats) = &insight.stats {
             if let Some(stats) = &mut player.stats {
                 stats.score = next_stats.score.max(stats.score);
@@ -980,6 +1000,20 @@ fn update_player_stats<F>(
     });
 }
 
+fn update_player_rank<F>(
+    players: &mut HashMap<String, ReplayPlayer>,
+    pri_to_player: &HashMap<i32, String>,
+    pri_actor_id: i32,
+    update: F,
+) where
+    F: FnOnce(&mut ReplayPlayerRank),
+{
+    update_player(players, pri_to_player, pri_actor_id, |player| {
+        let rank = player.rank.get_or_insert_with(ReplayPlayerRank::default);
+        update(rank);
+    });
+}
+
 fn update_player_cosmetics<F>(
     players: &mut HashMap<String, ReplayPlayer>,
     pri_to_player: &HashMap<i32, String>,
@@ -1021,6 +1055,7 @@ where
         platform: None,
         stats: None,
         cosmetics: None,
+        rank: None,
         ping: None,
         title: None,
         club_id: None,
@@ -1127,6 +1162,26 @@ fn json_int(obj: &serde_json::Map<String, serde_json::Value>, key: &str) -> Opti
     obj.get(key)
         .and_then(|value| value.as_i64())
         .map(|value| value as i32)
+}
+
+fn player_rank_from_properties(
+    object: Option<&serde_json::Map<String, serde_json::Value>>,
+) -> Option<ReplayPlayerRank> {
+    let obj = object?;
+    let rank = ReplayPlayerRank {
+        skill_tier: json_int(obj, "SkillTier")
+            .or_else(|| json_int(obj, "Rank"))
+            .or_else(|| json_int(obj, "Tier")),
+        mmr: json_int(obj, "MMR")
+            .or_else(|| json_int(obj, "Mmr"))
+            .or_else(|| json_int(obj, "Elo"))
+            .or_else(|| json_int(obj, "Rating")),
+    };
+    if rank.skill_tier.is_some() || rank.mmr.is_some() {
+        Some(rank)
+    } else {
+        None
+    }
 }
 
 fn platform_value(value: &serde_json::Value) -> Option<&str> {

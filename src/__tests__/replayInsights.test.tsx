@@ -4,7 +4,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ReplayTimeline } from "../replay/types";
 import { MatchMetadataBar } from "../viewer/MatchMetadataBar";
-import { PlayerList } from "../viewer/PlayerList";
+import { formatPlayerRank, PlayerList } from "../viewer/PlayerList";
 import { clampSpeed, snapSpeedToStop, TimelineControls } from "../viewer/TimelineControls";
 import { livePlayerStatsAt } from "../viewer/playerStats";
 
@@ -73,8 +73,16 @@ describe("replay insights UI", () => {
     expect(container.textContent).not.toContain("616");
     expect(container.textContent).not.toContain("Paint");
     expect(container.textContent).not.toContain("ping");
-    expect(container.textContent).toContain("Rank/MMR unavailable");
+    expect(container.textContent).toContain("Rank not saved");
     expect(container.querySelector(".tooltip-bubble")).not.toBeNull();
+  });
+
+  it("formats saved rank and MMR when replay data includes them", () => {
+    expect(formatPlayerRank({ skillTier: 16, mmr: 1194 })).toEqual({
+      label: "Champion I / 1194 MMR",
+      tooltip: "Rank and MMR from replay metadata when the replay includes those fields."
+    });
+    expect(formatPlayerRank({ skillTier: 22 })).toMatchObject({ label: "Supersonic Legend" });
   });
 
   it("updates player box score from replay events at the current playback time", () => {

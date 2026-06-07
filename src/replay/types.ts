@@ -46,9 +46,15 @@ export type ReplayPlayer = {
   platform?: string;
   stats?: ReplayPlayerStats;
   cosmetics?: ReplayPlayerCosmetics;
+  rank?: ReplayPlayerRank;
   ping?: number;
   title?: string;
   clubId?: string;
+};
+
+export type ReplayPlayerRank = {
+  skillTier?: number;
+  mmr?: number;
 };
 
 export type ReplayPlayerStats = {

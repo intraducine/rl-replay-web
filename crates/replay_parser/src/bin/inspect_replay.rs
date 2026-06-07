@@ -20,6 +20,19 @@ fn main() {
     let print_links = std::env::var("PRINT_LINKS").is_ok();
     let print_boost = std::env::var("PRINT_BOOST").is_ok();
     let print_camera = std::env::var("PRINT_CAMERA").is_ok();
+    let print_rank = std::env::var("PRINT_RANK").is_ok();
+    let print_player_stats = std::env::var("PRINT_PLAYER_STATS").is_ok();
+
+    if print_player_stats {
+        if let Some(value) = replay
+            .properties
+            .iter()
+            .find(|(key, _)| key.as_str() == "PlayerStats")
+            .map(|(_, value)| value)
+        {
+            println!("{}", serde_json::to_string_pretty(value).expect("serialize PlayerStats"));
+        }
+    }
 
     if let Some(network) = &replay.network_frames {
         for frame in &network.frames {
@@ -78,6 +91,29 @@ fn main() {
                         || attr_name.to_ascii_lowercase().contains("boost")
                         || attr_name == "TAGame.CarComponent_TA:ReplicatedActive"
                         || attr_name == "TAGame.CarComponent_TA:ReplicatedActivityTime"
+                    {
+                        println!(
+                            "t={:.3} actor {} ({}) attr {} -> {:?}",
+                            frame.time, update.actor_id.0, actor_name, attr_name, update.attribute
+                        );
+                    }
+                }
+
+                if print_rank {
+                    let actor_name = actor_objects
+                        .get(&update.actor_id.0)
+                        .cloned()
+                        .unwrap_or_else(|| "unknown-actor".into());
+                    let attr_name = replay
+                        .objects
+                        .get(update.object_id.0 as usize)
+                        .cloned()
+                        .unwrap_or_else(|| format!("attr-{}", update.object_id.0));
+                    let lowered = attr_name.to_ascii_lowercase();
+                    if lowered.contains("skill")
+                        || lowered.contains("rank")
+                        || lowered.contains("mmr")
+                        || lowered.contains("tier")
                     {
                         println!(
                             "t={:.3} actor {} ({}) attr {} -> {:?}",
