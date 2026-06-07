@@ -80,7 +80,7 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
       ) : null}
       {error ? <div className="error-box">{error}</div> : null}
       {timeline ? (
-        <Panel title="Last parsed replay">
+        <Panel title="Last opened replay">
           <dl className="metadata-grid replay-summary-grid">
             <div>
               <dt>Name</dt>

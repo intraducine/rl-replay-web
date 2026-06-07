@@ -12,6 +12,8 @@ describe("landing page copy and favicon", () => {
     expect(source).toContain("capability-list");
     expect(source).not.toContain("Browser replay parsing");
     expect(source).not.toContain("Rust/WASM parser");
+    expect(source).not.toContain("Last parsed replay");
+    expect(source).toContain('title="Last opened replay"');
     expect(source).not.toContain('title="Parsing"');
     expect(source).toContain('title="Opening replay"');
   });
