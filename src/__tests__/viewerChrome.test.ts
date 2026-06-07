@@ -10,7 +10,7 @@ describe("viewer chrome layout", () => {
 
     expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr)");
     expect(css).toContain("width: clamp(280px, 36vw, 420px)");
-    expect(css).toContain("width: min(100%, 260px)");
+    expect(css).toContain("width: min(58vw, 260px)");
     expect(css).toContain("bottom: 190px");
     expect(css).toContain("overflow: hidden");
     expect(css).toContain(".player-list-scroll");
