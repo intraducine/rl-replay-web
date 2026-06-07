@@ -21,8 +21,11 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("box-shadow: inset 0 0 0 2px #9df2d0");
     expect(css).toContain(".tooltip-bubble");
     expect(css).toContain("visibility: hidden");
+    expect(css).toContain("min-width: 160px");
     expect(css).toContain(".tooltip-target:hover > .tooltip-bubble");
     expect(css).toContain("visibility: visible");
+    expect(css).toContain(".viewer-selectors .tooltip-bubble");
+    expect(css).toContain("top: calc(100% + 8px)");
   });
 
   it("uses compact scoreboard columns and aligned viewer controls", () => {

@@ -3,6 +3,7 @@ import { samplePlayerCameraState, sampleTimeline, timelineDuration } from "../re
 import type { ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { Select } from "../ui/Select";
+import { TooltipBubble } from "../ui/Tooltip";
 import { cameraModeOptions, type CameraMode } from "./SpectatorCamera";
 import { MatchMetadataBar } from "./MatchMetadataBar";
 import { PlayerList } from "./PlayerList";
@@ -57,15 +58,17 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
               label="Camera"
               value={cameraMode}
               options={cameraModeOptions}
+              tooltip="Choose how the replay camera follows the match"
               onChange={(event) => setCameraMode(event.currentTarget.value as CameraMode)}
             />
             <Select
               label="Player"
               value={selectedPlayerId ?? ""}
               options={timeline.metadata.players.map((player) => ({ value: player.id, label: player.name }))}
+              tooltip="Choose which player the player camera and controls follow"
               onChange={(event) => setSelectedPlayerId(event.currentTarget.value)}
             />
-            <label className="viewer-toggle">
+            <label className="viewer-toggle tooltip-target">
               <input
                 type="checkbox"
                 aria-label="Toggle boost rendering"
@@ -73,6 +76,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
                 onChange={(event) => setBoostRenderingEnabled(event.currentTarget.checked)}
               />
               Boost
+              <TooltipBubble>Show or hide rendered boost trails</TooltipBubble>
             </label>
           </div>
         </div>

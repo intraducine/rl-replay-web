@@ -130,6 +130,14 @@ describe("replay insights UI", () => {
     expect(source).not.toContain("<Select");
   });
 
+  it("explains the viewer selector controls with hover tooltips", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
+
+    expect(source).toContain("Choose how the replay camera follows the match");
+    expect(source).toContain("Choose which player the player camera and controls follow");
+    expect(source).toContain("Show or hide rendered boost trails");
+  });
+
   it("snaps slider speed to sticky stops while clamping typed values", () => {
     expect(snapSpeedToStop(0.3)).toBe(0.25);
     expect(snapSpeedToStop(0.74)).toBe(0.5);

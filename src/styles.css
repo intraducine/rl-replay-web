@@ -99,6 +99,8 @@ nav {
   z-index: 20;
   left: 50%;
   bottom: calc(100% + 8px);
+  width: max-content;
+  min-width: 160px;
   max-width: min(260px, 72vw);
   padding: 6px 8px;
   border: 1px solid rgba(238, 246, 243, 0.16);
@@ -116,6 +118,11 @@ nav {
   transition: opacity 120ms ease, transform 120ms ease;
   visibility: hidden;
   white-space: normal;
+}
+
+.viewer-selectors .tooltip-bubble {
+  top: calc(100% + 8px);
+  bottom: auto;
 }
 
 .tooltip-target:hover > .tooltip-bubble,

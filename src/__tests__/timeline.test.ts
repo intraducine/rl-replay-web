@@ -119,6 +119,20 @@ describe("sampleTimeline", () => {
     expect(sample.cars.p1.boost).toBeCloseTo(70);
   });
 
+  it("smoothly interpolates boost amount when only boost changes between samples", () => {
+    const boostOnlyTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 100 } } },
+        { t: 1, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 40 } } }
+      ]
+    };
+
+    expect(sampleTimeline(boostOnlyTimeline, 0.25).cars.p1.boost).toBeCloseTo(85);
+    expect(sampleTimeline(boostOnlyTimeline, 0.5).cars.p1.boost).toBeCloseTo(70);
+    expect(sampleTimeline(boostOnlyTimeline, 0.75).cars.p1.boost).toBeCloseTo(55);
+  });
+
   it("removes demolished cars until their respawn frame is available", () => {
     const demoTimeline: ReplayTimeline = {
       ...timeline,
