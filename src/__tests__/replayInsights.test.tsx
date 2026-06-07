@@ -107,6 +107,14 @@ describe("replay insights UI", () => {
     expect(container.querySelector(".event-demo")).not.toBeNull();
   });
 
+  it("explains the primary desktop play button with a hover tooltip", () => {
+    const { container } = render(<TimelineControls events={timeline.events} />);
+
+    const tooltip = container.querySelector(".transport-controls .button-primary .tooltip-bubble");
+
+    expect(tooltip?.textContent).toBe("Play or pause replay");
+  });
+
   it("supports keyboard scrubbing from the timeline controls", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
 

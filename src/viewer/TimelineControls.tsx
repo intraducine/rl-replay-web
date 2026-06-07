@@ -56,8 +56,14 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
           >
             <TooltipBubble>Previous frame</TooltipBubble>
           </Button>
-          <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)}>
+          <Button
+            variant="primary"
+            icon={playing ? <Pause size={16} /> : <Play size={16} />}
+            onClick={() => setPlaying(!playing)}
+            className="tooltip-target"
+          >
             {playing ? "Pause" : "Play"}
+            <TooltipBubble>Play or pause replay</TooltipBubble>
           </Button>
           <Button
             icon={<StepForward size={16} />}
