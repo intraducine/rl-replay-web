@@ -28,14 +28,16 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
           onChange={(event) => setCurrentTime(Number(event.currentTarget.value))}
         />
         <div className="event-track" aria-label="Replay event markers">
-          <span style={{ width: `${percent}%` }} />
+          <span className="event-track-progress" style={{ width: `${percent}%` }} />
           {events.map((event, index) => (
             <i
               key={`${event.type}-${event.t}-${index}`}
-              className={`event-${event.type}`}
+              className={`event-${event.type} tooltip-target`}
               style={{ left: `${(event.t / Math.max(duration, 1)) * 100}%` }}
-              title={eventLabel(event)}
-            />
+              aria-label={eventLabel(event)}
+            >
+              <TooltipBubble>{eventLabel(event)}</TooltipBubble>
+            </i>
           ))}
         </div>
       </div>

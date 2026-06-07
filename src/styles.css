@@ -718,14 +718,14 @@ progress {
   background: rgba(238, 246, 243, 0.1);
 }
 
-.event-track span,
+.event-track-progress,
 .event-track i {
   position: absolute;
   top: 0;
   bottom: 0;
 }
 
-.event-track span {
+.event-track-progress {
   left: 0;
   border-radius: inherit;
   background: rgba(157, 242, 208, 0.42);

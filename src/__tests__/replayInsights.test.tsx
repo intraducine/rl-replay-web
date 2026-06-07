@@ -105,6 +105,7 @@ describe("replay insights UI", () => {
     expect(container.querySelector(".event-goal")).not.toBeNull();
     expect(container.querySelector(".event-save")).not.toBeNull();
     expect(container.querySelector(".event-demo")).not.toBeNull();
+    expect(container.querySelector(".event-track .event-goal .tooltip-bubble")?.textContent).toBe("goal");
   });
 
   it("explains the primary desktop play button with a hover tooltip", () => {
