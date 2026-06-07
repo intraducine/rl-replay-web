@@ -27,7 +27,7 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
           value={currentTime}
           onChange={(event) => setCurrentTime(Number(event.currentTarget.value))}
         />
-        <div className="event-track">
+        <div className="event-track" aria-label="Replay event markers">
           <span style={{ width: `${percent}%` }} />
           {events.map((event, index) => (
             <i

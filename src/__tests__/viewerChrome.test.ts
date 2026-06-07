@@ -39,6 +39,8 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".speed-input");
     expect(css).toContain(".mobile-transport-controls");
     expect(css).toContain("display: none");
+    expect(css).toContain(".timeline-shell .slider input");
+    expect(css).toContain("margin: -2px 0 0");
   });
 
   it("docks development coordinate controls instead of floating them over the field", () => {

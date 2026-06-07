@@ -101,6 +101,7 @@ describe("replay insights UI", () => {
   it("renders typed event markers for goals, saves, and demos", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 
+    expect(container.querySelector('.event-track[aria-label="Replay event markers"]')).not.toBeNull();
     expect(container.querySelector(".event-goal")).not.toBeNull();
     expect(container.querySelector(".event-save")).not.toBeNull();
     expect(container.querySelector(".event-demo")).not.toBeNull();
