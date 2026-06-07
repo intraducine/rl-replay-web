@@ -116,6 +116,9 @@ describe("replay insights UI", () => {
     expect(source).toContain('event.code === "Space"');
     expect(source).toContain("event.preventDefault()");
     expect(source).toContain("Space Play/Pause");
+    expect(source).toContain("WASD Move");
+    expect(source).toContain("Q/E Down/Up");
+    expect(source).toContain("Mouse Drag Orbit");
     expect(source).toContain("TooltipBubble");
   });
 

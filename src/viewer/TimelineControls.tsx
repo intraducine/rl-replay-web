@@ -140,6 +140,18 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
           Shift + ←/→ 1s
           <TooltipBubble>Hold Shift with Left or Right to scrub one second</TooltipBubble>
         </span>
+        <span className="tooltip-target">
+          WASD Move
+          <TooltipBubble>Move the free camera across the field</TooltipBubble>
+        </span>
+        <span className="tooltip-target">
+          Q/E Down/Up
+          <TooltipBubble>Move the free camera vertically</TooltipBubble>
+        </span>
+        <span className="tooltip-target">
+          Mouse Drag Orbit
+          <TooltipBubble>Drag in free camera to look around</TooltipBubble>
+        </span>
       </div>
     </div>
   );
