@@ -1082,7 +1082,39 @@ pre {
   }
 
   .viewer-top-left {
-    width: min(58vw, 260px);
+    width: min(52vw, 220px);
+  }
+
+  .viewer-top-left .match-metadata-bar {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .viewer-top-left .match-metadata-bar span {
+    padding: 2px 6px;
+    font-size: 0.72rem;
+  }
+
+  .viewer-top-left .player-list {
+    gap: 6px;
+  }
+
+  .viewer-top-left .player-list button {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .viewer-top-left .player-stats {
+    gap: 4px;
+  }
+
+  .viewer-top-left .player-stats span {
+    padding: 3px 6px;
+    font-size: 0.72rem;
+  }
+
+  .viewer-top-left .player-rank {
+    font-size: 0.7rem;
   }
 
   .viewer-control-panel {
