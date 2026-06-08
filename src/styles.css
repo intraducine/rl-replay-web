@@ -264,7 +264,7 @@ nav {
 }
 
 .dropzone {
-  min-height: 274px;
+  min-height: 220px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -366,7 +366,12 @@ nav {
 }
 
 .replay-summary-grid {
-  grid-template-columns: minmax(180px, 2fr) repeat(3, minmax(96px, 1fr));
+  grid-template-columns: minmax(min(100%, 220px), max-content) repeat(3, minmax(88px, max-content));
+  justify-content: start;
+}
+
+.replay-summary-grid div:first-child {
+  max-width: min(420px, 100%);
 }
 
 .progress-row {
