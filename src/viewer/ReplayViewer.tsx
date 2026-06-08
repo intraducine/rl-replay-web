@@ -11,6 +11,17 @@ import { SceneRoot } from "./SceneRoot";
 import { Scoreboard } from "./Scoreboard";
 import { TimelineControls } from "./TimelineControls";
 
+const coordinateDebugOptions = [
+  ["swapYZ", "Swap Y/Z", "Swap Rocket League Y and Z axes before rendering"],
+  ["invertX", "Flip X", "Flip rendered X positions"],
+  ["invertY", "Flip Y", "Flip rendered Y positions"],
+  ["invertZ", "Flip Z", "Flip rendered Z positions"],
+  ["invertQuatX", "Quat X", "Flip car and ball quaternion X values"],
+  ["invertQuatY", "Quat Y", "Flip car and ball quaternion Y values"],
+  ["invertQuatZ", "Quat Z", "Flip car and ball quaternion Z values"],
+  ["invertQuatW", "Quat W", "Flip car and ball quaternion W values"]
+] as const;
+
 export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const setDuration = useViewerStore((state) => state.setDuration);
   const setCurrentTime = useViewerStore((state) => state.setCurrentTime);
@@ -84,24 +95,19 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       {showDebugControls ? (
         <div className="viewer-overlay debug">
           <details>
-            <summary>Coordinates</summary>
-            {[
-              ["swapYZ", "Swap Y/Z"],
-              ["invertX", "Flip X"],
-              ["invertY", "Flip Y"],
-              ["invertZ", "Flip Z"],
-              ["invertQuatX", "Quat X"],
-              ["invertQuatY", "Quat Y"],
-              ["invertQuatZ", "Quat Z"],
-              ["invertQuatW", "Quat W"]
-            ].map(([key, label]) => (
-              <label key={key}>
+            <summary className="tooltip-target">
+              Coordinates
+              <TooltipBubble>Coordinate transform debugging options</TooltipBubble>
+            </summary>
+            {coordinateDebugOptions.map(([key, label, tooltip]) => (
+              <label key={key} className="tooltip-target">
                 <input
                   type="checkbox"
                   checked={Boolean(coordinateOptions[key as keyof typeof coordinateOptions])}
                   onChange={(event) => setCoordinateOption(key as keyof typeof coordinateOptions, event.currentTarget.checked)}
                 />
                 {label}
+                <TooltipBubble>{tooltip}</TooltipBubble>
               </label>
             ))}
           </details>

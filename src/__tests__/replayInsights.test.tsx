@@ -175,6 +175,16 @@ describe("replay insights UI", () => {
     expect(source).toContain("Show or hide rendered boost trails");
   });
 
+  it("explains development coordinate toggles with hover tooltips", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
+
+    expect(source).toContain("Coordinate transform debugging options");
+    expect(source).toContain("Swap Rocket League Y and Z axes before rendering");
+    expect(source).toContain("Flip rendered X positions");
+    expect(source).toContain("Flip car and ball quaternion W values");
+    expect(source).toContain('className="tooltip-target"');
+  });
+
   it("snaps slider speed to sticky stops while clamping typed values", () => {
     expect(snapSpeedToStop(0.3)).toBe(0.25);
     expect(snapSpeedToStop(0.74)).toBe(0.5);
