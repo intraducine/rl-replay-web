@@ -62,6 +62,23 @@ describe("replay insights UI", () => {
     expect(container.textContent).toContain("4:30 played");
   });
 
+  it("explains compact match metadata pills with hover tooltips", () => {
+    const { container } = render(<MatchMetadataBar timeline={timeline} />);
+
+    const tooltipTexts = [...container.querySelectorAll(".match-metadata-bar .tooltip-bubble")].map((node) => node.textContent);
+
+    expect(tooltipTexts).toEqual([
+      "Replay name",
+      "Match type",
+      "Team size",
+      "Rocket League playlist id",
+      "Server region",
+      "Match ended by forfeit",
+      "In-game time played",
+      "Replay save date"
+    ]);
+  });
+
   it("renders live player stats without misleading score, paint, or static ping", () => {
     const { container } = render(<PlayerList timeline={timeline} />);
 
