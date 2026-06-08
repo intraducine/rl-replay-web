@@ -99,8 +99,9 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
             </datalist>
             <span className="speed-stops" aria-label="Speed stops">
               {SPEED_STOPS.map((value) => (
-                <button key={value} type="button" onClick={() => setSpeed(value)} aria-label={`Set speed to ${value}x`}>
+                <button key={value} type="button" className="tooltip-target" onClick={() => setSpeed(value)} aria-label={`Set speed to ${value}x`}>
                   {value}x
+                  <TooltipBubble>Set playback speed to {value}x</TooltipBubble>
                 </button>
               ))}
             </span>

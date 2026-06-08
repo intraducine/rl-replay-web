@@ -142,6 +142,14 @@ describe("replay insights UI", () => {
     expect(source).not.toContain("<Select");
   });
 
+  it("explains each sticky speed stop with a hover tooltip", () => {
+    const { container } = render(<TimelineControls events={timeline.events} />);
+
+    const stopTooltips = [...container.querySelectorAll(".speed-stops .tooltip-bubble")].map((node) => node.textContent);
+
+    expect(stopTooltips).toEqual(["Set playback speed to 0.25x", "Set playback speed to 0.5x", "Set playback speed to 1x", "Set playback speed to 2x", "Set playback speed to 4x"]);
+  });
+
   it("explains the viewer selector controls with hover tooltips", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
