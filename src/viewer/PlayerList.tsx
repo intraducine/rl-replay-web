@@ -70,16 +70,16 @@ export function formatPlayerRank(rank: ReplayPlayerRank | undefined): { label: s
   if (!rank || (rank.skillTier === undefined && rank.mmr === undefined)) {
     return {
       label: "Rank not saved",
-      tooltip: "This replay does not include a saved rank or MMR value for this player."
+      tooltip: "This replay does not include a saved rank or Elo/MMR value for this player."
     };
   }
 
   const tier = rank.skillTier === undefined ? undefined : skillTierName(rank.skillTier);
-  const mmr = rank.mmr === undefined ? undefined : `${rank.mmr} MMR`;
-  const label = [tier, mmr].filter(Boolean).join(" / ");
+  const elo = rank.mmr === undefined ? undefined : `${rank.mmr} Elo`;
+  const label = [tier, elo].filter(Boolean).join(" / ");
   return {
     label,
-    tooltip: "Rank and MMR from replay metadata when the replay includes those fields."
+    tooltip: "Rank and Elo/MMR from replay metadata when the replay includes those fields."
   };
 }
 

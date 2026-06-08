@@ -77,10 +77,10 @@ describe("replay insights UI", () => {
     expect(container.querySelector(".tooltip-bubble")).not.toBeNull();
   });
 
-  it("formats saved rank and MMR when replay data includes them", () => {
+  it("formats saved rank and Elo when replay data includes them", () => {
     expect(formatPlayerRank({ skillTier: 16, mmr: 1194 })).toEqual({
-      label: "Champion I / 1194 MMR",
-      tooltip: "Rank and MMR from replay metadata when the replay includes those fields."
+      label: "Champion I / 1194 Elo",
+      tooltip: "Rank and Elo/MMR from replay metadata when the replay includes those fields."
     });
     expect(formatPlayerRank({ skillTier: 22 })).toMatchObject({ label: "Supersonic Legend" });
   });
