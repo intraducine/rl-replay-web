@@ -24,6 +24,8 @@ type ScoreboardIndex = {
   goals: GoalEvent[];
   blueGoals: GoalEvent[];
   orangeGoals: GoalEvent[];
+  blueFinalScore: number;
+  orangeFinalScore: number;
   clockSamples: ReplayClockSample[];
   hasMatchClockSamples: boolean;
   overtimeStart?: ReplayClockSample;
@@ -34,12 +36,10 @@ const scoreboardIndexCache = new WeakMap<ReplayTimeline, ScoreboardIndex>();
 
 export function scoreboardStateAt(timeline: ReplayTimeline, currentTime: number): ScoreboardState {
   const index = scoreboardIndexForTimeline(timeline);
-  const blueFinalScore = teamFinalScore(timeline, 0);
-  const orangeFinalScore = teamFinalScore(timeline, 1);
 
   return {
-    blueScore: Math.min(scoreFromGoals(index.blueGoals, currentTime), blueFinalScore),
-    orangeScore: Math.min(scoreFromGoals(index.orangeGoals, currentTime), orangeFinalScore),
+    blueScore: Math.min(scoreFromGoals(index.blueGoals, currentTime), index.blueFinalScore),
+    orangeScore: Math.min(scoreFromGoals(index.orangeGoals, currentTime), index.orangeFinalScore),
     ...clockStateAt(timeline, currentTime, index)
   };
 }
@@ -191,14 +191,25 @@ function scoreboardIndexForTimeline(timeline: ReplayTimeline): ScoreboardIndex {
   const cached = scoreboardIndexCache.get(timeline);
   if (cached) return cached;
 
-  const goals = timeline.events
-    .filter((event): event is GoalEvent => event.type === "goal")
-    .sort((a, b) => a.t - b.t);
+  const goals: GoalEvent[] = [];
+  const blueGoals: GoalEvent[] = [];
+  const orangeGoals: GoalEvent[] = [];
+  for (const event of timeline.events) {
+    if (event.type !== "goal") continue;
+    goals.push(event);
+    if (event.team === 0) blueGoals.push(event);
+    else orangeGoals.push(event);
+  }
+  goals.sort((a, b) => a.t - b.t);
+  blueGoals.sort((a, b) => a.t - b.t);
+  orangeGoals.sort((a, b) => a.t - b.t);
   const clockSamples = [...(timeline.clock ?? [])].sort((a, b) => a.t - b.t);
   const index: ScoreboardIndex = {
     goals,
-    blueGoals: goals.filter((event) => event.team === 0),
-    orangeGoals: goals.filter((event) => event.team === 1),
+    blueGoals,
+    orangeGoals,
+    blueFinalScore: teamFinalScore(timeline, 0),
+    orangeFinalScore: teamFinalScore(timeline, 1),
     clockSamples,
     hasMatchClockSamples: hasMatchClockSamples(clockSamples),
     overtimeStart: clockSamples.find((sample) => sample.overtime === true || (sample.secondsRemaining ?? DEFAULT_MATCH_LENGTH_SECONDS) < 0),
@@ -210,12 +221,21 @@ function scoreboardIndexForTimeline(timeline: ReplayTimeline): ScoreboardIndex {
 }
 
 function kickoffSegmentsForTimeline(timeline: ReplayTimeline, goals: GoalEvent[]): KickoffSegment[] {
-  const kickoffStarts = [0, ...goals.map((goal) => goal.t)];
-  return kickoffStarts.map((start, index) => ({
+  const segments: KickoffSegment[] = [];
+  let start = 0;
+  for (const goal of goals) {
+    segments.push({
+      start,
+      resume: kickoffResumeTime(timeline, start),
+      end: goal.t
+    });
+    start = goal.t;
+  }
+  segments.push({
     start,
-    resume: kickoffResumeTime(timeline, start),
-    end: goals[index]?.t
-  }));
+    resume: kickoffResumeTime(timeline, start)
+  });
+  return segments;
 }
 
 function formatClock(seconds: number) {

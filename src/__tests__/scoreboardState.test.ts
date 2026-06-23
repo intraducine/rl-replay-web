@@ -48,6 +48,11 @@ describe("scoreboardStateAt", () => {
     expect(source).toContain("function latestClockSampleAt");
     expect(source).toContain("kickoffSegmentsForTimeline");
     expect(source).not.toContain("goals.filter((goal) => goal.t <= currentTime).length");
+    expect(source).toContain("blueFinalScore");
+    expect(source).toContain("orangeFinalScore");
+    expect(source).not.toContain("blueGoals: goals.filter");
+    expect(source).not.toContain("orangeGoals: goals.filter");
+    expect(source).not.toContain("const kickoffStarts = [0, ...goals.map");
   });
 
   it("counts goals only after they happen", () => {
