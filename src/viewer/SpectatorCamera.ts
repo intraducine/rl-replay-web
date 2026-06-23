@@ -40,6 +40,15 @@ const WORLD_UP = new Vector3(0, 1, 0);
 const FALLBACK_BALL = new Vector3(0, 120, 0);
 const TMP_FORWARD = new Vector3();
 const TMP_BALL_DIRECTION = new Vector3();
+const TMP_CAR_POSITION = new Vector3();
+const TMP_BALL_POSITION = new Vector3();
+const TMP_CAMERA_DIRECTION = new Vector3();
+const TMP_CAMERA_POSITION = new Vector3();
+const TMP_CAMERA_TARGET = new Vector3();
+const TMP_NEAREST_BALL_POSITION = new Vector3();
+const TMP_NEAREST_CAR_POSITION = new Vector3();
+const PLAYER_CAMERA_HEIGHT_OFFSET = new Vector3(0, DEFAULT_CAMERA_SETTINGS.height, 0);
+const PLAYER_CAMERA_TARGET_HEIGHT_OFFSET = new Vector3(0, PLAYER_CAMERA_TARGET_HEIGHT, 0);
 
 export function cameraRigForMode(
   mode: CameraMode,
@@ -63,20 +72,24 @@ export function cameraRigForMode(
   }
 
   if ((mode === "player" || mode === "director") && selectedCar) {
-    const carPosition = new Vector3().fromArray(selectedCar.position);
+    const carPosition = TMP_CAR_POSITION.fromArray(selectedCar.position);
     const forward = forwardVectorFromCar(selectedCar.rotation);
     const settings = { ...DEFAULT_CAMERA_SETTINGS, ...playerCameraState?.settings };
     const usingBehindView = playerCameraState?.usingBehindView === true;
     const usingBallCam = !usingBehindView && (playerCameraState ? playerCameraState.usingSecondaryCamera === true : true) && !!sample.ball;
-    const lookDirection = playerCameraLookDirection(usingBallCam, carPosition, forward, sample.ball ? new Vector3().fromArray(ball) : FALLBACK_BALL);
-    const cameraDirection = usingBehindView ? forward.clone().negate() : lookDirection;
-    const cameraPosition = carPosition.clone().addScaledVector(cameraDirection, -settings.distance).add(new Vector3(0, settings.height, 0));
+    const ballPosition = sample.ball ? TMP_BALL_POSITION.fromArray(ball) : FALLBACK_BALL;
+    const lookDirection = playerCameraLookDirection(usingBallCam, carPosition, forward, ballPosition);
+    const cameraDirection = usingBehindView ? TMP_CAMERA_DIRECTION.copy(forward).negate() : TMP_CAMERA_DIRECTION.copy(lookDirection);
+    const cameraPosition = TMP_CAMERA_POSITION
+      .copy(carPosition)
+      .addScaledVector(cameraDirection, -settings.distance)
+      .add(PLAYER_CAMERA_HEIGHT_OFFSET.setY(settings.height));
     const target = usingBallCam
-      ? new Vector3().fromArray(ball)
-      : carPosition
-          .clone()
-          .addScaledVector(usingBehindView ? forward.clone().negate() : forward, PLAYER_CAMERA_LOOK_AHEAD)
-          .add(new Vector3(0, PLAYER_CAMERA_TARGET_HEIGHT, 0));
+      ? TMP_CAMERA_TARGET.copy(ballPosition)
+      : TMP_CAMERA_TARGET
+          .copy(carPosition)
+          .addScaledVector(usingBehindView ? TMP_CAMERA_DIRECTION.copy(forward).negate() : forward, PLAYER_CAMERA_LOOK_AHEAD)
+          .add(PLAYER_CAMERA_TARGET_HEIGHT_OFFSET);
 
     return {
       position: vectorToTuple(cameraPosition),
@@ -108,12 +121,12 @@ export function directorTargetPlayerId(sample: SampledReplayState, events: Repla
   if (eventPlayerId && sample.cars[eventPlayerId]) return eventPlayerId;
 
   if (!sample.ball) return Object.keys(sample.cars)[0];
-  const ball = new Vector3().fromArray(sample.ball.position);
+  const ball = TMP_NEAREST_BALL_POSITION.fromArray(sample.ball.position);
   let bestId: string | undefined;
   let bestDistance = Number.POSITIVE_INFINITY;
 
   for (const [id, car] of Object.entries(sample.cars)) {
-    const distance = new Vector3().fromArray(car.position).distanceToSquared(ball);
+    const distance = TMP_NEAREST_CAR_POSITION.fromArray(car.position).distanceToSquared(ball);
     if (distance < bestDistance) {
       bestDistance = distance;
       bestId = id;
@@ -150,17 +163,17 @@ function forwardVectorFromCar(rotation: [number, number, number, number]) {
   const quaternion = new Quaternion(rotation[0], rotation[1], rotation[2], rotation[3]);
   const forward = TMP_FORWARD.set(1, 0, 0).applyQuaternion(quaternion);
   forward.y = 0;
-  if (forward.lengthSq() < 0.0001) return new Vector3(1, 0, 0);
-  return forward.normalize().clone();
+  if (forward.lengthSq() < 0.0001) return TMP_FORWARD.set(1, 0, 0);
+  return forward.normalize();
 }
 
 function playerCameraLookDirection(usingBallCam: boolean, carPosition: Vector3, forward: Vector3, ballPosition: Vector3) {
-  if (!usingBallCam) return forward.clone();
+  if (!usingBallCam) return forward;
 
   TMP_BALL_DIRECTION.copy(ballPosition).sub(carPosition);
   TMP_BALL_DIRECTION.y = 0;
-  if (TMP_BALL_DIRECTION.lengthSq() < 0.0001) return forward.clone();
-  return TMP_BALL_DIRECTION.normalize().clone();
+  if (TMP_BALL_DIRECTION.lengthSq() < 0.0001) return forward;
+  return TMP_BALL_DIRECTION.normalize();
 }
 
 function vectorToTuple(vector: Vector3): [number, number, number] {

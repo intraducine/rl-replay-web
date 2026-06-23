@@ -119,6 +119,18 @@ describe("cameraRigForMode", () => {
     expect(sceneRootSource).toContain("cameraRigMode,\n      sample,\n      cameraPlayerId,");
   });
 
+  it("reuses scratch vectors on the player camera hot path", () => {
+    const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
+
+    expect(cameraSource).toContain("const TMP_CAR_POSITION = new Vector3()");
+    expect(cameraSource).toContain("const TMP_CAMERA_POSITION = new Vector3()");
+    expect(cameraSource).toContain("const TMP_NEAREST_CAR_POSITION = new Vector3()");
+    expect(cameraSource).toContain("TMP_CAR_POSITION.fromArray(selectedCar.position)");
+    expect(cameraSource).toContain("TMP_NEAREST_CAR_POSITION.fromArray(car.position).distanceToSquared(ball)");
+    expect(cameraSource).not.toContain("const carPosition = new Vector3().fromArray(selectedCar.position)");
+    expect(cameraSource).not.toContain("new Vector3().fromArray(car.position).distanceToSquared(ball)");
+  });
+
   it("uses top-down camera up vector that keeps the field oriented", () => {
     const rig = cameraRigForMode("top-down", { t: 0, cars: {} });
     expect(rig.position).toEqual([0, 9300, 0]);
