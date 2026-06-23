@@ -220,14 +220,17 @@ describe("Alpha boost render contract", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
 
     expect(carSource).toContain("ALPHA_BOOST_MAIN_BODY_POSITION");
+    expect(carSource).toContain("const ALPHA_MAIN_SPAWN_BIRTH_OFFSETS = sourceCascadeSpawnOffsets(");
     expect(carSource).toContain("const ALPHA_RENDERED_MAIN_PARTICLES = sourceCascadeSpawnAccumulatorActiveParticles(");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.main.spawnRate");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.main.lifetimeSeconds");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.main.emitterDurationSeconds");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.main.peakActiveParticles");
     expect(carSource).toContain("sourceCascadeSpawnAccumulatorActiveParticles(");
-    expect(carSource).toContain("sourceCascadeSpawnBirthOffset(particleIndex, ALPHA_BOOST_CASCADE.main.spawnRate, ALPHA_BOOST_CASCADE.main.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds)");
-    expect(carSource).toContain("sourceParticleAge(t, sourceCascadeSpawnBirthOffset(particleIndex, ALPHA_BOOST_CASCADE.main.spawnRate, ALPHA_BOOST_CASCADE.main.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds), ALPHA_BOOST_CASCADE.main.lifetimeSeconds)");
+    expect(carSource).toContain("sourceCascadeSpawnBirthOffset(particleIndex, ALPHA_MAIN_SPAWN_BIRTH_OFFSETS)");
+    expect(carSource).toContain("sourceParticleAge(");
+    expect(carSource).toContain("sourceCascadeSpawnBirthOffsetFromParameters(particleIndex, spawnRate, lifetimeSeconds, updateStepSeconds)");
+    expect(carSource).not.toContain("sourceCascadeSpawnBirthOffset(particleIndex, ALPHA_BOOST_CASCADE.main.spawnRate, ALPHA_BOOST_CASCADE.main.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds)");
     expect(carSource).toContain("return positiveModulo(time - birthOffset, lifetimeSeconds)");
     expect(carSource).toContain("spawnFraction += spawnRate * sourceUpdateStep");
     expect(carSource).toContain("Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }");

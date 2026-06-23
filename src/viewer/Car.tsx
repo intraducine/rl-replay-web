@@ -44,12 +44,15 @@ const ALPHA_BOOST_ATTACHMENT_POSITIONS = ALPHA_BOOST_CASCADE.boostMesh.sourceAtt
 const ALPHA_LENS_FLARE_POSITION = sourceAveragePosition(ALPHA_BOOST_ATTACHMENT_POSITIONS);
 const ALPHA_BOOST_MAIN_BODY_POSITION = ALPHA_LENS_FLARE_POSITION;
 const ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST = ALPHA_BOOST_CASCADE.flame.peakActiveParticles;
-const ALPHA_RENDERED_MAIN_PARTICLES = sourceCascadeSpawnAccumulatorActiveParticles(
+const ALPHA_MAIN_SPAWN_BIRTH_OFFSETS = sourceCascadeSpawnOffsets(
   ALPHA_BOOST_CASCADE.main.spawnRate,
+  sourceEmitterSimulationWindow(ALPHA_BOOST_CASCADE.main.lifetimeSeconds, ALPHA_BOOST_CASCADE.main.emitterDurationSeconds),
+  ALPHA_BOOST_CASCADE.updateStepSeconds
+);
+const ALPHA_RENDERED_MAIN_PARTICLES = sourceCascadeSpawnAccumulatorActiveParticles(
+  ALPHA_MAIN_SPAWN_BIRTH_OFFSETS,
   ALPHA_BOOST_CASCADE.main.lifetimeSeconds,
-  ALPHA_BOOST_CASCADE.main.peakActiveParticles,
-  ALPHA_BOOST_CASCADE.updateStepSeconds,
-  ALPHA_BOOST_CASCADE.main.emitterDurationSeconds
+  ALPHA_BOOST_CASCADE.main.peakActiveParticles
 );
 const ALPHA_FLAME_DENSITY_OPACITY = 1;
 const ALPHA_BOOST_MESH_FADE_IN_DURATION = sourceTimeRangeDuration(ALPHA_BOOST_CASCADE.boostMesh.fadeInTime);
@@ -307,7 +310,11 @@ function AlphaBoost() {
       particle.visible = alphaBoostComponentEnabled("main") && particleVisibility > 0;
       if (!particle.visible) continue;
       const origin = ALPHA_BOOST_MAIN_BODY_POSITION;
-      const particleClock = sourceParticleAge(t, sourceCascadeSpawnBirthOffset(particleIndex, ALPHA_BOOST_CASCADE.main.spawnRate, ALPHA_BOOST_CASCADE.main.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds), ALPHA_BOOST_CASCADE.main.lifetimeSeconds);
+      const particleClock = sourceParticleAge(
+        t,
+        sourceCascadeSpawnBirthOffset(particleIndex, ALPHA_MAIN_SPAWN_BIRTH_OFFSETS),
+        ALPHA_BOOST_CASCADE.main.lifetimeSeconds
+      );
       const phase = particleClock / ALPHA_BOOST_CASCADE.main.lifetimeSeconds;
       const age = phase * ALPHA_BOOST_CASCADE.main.lifetimeSeconds;
       const velocity = sourceMainBodyVelocity(particleIndex);
@@ -433,21 +440,25 @@ function sourceSpawnPerUnitRateFromDistance(distanceWindow: number, lifetimeSeco
 }
 
 function sourceCascadeSpawnAccumulatorActiveParticles(
-  spawnRate: number,
+  offsets: readonly number[],
   lifetimeSeconds: number,
-  peakActiveParticles: number,
-  updateStepSeconds: number,
-  emitterDurationSeconds?: number
+  peakActiveParticles: number
 ) {
-  const sourceEmitterDuration = typeof emitterDurationSeconds === "number" && emitterDurationSeconds > 0 ? emitterDurationSeconds : lifetimeSeconds;
-  const simulationWindow = Math.max(lifetimeSeconds, sourceEmitterDuration);
-  const activeParticles = sourceCascadeSpawnOffsets(spawnRate, simulationWindow, updateStepSeconds).filter((offset) => offset < lifetimeSeconds).length;
+  const activeParticles = offsets.filter((offset) => offset < lifetimeSeconds).length;
   return THREE.MathUtils.clamp(activeParticles, 1, peakActiveParticles);
 }
 
-function sourceCascadeSpawnBirthOffset(particleIndex: number, spawnRate: number, lifetimeSeconds: number, updateStepSeconds: number) {
-  const offsets = sourceCascadeSpawnOffsets(spawnRate, lifetimeSeconds, updateStepSeconds);
+function sourceEmitterSimulationWindow(lifetimeSeconds: number, emitterDurationSeconds?: number) {
+  const sourceEmitterDuration = typeof emitterDurationSeconds === "number" && emitterDurationSeconds > 0 ? emitterDurationSeconds : lifetimeSeconds;
+  return Math.max(lifetimeSeconds, sourceEmitterDuration);
+}
+
+function sourceCascadeSpawnBirthOffset(particleIndex: number, offsets: readonly number[]) {
   return offsets[particleIndex % offsets.length] ?? 0;
+}
+
+function sourceCascadeSpawnBirthOffsetFromParameters(particleIndex: number, spawnRate: number, lifetimeSeconds: number, updateStepSeconds: number) {
+  return sourceCascadeSpawnBirthOffset(particleIndex, sourceCascadeSpawnOffsets(spawnRate, lifetimeSeconds, updateStepSeconds));
 }
 
 function sourceSpawnPerUnitParticleAge(
@@ -463,7 +474,7 @@ function sourceSpawnPerUnitParticleAge(
 
   return sourceParticleAge(
     0,
-    -sourceCascadeSpawnBirthOffset(particleIndex, spawnRate, lifetimeSeconds, updateStepSeconds),
+    -sourceCascadeSpawnBirthOffsetFromParameters(particleIndex, spawnRate, lifetimeSeconds, updateStepSeconds),
     lifetimeSeconds
   );
 }
