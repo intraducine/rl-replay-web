@@ -1,20 +1,27 @@
 import type { ReplayPlayerRank, ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { TooltipBubble } from "../ui/Tooltip";
-import { livePlayerStatsAt } from "./playerStats";
+import { emptyLivePlayerStats, type LivePlayerStats } from "./playerStats";
 import { teamClassName } from "./teamColors";
 
-export function PlayerList({ timeline, boostByPlayer = {} }: { timeline: ReplayTimeline; boostByPlayer?: Record<string, number | undefined> }) {
+export function PlayerList({
+  timeline,
+  boostByPlayer = {},
+  statsByPlayer = {}
+}: {
+  timeline: ReplayTimeline;
+  boostByPlayer?: Record<string, number | undefined>;
+  statsByPlayer?: Record<string, LivePlayerStats | undefined>;
+}) {
   const selectedPlayerId = useViewerStore((state) => state.selectedPlayerId);
   const setSelectedPlayerId = useViewerStore((state) => state.setSelectedPlayerId);
-  const currentTime = useViewerStore((state) => state.currentTime);
 
   return (
     <div className="player-list-scroll">
       <div className="player-list">
         {timeline.metadata.players.map((player) => {
           const boost = boostByPlayer[player.id];
-          const stats = livePlayerStatsAt(timeline, player.id, currentTime);
+          const stats = statsByPlayer[player.id] ?? emptyLivePlayerStats();
           const boostLabel = boost === undefined ? "--" : boost.toFixed(1);
           const rank = formatPlayerRank(player.rank);
           return (

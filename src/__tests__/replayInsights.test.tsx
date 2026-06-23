@@ -6,7 +6,7 @@ import type { ReplayTimeline } from "../replay/types";
 import { MatchMetadataBar } from "../viewer/MatchMetadataBar";
 import { formatPlayerRank, PlayerList } from "../viewer/PlayerList";
 import { clampSpeed, snapSpeedToStop, TimelineControls } from "../viewer/TimelineControls";
-import { livePlayerStatsAt } from "../viewer/playerStats";
+import { livePlayerStatsAt, livePlayerStatsByPlayerAt } from "../viewer/playerStats";
 
 const timeline: ReplayTimeline = {
   version: 1,
@@ -113,6 +113,21 @@ describe("replay insights UI", () => {
       saves: 1,
       demos: 1
     });
+    expect(livePlayerStatsByPlayerAt(timeline, 160)["player-0-Kehvn"]).toMatchObject({
+      goals: 1,
+      saves: 1,
+      demos: 1
+    });
+  });
+
+  it("computes live player stats once in ReplayViewer before rendering the player list", () => {
+    const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
+    const playerListSource = readFileSync(resolve(process.cwd(), "src/viewer/PlayerList.tsx"), "utf8");
+
+    expect(replayViewerSource).toContain("livePlayerStatsByPlayerAt(timeline, currentTime)");
+    expect(replayViewerSource).toContain("statsByPlayer={statsByPlayer}");
+    expect(playerListSource).not.toContain("livePlayerStatsAt(");
+    expect(playerListSource).not.toContain("state.currentTime");
   });
 
   it("renders typed event markers for goals, saves, and demos", () => {

@@ -10,6 +10,7 @@ import { PlayerList } from "./PlayerList";
 import { SceneRoot } from "./SceneRoot";
 import { Scoreboard } from "./Scoreboard";
 import { TimelineControls } from "./TimelineControls";
+import { livePlayerStatsByPlayerAt } from "./playerStats";
 
 const coordinateDebugOptions = [
   ["swapYZ", "Swap Y/Z", "Swap Rocket League Y and Z axes before rendering"],
@@ -40,6 +41,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const boostByPlayer = Object.fromEntries(
     timeline.metadata.players.map((player) => [player.id, sample.cars[player.id]?.boost])
   );
+  const statsByPlayer = livePlayerStatsByPlayerAt(timeline, currentTime);
 
   useEffect(() => {
     setDuration(timelineDuration(timeline));
@@ -60,7 +62,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         <div className="viewer-top-left">
           <Scoreboard timeline={timeline} />
           <MatchMetadataBar timeline={timeline} />
-          <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} />
+          <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} statsByPlayer={statsByPlayer} />
         </div>
         <div className="viewer-control-panel">
           {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">BALL CAM</div> : null}
