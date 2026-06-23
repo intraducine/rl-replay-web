@@ -32,6 +32,8 @@ describe("boost rendering toggle", () => {
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
 
     expect(sceneRootSource).toContain("state.boostRenderingEnabled");
+    expect(sceneRootSource).toContain("let flameDistanceWindow: number | undefined");
+    expect(sceneRootSource).toContain("if (boosting) {");
     expect(sceneRootSource).toContain("setCarAlphaBoostActive(group, boosting, frame, boostRenderingEnabled, time, flameDistanceWindow, flameSpawnAges, alphaBoostEmitterAge)");
     expect(sceneRootSource).toContain("setCarSupersonicTrailVisible(group, boostRenderingEnabled && Boolean(frame.supersonic) && !boosting)");
   });

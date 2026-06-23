@@ -455,18 +455,25 @@ function updateCars(
     group.position.fromArray(carRenderPosition(frame.position));
     group.quaternion.fromArray(frame.rotation);
     const boosting = boostRenderingEnabled && isCarBoostingAt(timeline, id, time);
-    const flameDistanceWindow = sampleCarDistanceWindow(timeline, id, time, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds);
-    const flameEmitterStartTime = boosting ? carBoostSegmentStartTime(timeline, id, time) : undefined;
-    const alphaBoostEmitterAge = boosting && typeof flameEmitterStartTime === "number" ? time - flameEmitterStartTime : undefined;
-    const flameSpawnAges = sampleCarSpawnPerUnitAgesWindow(
-      timeline,
-      id,
-      time,
-      ALPHA_BOOST_CASCADE.flame.lifetimeSeconds,
-      ALPHA_BOOST_CASCADE.flame.spawnPerUnit,
-      ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar,
-      flameEmitterStartTime
-    );
+    let flameDistanceWindow: number | undefined;
+    let flameSpawnAges: number[] | undefined;
+    let alphaBoostEmitterAge: number | undefined;
+
+    if (boosting) {
+      flameDistanceWindow = sampleCarDistanceWindow(timeline, id, time, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds);
+      const flameEmitterStartTime = carBoostSegmentStartTime(timeline, id, time);
+      alphaBoostEmitterAge = time - flameEmitterStartTime;
+      flameSpawnAges = sampleCarSpawnPerUnitAgesWindow(
+        timeline,
+        id,
+        time,
+        ALPHA_BOOST_CASCADE.flame.lifetimeSeconds,
+        ALPHA_BOOST_CASCADE.flame.spawnPerUnit,
+        ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar,
+        flameEmitterStartTime
+      );
+    }
+
     setCarAlphaBoostActive(group, boosting, frame, boostRenderingEnabled, time, flameDistanceWindow, flameSpawnAges, alphaBoostEmitterAge);
     setCarSupersonicTrailVisible(group, boostRenderingEnabled && Boolean(frame.supersonic) && !boosting);
     if (shadow) updateProjectedCarShadow(shadow, frame);
