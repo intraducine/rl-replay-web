@@ -154,8 +154,10 @@ describe("cameraRigForMode", () => {
     expect(cameraSource).toContain("const TMP_NEAREST_CAR_POSITION = new Vector3()");
     expect(cameraSource).toContain("TMP_CAR_POSITION.fromArray(selectedCar.position)");
     expect(cameraSource).toContain("TMP_NEAREST_CAR_POSITION.fromArray(car.position).distanceToSquared(ball)");
+    expect(cameraSource).toContain("const settings = playerCameraState?.settings ?? DEFAULT_CAMERA_SETTINGS");
     expect(cameraSource).not.toContain("const carPosition = new Vector3().fromArray(selectedCar.position)");
     expect(cameraSource).not.toContain("new Vector3().fromArray(car.position).distanceToSquared(ball)");
+    expect(cameraSource).not.toContain("{ ...DEFAULT_CAMERA_SETTINGS, ...playerCameraState?.settings }");
   });
 
   it("uses top-down camera up vector that keeps the field oriented", () => {

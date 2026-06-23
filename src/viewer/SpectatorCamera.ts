@@ -79,7 +79,7 @@ export function cameraRigForMode(
   if ((mode === "player" || mode === "director") && selectedCar) {
     const carPosition = TMP_CAR_POSITION.fromArray(selectedCar.position);
     const forward = forwardVectorFromCar(selectedCar.rotation);
-    const settings = { ...DEFAULT_CAMERA_SETTINGS, ...playerCameraState?.settings };
+    const settings = playerCameraState?.settings ?? DEFAULT_CAMERA_SETTINGS;
     const usingBehindView = playerCameraState?.usingBehindView === true;
     const usingBallCam = !usingBehindView && (playerCameraState ? playerCameraState.usingSecondaryCamera === true : true) && !!sample.ball;
     const ballPosition = sample.ball ? TMP_BALL_POSITION.fromArray(ball) : FALLBACK_BALL;
