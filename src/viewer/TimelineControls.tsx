@@ -180,31 +180,28 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
 }
 
 export function useTimelineKeyboardShortcuts() {
-  const seekBy = useViewerStore((state) => state.seekBy);
-  const setCurrentTime = useViewerStore((state) => state.setCurrentTime);
-  const setPlaying = useViewerStore((state) => state.setPlaying);
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableEventTarget(event.target)) return;
+      const state = useViewerStore.getState();
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        seekBy(event.shiftKey ? -1 : -5);
+        state.seekBy(event.shiftKey ? -1 : -5);
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
-        seekBy(event.shiftKey ? 1 : 5);
+        state.seekBy(event.shiftKey ? 1 : 5);
       } else if (event.key === "Home") {
         event.preventDefault();
-        setCurrentTime(0);
+        state.setCurrentTime(0);
       } else if (event.code === "Space") {
         event.preventDefault();
-        setPlaying(!useViewerStore.getState().playing);
+        state.setPlaying(!state.playing);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [seekBy, setCurrentTime, setPlaying]);
+  }, []);
 }
 
 function isEditableEventTarget(target: EventTarget | null): boolean {

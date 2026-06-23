@@ -247,12 +247,20 @@ describe("replay insights UI", () => {
 
   it("supports keyboard scrubbing from the timeline controls", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
+    const shortcutSource = source.match(/export function useTimelineKeyboardShortcuts[\s\S]*?\n}\n\nfunction isEditableEventTarget/)?.[0] ?? "";
 
     expect(source).toContain("useTimelineKeyboardShortcuts");
     expect(source).toContain("ArrowLeft");
     expect(source).toContain("ArrowRight");
     expect(source).toContain('event.code === "Space"');
     expect(source).toContain("event.preventDefault()");
+    expect(shortcutSource).toContain("const state = useViewerStore.getState()");
+    expect(shortcutSource).toContain("state.seekBy(event.shiftKey ? -1 : -5)");
+    expect(shortcutSource).toContain("state.setCurrentTime(0)");
+    expect(shortcutSource).toContain("state.setPlaying(!state.playing)");
+    expect(shortcutSource).not.toContain("useViewerStore((state) => state.seekBy)");
+    expect(shortcutSource).not.toContain("useViewerStore((state) => state.setCurrentTime)");
+    expect(shortcutSource).not.toContain("useViewerStore((state) => state.setPlaying)");
     expect(source).toContain("Space Play/Pause");
     expect(source).toContain("WASD Move");
     expect(source).toContain("Q/E Down/Up");
