@@ -1,4 +1,4 @@
-import type { ReplayTimeline } from "../replay/types";
+import type { ReplayEvent, ReplayTimeline } from "../replay/types";
 
 export type LivePlayerStats = {
   goals: number;
@@ -7,6 +7,10 @@ export type LivePlayerStats = {
   demos: number;
 };
 
+type StatEvent = Extract<ReplayEvent, { type: "goal" | "shot" | "save" | "demo" }>;
+
+const statEventsCache = new WeakMap<ReplayTimeline, StatEvent[]>();
+
 export function livePlayerStatsAt(timeline: ReplayTimeline, playerId: string, timeSeconds: number): LivePlayerStats {
   return livePlayerStatsByPlayerAt(timeline, timeSeconds)[playerId] ?? emptyLivePlayerStats();
 }
@@ -14,8 +18,8 @@ export function livePlayerStatsAt(timeline: ReplayTimeline, playerId: string, ti
 export function livePlayerStatsByPlayerAt(timeline: ReplayTimeline, timeSeconds: number): Record<string, LivePlayerStats> {
   const statsByPlayer: Record<string, LivePlayerStats> = {};
 
-  for (const event of timeline.events) {
-    if (event.t > timeSeconds) continue;
+  for (const event of statEventsForTimeline(timeline)) {
+    if (event.t > timeSeconds) break;
     switch (event.type) {
       case "goal":
         if (event.scorerId) {
@@ -50,4 +54,21 @@ export function emptyLivePlayerStats(): LivePlayerStats {
 function statsForPlayer(statsByPlayer: Record<string, LivePlayerStats>, playerId: string): LivePlayerStats {
   statsByPlayer[playerId] ??= emptyLivePlayerStats();
   return statsByPlayer[playerId];
+}
+
+function statEventsForTimeline(timeline: ReplayTimeline): StatEvent[] {
+  const cached = statEventsCache.get(timeline);
+  if (cached) return cached;
+
+  const events: StatEvent[] = [];
+  for (const event of timeline.events) {
+    if (isStatEvent(event)) events.push(event);
+  }
+  events.sort((a, b) => a.t - b.t);
+  statEventsCache.set(timeline, events);
+  return events;
+}
+
+function isStatEvent(event: ReplayEvent): event is StatEvent {
+  return event.type === "goal" || event.type === "shot" || event.type === "save" || event.type === "demo";
 }

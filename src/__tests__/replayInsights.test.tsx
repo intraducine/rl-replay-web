@@ -120,6 +120,28 @@ describe("replay insights UI", () => {
     });
   });
 
+  it("caches sorted player stat events before scanning live replay stats", () => {
+    const unsortedTimeline: ReplayTimeline = {
+      ...timeline,
+      events: [
+        { type: "save", t: 135.1, playerId: "player-0-Kehvn" },
+        { type: "goal", t: 117.6, team: 0, scorerId: "player-0-Kehvn" },
+        { type: "demo", t: 155.2, attackerId: "player-0-Kehvn", victimId: "player-1" }
+      ]
+    };
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/playerStats.ts"), "utf8");
+
+    expect(livePlayerStatsByPlayerAt(unsortedTimeline, 120)["player-0-Kehvn"]).toMatchObject({
+      goals: 1,
+      saves: 0,
+      demos: 0
+    });
+    expect(source).toContain("statEventsCache");
+    expect(source).toContain("statEventsForTimeline(timeline)");
+    expect(source).toContain("if (event.t > timeSeconds) break");
+    expect(source).toContain("events.sort((a, b) => a.t - b.t)");
+  });
+
   it("computes live player stats once in ReplayViewer before rendering the player list", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
     const playerListSource = readFileSync(resolve(process.cwd(), "src/viewer/PlayerList.tsx"), "utf8");
