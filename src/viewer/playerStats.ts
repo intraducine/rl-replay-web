@@ -9,18 +9,52 @@ export type LivePlayerStats = {
 
 type StatEvent = Extract<ReplayEvent, { type: "goal" | "shot" | "save" | "demo" }>;
 
+type StatSnapshot = {
+  t: number;
+  statsByPlayer: Record<string, LivePlayerStats>;
+};
+
+type StatTimelineIndex = {
+  snapshots: StatSnapshot[];
+};
+
 const EMPTY_LIVE_PLAYER_STATS: LivePlayerStats = { goals: 0, saves: 0, shots: 0, demos: 0 };
-const statEventsCache = new WeakMap<ReplayTimeline, StatEvent[]>();
+const EMPTY_LIVE_PLAYER_STATS_BY_PLAYER: Record<string, LivePlayerStats> = {};
+const statIndexCache = new WeakMap<ReplayTimeline, StatTimelineIndex>();
 
 export function livePlayerStatsAt(timeline: ReplayTimeline, playerId: string, timeSeconds: number): LivePlayerStats {
   return livePlayerStatsByPlayerAt(timeline, timeSeconds)[playerId] ?? emptyLivePlayerStats();
 }
 
 export function livePlayerStatsByPlayerAt(timeline: ReplayTimeline, timeSeconds: number): Record<string, LivePlayerStats> {
-  const statsByPlayer: Record<string, LivePlayerStats> = {};
+  const snapshots = statIndexForTimeline(timeline).snapshots;
+  if (snapshots.length === 0) return EMPTY_LIVE_PLAYER_STATS_BY_PLAYER;
 
-  for (const event of statEventsForTimeline(timeline)) {
-    if (event.t > timeSeconds) break;
+  let low = 0;
+  let high = snapshots.length;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (snapshots[mid].t <= timeSeconds) low = mid + 1;
+    else high = mid;
+  }
+
+  return snapshots[low - 1]?.statsByPlayer ?? EMPTY_LIVE_PLAYER_STATS_BY_PLAYER;
+}
+
+export function emptyLivePlayerStats(): LivePlayerStats {
+  return EMPTY_LIVE_PLAYER_STATS;
+}
+
+function statIndexForTimeline(timeline: ReplayTimeline): StatTimelineIndex {
+  const cached = statIndexCache.get(timeline);
+  if (cached) return cached;
+
+  const events = statEventsForTimeline(timeline);
+  const snapshots: StatSnapshot[] = [];
+  let statsByPlayer: Record<string, LivePlayerStats> = EMPTY_LIVE_PLAYER_STATS_BY_PLAYER;
+
+  for (const event of events) {
+    statsByPlayer = cloneStatsByPlayer(statsByPlayer);
     switch (event.type) {
       case "goal":
         if (event.scorerId) {
@@ -43,13 +77,12 @@ export function livePlayerStatsByPlayerAt(timeline: ReplayTimeline, timeSeconds:
         }
         break;
     }
+    snapshots.push({ t: event.t, statsByPlayer });
   }
 
-  return statsByPlayer;
-}
-
-export function emptyLivePlayerStats(): LivePlayerStats {
-  return EMPTY_LIVE_PLAYER_STATS;
+  const index = { snapshots };
+  statIndexCache.set(timeline, index);
+  return index;
 }
 
 function statsForPlayer(statsByPlayer: Record<string, LivePlayerStats>, playerId: string): LivePlayerStats {
@@ -57,16 +90,20 @@ function statsForPlayer(statsByPlayer: Record<string, LivePlayerStats>, playerId
   return statsByPlayer[playerId];
 }
 
-function statEventsForTimeline(timeline: ReplayTimeline): StatEvent[] {
-  const cached = statEventsCache.get(timeline);
-  if (cached) return cached;
+function cloneStatsByPlayer(statsByPlayer: Record<string, LivePlayerStats>): Record<string, LivePlayerStats> {
+  const clone: Record<string, LivePlayerStats> = {};
+  for (const [playerId, stats] of Object.entries(statsByPlayer)) {
+    clone[playerId] = { ...stats };
+  }
+  return clone;
+}
 
+function statEventsForTimeline(timeline: ReplayTimeline): StatEvent[] {
   const events: StatEvent[] = [];
   for (const event of timeline.events) {
     if (isStatEvent(event)) events.push(event);
   }
   events.sort((a, b) => a.t - b.t);
-  statEventsCache.set(timeline, events);
   return events;
 }
 
