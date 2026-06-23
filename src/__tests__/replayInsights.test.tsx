@@ -171,6 +171,17 @@ describe("replay insights UI", () => {
     expect(playerListSource).not.toContain("state.currentTime");
   });
 
+  it("subscribes player list only to selected-player state", () => {
+    const playerListSource = readFileSync(resolve(process.cwd(), "src/viewer/PlayerList.tsx"), "utf8");
+
+    expect(playerListSource).toContain('import { useShallow } from "zustand/shallow"');
+    expect(playerListSource).toContain("useViewerStore(\n    useShallow((state) => ({");
+    expect(playerListSource).toContain("selectedPlayerId: state.selectedPlayerId");
+    expect(playerListSource).toContain("setSelectedPlayerId: state.setSelectedPlayerId");
+    expect(playerListSource).not.toContain("const selectedPlayerId = useViewerStore((state) => state.selectedPlayerId)");
+    expect(playerListSource).not.toContain("const setSelectedPlayerId = useViewerStore((state) => state.setSelectedPlayerId)");
+  });
+
   it("avoids extra player data allocation work in the replay viewer render path", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 

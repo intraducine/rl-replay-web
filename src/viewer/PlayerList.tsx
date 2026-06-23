@@ -1,3 +1,4 @@
+import { useShallow } from "zustand/shallow";
 import type { ReplayPlayerRank, ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { TooltipBubble } from "../ui/Tooltip";
@@ -13,8 +14,12 @@ export function PlayerList({
   boostByPlayer?: Record<string, number | undefined>;
   statsByPlayer?: Record<string, LivePlayerStats | undefined>;
 }) {
-  const selectedPlayerId = useViewerStore((state) => state.selectedPlayerId);
-  const setSelectedPlayerId = useViewerStore((state) => state.setSelectedPlayerId);
+  const { selectedPlayerId, setSelectedPlayerId } = useViewerStore(
+    useShallow((state) => ({
+      selectedPlayerId: state.selectedPlayerId,
+      setSelectedPlayerId: state.setSelectedPlayerId
+    }))
+  );
 
   return (
     <div className="player-list-scroll">
