@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
+import { samplePlayerBoostsAt, samplePlayerCameraState, timelineDuration } from "../replay/ReplayTimeline";
 import type { ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { Select } from "../ui/Select";
@@ -35,11 +35,11 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const setBoostRenderingEnabled = useViewerStore((state) => state.setBoostRenderingEnabled);
   const setCoordinateOption = useViewerStore((state) => state.setCoordinateOption);
   const coordinateOptions = useViewerStore((state) => state.coordinateOptions);
-  const sample = sampleTimeline(timeline, currentTime);
   const playerCameraState = samplePlayerCameraState(timeline, selectedPlayerId, currentTime);
   const showDebugControls = import.meta.env.DEV;
   const playerOptions = useMemo(() => timeline.metadata.players.map((player) => ({ value: player.id, label: player.name })), [timeline]);
-  const boostByPlayer = boostByPlayerFromSample(timeline, sample);
+  const playerIds = useMemo(() => timeline.metadata.players.map((player) => player.id), [timeline]);
+  const boostByPlayer = samplePlayerBoostsAt(timeline, playerIds, currentTime);
   const statsByPlayer = livePlayerStatsByPlayerAt(timeline, currentTime);
 
   useEffect(() => {
@@ -119,12 +119,4 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       </div>
     </div>
   );
-}
-
-function boostByPlayerFromSample(timeline: ReplayTimeline, sample: ReturnType<typeof sampleTimeline>) {
-  const boostByPlayer: Record<string, number | undefined> = {};
-  for (const player of timeline.metadata.players) {
-    boostByPlayer[player.id] = sample.cars[player.id]?.boost;
-  }
-  return boostByPlayer;
 }

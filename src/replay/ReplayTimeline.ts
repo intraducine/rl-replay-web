@@ -229,6 +229,24 @@ export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): S
   };
 }
 
+export function samplePlayerBoostsAt(timeline: ReplayTimeline, playerIds: readonly string[], timeSeconds: number): Record<string, number | undefined> {
+  const [previousIndex, nextIndex, alpha] = findFramePairIndices(timeline.frames, timeSeconds);
+  const previous = timeline.frames[previousIndex];
+  const next = timeline.frames[nextIndex];
+  const boostByPlayer: Record<string, number | undefined> = {};
+
+  for (const playerId of playerIds) {
+    boostByPlayer[playerId] = sampleBoostValue(previous.cars[playerId]?.boost, next.cars[playerId]?.boost, alpha);
+  }
+
+  return boostByPlayer;
+}
+
+function sampleBoostValue(previous: number | undefined, next: number | undefined, alpha: number) {
+  if (previous !== undefined && next !== undefined) return lerp(previous, next, alpha);
+  return alpha < 0.5 ? previous ?? next : next ?? previous;
+}
+
 function appendSampledCar(
   cars: Record<string, CarFrame>,
   samplingIndex: TimelineSamplingIndex,

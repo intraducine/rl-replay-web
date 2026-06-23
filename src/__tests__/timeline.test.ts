@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { sampleCarDistanceWindow, sampleCarSpawnPerUnitAgesWindow, samplePlayerCameraState, sampleTimeline } from "../replay/ReplayTimeline";
+import {
+  sampleCarDistanceWindow,
+  sampleCarSpawnPerUnitAgesWindow,
+  samplePlayerBoostsAt,
+  samplePlayerCameraState,
+  sampleTimeline
+} from "../replay/ReplayTimeline";
 import type { ReplayTimeline } from "../replay/types";
 
 const timeline: ReplayTimeline = {
@@ -209,6 +215,43 @@ describe("sampleTimeline", () => {
     expect(sampleTimeline(boostOnlyTimeline, 0.25).cars.p1.boost).toBeCloseTo(85);
     expect(sampleTimeline(boostOnlyTimeline, 0.5).cars.p1.boost).toBeCloseTo(70);
     expect(sampleTimeline(boostOnlyTimeline, 0.75).cars.p1.boost).toBeCloseTo(55);
+  });
+
+  it("samples player boost values without interpolating the full replay scene", () => {
+    const boostTimeline: ReplayTimeline = {
+      ...timeline,
+      metadata: {
+        ...timeline.metadata,
+        players: [
+          { id: "p1", name: "Blue", team: 0 },
+          { id: "p2", name: "Orange", team: 1 }
+        ]
+      },
+      frames: [
+        {
+          t: 0,
+          cars: {
+            p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 100 },
+            p2: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 40 }
+          }
+        },
+        {
+          t: 1,
+          cars: {
+            p1: { position: [200, 0, 0], rotation: [0, 0, 0, 1], boost: 50 }
+          }
+        }
+      ]
+    };
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+    const boostSamplerSource = source.match(/export function samplePlayerBoostsAt[\s\S]*?\n}\n\nfunction sampleBoostValue/)?.[0] ?? "";
+
+    expect(samplePlayerBoostsAt(boostTimeline, ["p1", "p2"], 0.25)).toEqual({ p1: 87.5, p2: 40 });
+    expect(samplePlayerBoostsAt(boostTimeline, ["p1", "p2"], 0.75)).toEqual({ p1: 62.5, p2: 40 });
+    expect(boostSamplerSource).toContain("findFramePairIndices(timeline.frames, timeSeconds)");
+    expect(boostSamplerSource).not.toContain("sampleTimeline(");
+    expect(boostSamplerSource).not.toContain("buildSamplingIndex");
+    expect(boostSamplerSource).not.toContain("interpolateRigidBody");
   });
 
   it("removes demolished cars until their respawn frame is available", () => {

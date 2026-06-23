@@ -175,8 +175,10 @@ describe("replay insights UI", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
     expect(replayViewerSource).toContain("const playerOptions = useMemo(");
-    expect(replayViewerSource).toContain("boostByPlayerFromSample(timeline, sample)");
-    expect(replayViewerSource).toContain("for (const player of timeline.metadata.players)");
+    expect(replayViewerSource).toContain("const playerIds = useMemo(");
+    expect(replayViewerSource).toContain("samplePlayerBoostsAt(timeline");
+    expect(replayViewerSource).not.toContain("sampleTimeline(timeline, currentTime)");
+    expect(replayViewerSource).not.toContain("boostByPlayerFromSample");
     expect(replayViewerSource).not.toContain("Object.fromEntries");
     expect(replayViewerSource).not.toContain("options={timeline.metadata.players.map");
   });
