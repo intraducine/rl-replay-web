@@ -444,7 +444,10 @@ function sourceCascadeSpawnAccumulatorActiveParticles(
   lifetimeSeconds: number,
   peakActiveParticles: number
 ) {
-  const activeParticles = offsets.filter((offset) => offset < lifetimeSeconds).length;
+  let activeParticles = 0;
+  for (const offset of offsets) {
+    if (offset < lifetimeSeconds) activeParticles += 1;
+  }
   return THREE.MathUtils.clamp(activeParticles, 1, peakActiveParticles);
 }
 

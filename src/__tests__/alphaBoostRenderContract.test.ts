@@ -231,6 +231,8 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("sourceParticleAge(");
     expect(carSource).toContain("sourceCascadeSpawnBirthOffsetFromParameters(particleIndex, spawnRate, lifetimeSeconds, updateStepSeconds)");
     expect(carSource).not.toContain("sourceCascadeSpawnBirthOffset(particleIndex, ALPHA_BOOST_CASCADE.main.spawnRate, ALPHA_BOOST_CASCADE.main.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds)");
+    expect(carSource).toContain("for (const offset of offsets)");
+    expect(carSource).not.toContain("offsets.filter((offset) => offset < lifetimeSeconds).length");
     expect(carSource).toContain("return positiveModulo(time - birthOffset, lifetimeSeconds)");
     expect(carSource).toContain("spawnFraction += spawnRate * sourceUpdateStep");
     expect(carSource).toContain("Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }");
