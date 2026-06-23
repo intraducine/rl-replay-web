@@ -113,6 +113,9 @@ function FreeCameraKeyboardControls({
 }) {
   const { camera } = useThree();
   const activeIntents = useRef(new Set<FreeCameraMoveIntent>());
+  const movement = useMemo(() => new Vector3(), []);
+  const forward = useMemo(() => new Vector3(), []);
+  const right = useMemo(() => new Vector3(), []);
 
   useEffect(() => {
     activeIntents.current.clear();
@@ -145,7 +148,7 @@ function FreeCameraKeyboardControls({
 
   useFrame((_, delta) => {
     if (!enabled || activeIntents.current.size === 0) return;
-    const displacement = freeCameraKeyboardDisplacement(camera, activeIntents.current, delta);
+    const displacement = freeCameraKeyboardDisplacement(camera, activeIntents.current, delta, undefined, movement, forward, right);
     if (displacement.lengthSq() === 0) return;
 
     camera.position.add(displacement);

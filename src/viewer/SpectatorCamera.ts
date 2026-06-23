@@ -248,9 +248,11 @@ export function freeCameraKeyboardDisplacement(
   camera: Camera,
   activeIntents: ReadonlySet<FreeCameraMoveIntent>,
   deltaSeconds: number,
-  speed = FREE_CAMERA_KEYBOARD_MOVE_SPEED
+  speed = FREE_CAMERA_KEYBOARD_MOVE_SPEED,
+  target = new Vector3(),
+  forward = new Vector3(),
+  right = new Vector3()
 ): Vector3 {
-  const forward = new Vector3();
   camera.getWorldDirection(forward);
   forward.y = 0;
   if (forward.lengthSq() < 0.0001) {
@@ -259,21 +261,21 @@ export function freeCameraKeyboardDisplacement(
     forward.normalize();
   }
 
-  const right = new Vector3().copy(forward).cross(WORLD_UP);
+  right.copy(forward).cross(WORLD_UP);
   if (right.lengthSq() < 0.0001) {
     right.set(1, 0, 0);
   } else {
     right.normalize();
   }
 
-  const movement = new Vector3();
-  if (activeIntents.has("forward")) movement.add(forward);
-  if (activeIntents.has("backward")) movement.sub(forward);
-  if (activeIntents.has("right")) movement.add(right);
-  if (activeIntents.has("left")) movement.sub(right);
-  if (activeIntents.has("up")) movement.add(WORLD_UP);
-  if (activeIntents.has("down")) movement.sub(WORLD_UP);
+  target.set(0, 0, 0);
+  if (activeIntents.has("forward")) target.add(forward);
+  if (activeIntents.has("backward")) target.sub(forward);
+  if (activeIntents.has("right")) target.add(right);
+  if (activeIntents.has("left")) target.sub(right);
+  if (activeIntents.has("up")) target.add(WORLD_UP);
+  if (activeIntents.has("down")) target.sub(WORLD_UP);
 
-  if (movement.lengthSq() > 1) movement.normalize();
-  return movement.multiplyScalar(Math.max(0, deltaSeconds) * speed);
+  if (target.lengthSq() > 1) target.normalize();
+  return target.multiplyScalar(Math.max(0, deltaSeconds) * speed);
 }

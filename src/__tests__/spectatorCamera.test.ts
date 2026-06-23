@@ -207,6 +207,28 @@ describe("cameraRigForMode", () => {
     expect(down.z).toBeCloseTo(0);
   });
 
+  it("reuses free camera movement scratch vectors on the frame path", () => {
+    const camera = new PerspectiveCamera();
+    const movement = new Vector3();
+    const forward = new Vector3();
+    const right = new Vector3();
+    camera.position.set(0, 0, 0);
+    camera.lookAt(new Vector3(1, 0, 0));
+    camera.updateMatrixWorld();
+
+    const displacement = freeCameraKeyboardDisplacement(camera, new Set(["forward"]), 0.5, 200, movement, forward, right);
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+    const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
+
+    expect(displacement).toBe(movement);
+    expect(displacement.x).toBeCloseTo(100);
+    expect(sceneRootSource).toContain("freeCameraKeyboardDisplacement(camera, activeIntents.current, delta, undefined, movement, forward, right)");
+    expect(cameraSource).toContain("target = new Vector3()");
+    expect(cameraSource).toContain("right.copy(forward).cross(WORLD_UP)");
+    expect(cameraSource).not.toContain("const movement = new Vector3()");
+    expect(cameraSource).not.toContain("new Vector3().copy(forward).cross(WORLD_UP)");
+  });
+
   it("starts free camera at its closest orbit distance for first-person-style control", () => {
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
 
