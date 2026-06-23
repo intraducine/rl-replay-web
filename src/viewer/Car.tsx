@@ -183,8 +183,10 @@ function AlphaBoost() {
 
   const boostMeshes = useMemo(
     () =>
-      ALPHA_BOOST_CASCADE.boostMesh.sourceAttachmentOverrides.map(() => {
+      ALPHA_BOOST_CASCADE.boostMesh.sourceAttachmentOverrides.map((attachment) => {
         const clone = boostMeshScene.clone(true);
+        applySourceBoostMeshTransform(clone, attachment);
+        clone.matrixAutoUpdate = false;
         clone.traverse((object) => {
           if (object instanceof THREE.Mesh) {
             object.material = boostMeshMaterial;
@@ -225,7 +227,6 @@ function AlphaBoost() {
 
     for (let index = 0; index < boostMeshRefs.current.length; index++) {
       const mesh = boostMeshRefs.current[index];
-      applySourceBoostMeshTransform(mesh, ALPHA_BOOST_CASCADE.boostMesh.sourceAttachmentOverrides[index]);
       mesh.visible = alphaBoostComponentEnabled("mesh");
     }
 

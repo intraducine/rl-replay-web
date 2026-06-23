@@ -10,7 +10,7 @@ describe("viewer chrome layout", () => {
 
     expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr)");
     expect(css).toContain("width: clamp(280px, 36vw, 420px)");
-    expect(css).toContain("width: min(52vw, 220px)");
+    expect(css).toContain("width: min(100%, 320px)");
     expect(css).toContain(".viewer-top-left .player-list");
     expect(css).toContain("gap: 6px");
     expect(css).toContain(".viewer-top-left .player-list button");
@@ -71,5 +71,9 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("max-width: 100%");
     expect(css).toContain(".timeline-controls");
     expect(css).toContain("min-width: 0");
+    expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
+    expect(css).toContain("justify-content: stretch");
+    expect(css).toContain(".viewer-toggle");
+    expect(css).toContain("width: 100%");
   });
 });

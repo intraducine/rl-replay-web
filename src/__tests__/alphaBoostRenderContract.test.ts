@@ -28,6 +28,8 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.boostMesh.assetPath");
     expect(carSource).toContain("sourceAttachmentOverrides");
     expect(carSource).toContain("applySourceBoostMeshTransform");
+    expect(carSource).toContain("applySourceBoostMeshTransform(clone, attachment)");
+    expect(carSource).not.toContain("applySourceBoostMeshTransform(mesh, ALPHA_BOOST_CASCADE.boostMesh.sourceAttachmentOverrides[index])");
     expect(carSource).toContain("ALPHA_BOOST_ATTACHMENT_POSITIONS");
     expect(carSource).toContain("sourceAttachmentViewerPosition");
     expect(carSource).not.toContain("sprite.position.set(-116, 34");

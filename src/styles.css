@@ -1087,7 +1087,7 @@ pre {
   }
 
   .viewer-top-left {
-    width: min(52vw, 220px);
+    width: min(100%, 320px);
   }
 
   .viewer-top-left .match-metadata-bar {
@@ -1123,16 +1123,25 @@ pre {
   }
 
   .viewer-control-panel {
+    width: min(100%, 320px);
     max-width: 100%;
     justify-items: start;
   }
 
   .viewer-selectors {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    justify-content: stretch;
   }
 
   .viewer-selectors .select select {
-    min-width: 118px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .viewer-toggle {
+    width: 100%;
   }
 
   .control-row {
