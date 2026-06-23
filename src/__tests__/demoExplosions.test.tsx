@@ -58,6 +58,17 @@ describe("demo explosion reconstruction", () => {
     expect(demoExplosionInstances(timeline, 12)).toEqual([]);
   });
 
+  it("builds active demo explosion instances in one pass", () => {
+    const source = readFileSyncForTest("src/viewer/DemoExplosions.tsx");
+    const instanceSource = source.match(/export function demoExplosionInstances[\s\S]*?\n}\n\nexport function DemoExplosions/)?.[0] ?? "";
+
+    expect(instanceSource).toContain("const instances: DemoExplosionInstance[] = []");
+    expect(instanceSource).toContain("for (const model of demoExplosionModels(timeline))");
+    expect(instanceSource).toContain("instances.push({");
+    expect(instanceSource).not.toContain(".filter((instance)");
+    expect(instanceSource).not.toContain(".map(({ t:");
+  });
+
   it("mounts the demo explosion layer from the replay scene", () => {
     const sceneRootSource = readFileSyncForTest("src/viewer/SceneRoot.tsx");
 

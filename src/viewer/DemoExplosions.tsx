@@ -71,10 +71,18 @@ type DemoExplosionModel = Omit<DemoExplosionInstance, "age"> & {
 };
 
 export function demoExplosionInstances(timeline: ReplayTimeline, timeSeconds: number): DemoExplosionInstance[] {
-  return demoExplosionModels(timeline)
-    .map((model) => ({ ...model, age: timeSeconds - model.t }))
-    .filter((instance) => instance.age >= 0 && instance.age <= DEMO_EXPLOSION_DURATION_SECONDS)
-    .map(({ t: _t, ...instance }) => instance);
+  const instances: DemoExplosionInstance[] = [];
+  for (const model of demoExplosionModels(timeline)) {
+    const age = timeSeconds - model.t;
+    if (age < 0 || age > DEMO_EXPLOSION_DURATION_SECONDS) continue;
+    instances.push({
+      id: model.id,
+      age,
+      position: model.position,
+      team: model.team
+    });
+  }
+  return instances;
 }
 
 export function DemoExplosions({ timeline, playbackTimeRef }: { timeline: ReplayTimeline; playbackTimeRef: { current: number } }) {
