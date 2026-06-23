@@ -8,15 +8,15 @@ type BoostSegment = { start: number; end: number };
 const boostSegmentCache = new WeakMap<ReplayTimeline, Map<string, BoostSegment[]>>();
 
 export function isCarBoostingAt(timeline: ReplayTimeline, carId: string, time: number): boolean {
-  return boostSegmentAt(timeline, carId, time) !== undefined;
+  return carBoostSegmentAt(timeline, carId, time) !== undefined;
 }
 
 export function carBoostSegmentStartTime(timeline: ReplayTimeline, carId: string, time: number): number {
-  const segment = boostSegmentAt(timeline, carId, time);
+  const segment = carBoostSegmentAt(timeline, carId, time);
   return segment?.start ?? time;
 }
 
-function boostSegmentAt(timeline: ReplayTimeline, carId: string, time: number) {
+export function carBoostSegmentAt(timeline: ReplayTimeline, carId: string, time: number): BoostSegment | undefined {
   const segments = boostSegmentsForCar(timeline, carId);
   if (segments.length === 0) return undefined;
 

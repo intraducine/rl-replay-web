@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ReplayTimeline } from "../replay/types";
-import { carBoostSegmentStartTime, isCarBoostingAt } from "../viewer/boostActivity";
+import { carBoostSegmentAt, carBoostSegmentStartTime, isCarBoostingAt } from "../viewer/boostActivity";
 
 const baseTimeline = {
   version: 1,
@@ -24,7 +24,7 @@ describe("isCarBoostingAt", () => {
 
     expect(source).not.toContain("sampleTimeline");
     expect(source).toContain("boostSegmentCache");
-    expect(source).toContain("boostSegmentAt(timeline, carId, time)");
+    expect(source).toContain("carBoostSegmentAt(timeline, carId, time)");
     expect(source).toContain("replicatedBoostSegmentsForCar");
     expect(source).toContain("inferredBoostDrainSegmentsForCar");
     expect(source).not.toContain("timelineHasReplicatedBoostActive");
@@ -113,6 +113,7 @@ describe("isCarBoostingAt", () => {
     };
 
     expect(isCarBoostingAt(timeline, "p1", 0.2)).toBe(true);
+    expect(carBoostSegmentAt(timeline, "p1", 0.2)).toEqual({ start: 0.1, end: 0.3 });
     expect(carBoostSegmentStartTime(timeline, "p1", 0.2)).toBe(0.1);
   });
 

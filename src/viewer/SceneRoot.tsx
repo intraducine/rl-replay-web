@@ -28,7 +28,7 @@ import {
 } from "./SpectatorCamera";
 import { StandardArena } from "./StandardArena";
 import { ALPHA_BOOST_CASCADE } from "./alphaBoostConfig";
-import { carBoostSegmentStartTime, isCarBoostingAt } from "./boostActivity";
+import { carBoostSegmentAt } from "./boostActivity";
 import { setCarAlphaBoostActive, setCarSupersonicTrailVisible } from "./carAlphaBoost";
 import { setCarRenderPosition } from "./carPlacement";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
@@ -459,14 +459,15 @@ function updateCars(
     group.visible = true;
     setCarRenderPosition(group.position, frame.position);
     group.quaternion.fromArray(frame.rotation);
-    const boosting = boostRenderingEnabled && isCarBoostingAt(timeline, id, time);
+    const boostSegment = boostRenderingEnabled ? carBoostSegmentAt(timeline, id, time) : undefined;
+    const boosting = boostSegment !== undefined;
     let flameDistanceWindow: number | undefined;
     let flameSpawnAges: number[] | undefined;
     let alphaBoostEmitterAge: number | undefined;
 
     if (boosting) {
       flameDistanceWindow = sampleCarDistanceWindow(timeline, id, time, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds);
-      const flameEmitterStartTime = carBoostSegmentStartTime(timeline, id, time);
+      const flameEmitterStartTime = boostSegment.start;
       alphaBoostEmitterAge = time - flameEmitterStartTime;
       flameSpawnAges = sampleCarSpawnPerUnitAgesWindow(
         timeline,
