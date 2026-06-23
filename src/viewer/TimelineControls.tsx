@@ -1,5 +1,6 @@
 import { Pause, Play, RotateCcw, StepBack, StepForward } from "lucide-react";
 import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/shallow";
 import { useViewerStore } from "../state/viewerStore";
 import { Button } from "../ui/Button";
 import { Slider } from "../ui/Slider";
@@ -11,7 +12,18 @@ const MAX_SPEED = 4;
 const SPEED_STOPS = [0.25, 0.5, 1, 2, 4];
 
 export function TimelineControls({ events = [] }: { events?: Array<{ t: number; type: string }> }) {
-  const { playing, currentTime, duration, speed, setPlaying, setCurrentTime, setSpeed, seekBy } = useViewerStore();
+  const { playing, currentTime, duration, speed, setPlaying, setCurrentTime, setSpeed, seekBy } = useViewerStore(
+    useShallow((state) => ({
+      playing: state.playing,
+      currentTime: state.currentTime,
+      duration: state.duration,
+      speed: state.speed,
+      setPlaying: state.setPlaying,
+      setCurrentTime: state.setCurrentTime,
+      setSpeed: state.setSpeed,
+      seekBy: state.seekBy
+    }))
+  );
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const eventMarkers = useMemo(() => replayEventMarkers(events, duration), [events, duration]);
   useTimelineKeyboardShortcuts();

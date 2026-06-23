@@ -202,6 +202,18 @@ describe("replay insights UI", () => {
     expect(source).not.toContain("{events.map((event, index) => (");
   });
 
+  it("subscribes timeline controls only to playback fields", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
+
+    expect(source).toContain('import { useShallow } from "zustand/shallow"');
+    expect(source).toContain("useViewerStore(\n    useShallow((state) => ({");
+    expect(source).toContain("playing: state.playing");
+    expect(source).toContain("currentTime: state.currentTime");
+    expect(source).toContain("duration: state.duration");
+    expect(source).toContain("speed: state.speed");
+    expect(source).not.toContain("useViewerStore();");
+  });
+
   it("explains the primary desktop play button with a hover tooltip", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 
