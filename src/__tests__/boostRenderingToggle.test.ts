@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { Group } from "three";
 import { useViewerStore } from "../state/viewerStore";
 import type { CarFrame } from "../replay/types";
-import { setCarAlphaBoostActive } from "../viewer/carAlphaBoost";
+import { setCarAlphaBoostActive, setCarSupersonicTrailVisible } from "../viewer/carAlphaBoost";
 
 describe("boost rendering toggle", () => {
   it("defaults boost rendering off on startup and exposes a setter", () => {
@@ -132,5 +132,23 @@ describe("boost rendering toggle", () => {
     setCarAlphaBoostActive(car, true, undefined, true, 20.5, 128, [0.1, 0.2], 0.35);
 
     expect(boost.userData.alphaBoostEmitterAge).toBe(0.35);
+  });
+
+  it("caches the supersonic trail group for per-frame visibility updates", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/carAlphaBoost.ts"), "utf8");
+    const car = new Group();
+    const trail = new Group();
+    trail.name = "supersonicTrail";
+    car.add(trail);
+
+    setCarSupersonicTrailVisible(car, true);
+    const cachedTrail = car.userData.supersonicTrail;
+    setCarSupersonicTrailVisible(car, false);
+
+    expect(cachedTrail).toBe(trail);
+    expect(car.userData.supersonicTrail).toBe(cachedTrail);
+    expect(trail.visible).toBe(false);
+    expect(source).toContain("car.userData.supersonicTrail");
+    expect(source).toContain("car.getObjectByName(SUPERSONIC_TRAIL_OBJECT_NAME)");
   });
 });

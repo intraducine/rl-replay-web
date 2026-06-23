@@ -178,10 +178,12 @@ describe("Alpha boost render contract", () => {
 
   it("keeps the generic supersonic placeholder from contaminating active Alpha boost", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const carAlphaBoostSource = readFileSync(resolve(process.cwd(), "src/viewer/carAlphaBoost.ts"), "utf8");
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
 
     expect(carSource).toContain("SUPERSONIC_TRAIL_OBJECT_NAME");
     expect(carSource).not.toContain("frame?.supersonic ? (");
+    expect(carAlphaBoostSource).toContain("car.userData.supersonicTrail");
     expect(sceneRootSource).toContain("setCarSupersonicTrailVisible(group, boostRenderingEnabled && Boolean(frame.supersonic) && !boosting)");
   });
 

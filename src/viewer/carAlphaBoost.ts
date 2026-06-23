@@ -40,7 +40,8 @@ export function setCarAlphaBoostActive(
 }
 
 export function setCarSupersonicTrailVisible(car: Group, visible: boolean) {
-  const trail = car.getObjectByName(SUPERSONIC_TRAIL_OBJECT_NAME);
+  const trail = (car.userData.supersonicTrail as Group | undefined) ?? (car.getObjectByName(SUPERSONIC_TRAIL_OBJECT_NAME) as Group | undefined);
+  if (trail) car.userData.supersonicTrail = trail;
   if (trail) trail.visible = visible;
 }
 
