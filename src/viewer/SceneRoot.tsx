@@ -303,10 +303,11 @@ function ReplayObjects({
 
     const cameraPlayerId =
       state.cameraMode === "director" ? directorTargetPlayerId(sample, timeline.events) ?? state.selectedPlayerId : state.selectedPlayerId;
+    const cameraRigMode = state.cameraMode === "director" ? "player" : state.cameraMode;
     const rig = cameraRigForMode(
-      state.cameraMode,
+      cameraRigMode,
       sample,
-      state.selectedPlayerId,
+      cameraPlayerId,
       timeline.events,
       samplePlayerCameraState(timeline, cameraPlayerId, sample.t)
     );

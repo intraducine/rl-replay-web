@@ -108,6 +108,17 @@ describe("cameraRigForMode", () => {
     expect(target).toBe("scorer");
   });
 
+  it("avoids per-frame director event sorting and duplicate target resolution", () => {
+    const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+
+    expect(cameraSource).toContain("function nearestDirectorEvent");
+    expect(cameraSource).not.toContain(".filter((candidate) => Math.abs(candidate.t - sample.t) < 3.5)");
+    expect(cameraSource).not.toContain(".sort((a, b) => Math.abs(a.t - sample.t) - Math.abs(b.t - sample.t))");
+    expect(sceneRootSource).toContain('const cameraRigMode = state.cameraMode === "director" ? "player" : state.cameraMode');
+    expect(sceneRootSource).toContain("cameraRigMode,\n      sample,\n      cameraPlayerId,");
+  });
+
   it("uses top-down camera up vector that keeps the field oriented", () => {
     const rig = cameraRigForMode("top-down", { t: 0, cars: {} });
     expect(rig.position).toEqual([0, 9300, 0]);

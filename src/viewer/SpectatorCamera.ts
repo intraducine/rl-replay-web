@@ -103,9 +103,7 @@ export function cameraRigForMode(
 }
 
 export function directorTargetPlayerId(sample: SampledReplayState, events: ReplayEvent[] = []): string | undefined {
-  const event = events
-    .filter((candidate) => Math.abs(candidate.t - sample.t) < 3.5)
-    .sort((a, b) => Math.abs(a.t - sample.t) - Math.abs(b.t - sample.t))[0];
+  const event = nearestDirectorEvent(sample.t, events);
   const eventPlayerId = eventPlayerIdForCamera(event);
   if (eventPlayerId && sample.cars[eventPlayerId]) return eventPlayerId;
 
@@ -123,6 +121,21 @@ export function directorTargetPlayerId(sample: SampledReplayState, events: Repla
   }
 
   return bestId;
+}
+
+function nearestDirectorEvent(timeSeconds: number, events: ReplayEvent[]): ReplayEvent | undefined {
+  let nearest: ReplayEvent | undefined;
+  let nearestDelta = 3.5;
+
+  for (const candidate of events) {
+    const delta = Math.abs(candidate.t - timeSeconds);
+    if (delta < nearestDelta) {
+      nearest = candidate;
+      nearestDelta = delta;
+    }
+  }
+
+  return nearest;
 }
 
 function eventPlayerIdForCamera(event?: ReplayEvent): string | undefined {
