@@ -336,14 +336,16 @@ export function sampleCarSpawnPerUnitAgesWindow(
       const distanceIntoReverseSegment = nextSpawnDistance - distanceFromEnd;
       const alphaBack = distanceIntoReverseSegment / segmentDistance;
       const spawnTime = current.t + (previous.t - current.t) * alphaBack;
-      ages.push(roundSampleAge(endTimeSeconds - spawnTime));
+      const age = roundSampleAge(endTimeSeconds - spawnTime);
+      if (age > windowSeconds) return ages;
+      ages.push(age);
       nextSpawnDistance += interval;
     }
 
     distanceFromEnd += segmentDistance;
   }
 
-  return ages.filter((age) => age <= windowSeconds);
+  return ages;
 }
 
 function sampleCarSpawnPerUnitAgesFromEmitterStart(

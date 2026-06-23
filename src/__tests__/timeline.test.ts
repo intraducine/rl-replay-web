@@ -310,6 +310,15 @@ describe("sampleTimeline", () => {
 
     expect(sampleCarSpawnPerUnitAgesWindow(movingTimeline, "p1", 1, 1, 0.5, 1)).toEqual([0.2, 0.4, 0.6, 0.8, 1]);
     expect(sampleCarSpawnPerUnitAgesWindow(movingTimeline, "p1", 1, 0.5, 0.5, 1)).toEqual([0.2, 0.4]);
+    expect(sampleCarSpawnPerUnitAgesWindow(movingTimeline, "p1", 1, 0.25, 0.5, 1)).toEqual([0.2]);
+  });
+
+  it("stops reverse SpawnPerUnit age sampling once ages leave the replay window", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+    const spawnAgeSource = source.match(/export function sampleCarSpawnPerUnitAgesWindow[\s\S]*?\n}\n\nfunction sampleCarSpawnPerUnitAgesFromEmitterStart/)?.[0] ?? "";
+
+    expect(spawnAgeSource).toContain("if (age > windowSeconds) return ages");
+    expect(spawnAgeSource).not.toContain("ages.filter((age) => age <= windowSeconds)");
   });
 
   it("carries SpawnPerUnit distance phase forward from a known emitter start", () => {
