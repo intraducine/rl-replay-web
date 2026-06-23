@@ -183,6 +183,18 @@ describe("replay insights UI", () => {
     expect(replayViewerSource).not.toContain("options={timeline.metadata.players.map");
   });
 
+  it("uses one shallow viewer store selector for replay chrome state", () => {
+    const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
+
+    expect(replayViewerSource).toContain('import { useShallow } from "zustand/shallow"');
+    expect(replayViewerSource).toContain("} = useViewerStore(\n    useShallow((state) => ({");
+    expect(replayViewerSource).toContain("currentTime: state.currentTime");
+    expect(replayViewerSource).toContain("cameraMode: state.cameraMode");
+    expect(replayViewerSource).toContain("boostRenderingEnabled: state.boostRenderingEnabled");
+    expect(replayViewerSource).not.toContain("const currentTime = useViewerStore((state) => state.currentTime)");
+    expect(replayViewerSource).not.toContain("const cameraMode = useViewerStore((state) => state.cameraMode)");
+  });
+
   it("renders typed event markers for goals, saves, and demos", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 

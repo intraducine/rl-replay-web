@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/shallow";
 import { samplePlayerBoostsAt, samplePlayerCameraState, timelineDuration } from "../replay/ReplayTimeline";
 import type { ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
@@ -24,17 +25,33 @@ const coordinateDebugOptions = [
 ] as const;
 
 export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
-  const setDuration = useViewerStore((state) => state.setDuration);
-  const setCurrentTime = useViewerStore((state) => state.setCurrentTime);
-  const cameraMode = useViewerStore((state) => state.cameraMode);
-  const setCameraMode = useViewerStore((state) => state.setCameraMode);
-  const selectedPlayerId = useViewerStore((state) => state.selectedPlayerId);
-  const setSelectedPlayerId = useViewerStore((state) => state.setSelectedPlayerId);
-  const currentTime = useViewerStore((state) => state.currentTime);
-  const boostRenderingEnabled = useViewerStore((state) => state.boostRenderingEnabled);
-  const setBoostRenderingEnabled = useViewerStore((state) => state.setBoostRenderingEnabled);
-  const setCoordinateOption = useViewerStore((state) => state.setCoordinateOption);
-  const coordinateOptions = useViewerStore((state) => state.coordinateOptions);
+  const {
+    setDuration,
+    setCurrentTime,
+    cameraMode,
+    setCameraMode,
+    selectedPlayerId,
+    setSelectedPlayerId,
+    currentTime,
+    boostRenderingEnabled,
+    setBoostRenderingEnabled,
+    setCoordinateOption,
+    coordinateOptions
+  } = useViewerStore(
+    useShallow((state) => ({
+      setDuration: state.setDuration,
+      setCurrentTime: state.setCurrentTime,
+      cameraMode: state.cameraMode,
+      setCameraMode: state.setCameraMode,
+      selectedPlayerId: state.selectedPlayerId,
+      setSelectedPlayerId: state.setSelectedPlayerId,
+      currentTime: state.currentTime,
+      boostRenderingEnabled: state.boostRenderingEnabled,
+      setBoostRenderingEnabled: state.setBoostRenderingEnabled,
+      setCoordinateOption: state.setCoordinateOption,
+      coordinateOptions: state.coordinateOptions
+    }))
+  );
   const playerCameraState = samplePlayerCameraState(timeline, selectedPlayerId, currentTime);
   const showDebugControls = import.meta.env.DEV;
   const playerOptions = useMemo(() => timeline.metadata.players.map((player) => ({ value: player.id, label: player.name })), [timeline]);
