@@ -76,4 +76,17 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".viewer-toggle");
     expect(css).toContain("width: 100%");
   });
+
+  it("keeps touch playback controls large enough on coarse-pointer devices", () => {
+    const css = styles();
+
+    expect(css).toContain("@media (pointer: coarse)");
+    expect(css).toContain("min-height: 44px");
+    expect(css).toContain(".timeline-shell .slider input[type=\"range\"]");
+    expect(css).toContain("min-height: 32px");
+    expect(css).toContain(".event-track");
+    expect(css).toContain("height: 12px");
+    expect(css).toContain(".mobile-transport-controls .button");
+    expect(css).toContain("flex: 1 1 0");
+  });
 });

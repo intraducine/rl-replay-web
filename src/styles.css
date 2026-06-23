@@ -1170,3 +1170,29 @@ pre {
     order: 4;
   }
 }
+
+@media (pointer: coarse) {
+  .button,
+  .viewer-toggle,
+  .select select,
+  .speed-input input {
+    min-height: 44px;
+  }
+
+  .timeline-shell .slider input[type="range"],
+  .speed-slider input[type="range"] {
+    min-height: 32px;
+  }
+
+  .event-track {
+    height: 12px;
+  }
+
+  .mobile-transport-controls {
+    width: 100%;
+  }
+
+  .mobile-transport-controls .button {
+    flex: 1 1 0;
+  }
+}
