@@ -30,7 +30,7 @@ import { StandardArena } from "./StandardArena";
 import { ALPHA_BOOST_CASCADE } from "./alphaBoostConfig";
 import { carBoostSegmentStartTime, isCarBoostingAt } from "./boostActivity";
 import { setCarAlphaBoostActive, setCarSupersonicTrailVisible } from "./carAlphaBoost";
-import { carRenderPosition } from "./carPlacement";
+import { setCarRenderPosition } from "./carPlacement";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 
 const PLAYBACK_UI_COMMIT_FPS = 30;
@@ -42,6 +42,7 @@ const PROJECTED_SHADOW_BASE_OPACITY = 0.28;
 const SHADOW_LIGHT_DIRECTION = new Vector3(2600, 6200, 3400).normalize();
 const SHADOW_QUATERNION = new THREE.Quaternion();
 const SHADOW_EULER = new THREE.Euler();
+const SHADOW_RENDER_POSITION = new Vector3();
 const FREE_CAMERA_INITIAL_POSITION: [number, number, number] = [0, 160, 0];
 const FREE_CAMERA_TARGET: [number, number, number] = [0, 160, -1];
 const FREE_CAMERA_MIN_DISTANCE = 1;
@@ -456,7 +457,7 @@ function updateCars(
       continue;
     }
     group.visible = true;
-    group.position.fromArray(carRenderPosition(frame.position));
+    setCarRenderPosition(group.position, frame.position);
     group.quaternion.fromArray(frame.rotation);
     const boosting = boostRenderingEnabled && isCarBoostingAt(timeline, id, time);
     let flameDistanceWindow: number | undefined;
@@ -485,15 +486,15 @@ function updateCars(
 }
 
 function updateProjectedCarShadow(shadow: Mesh, frame: SampledReplayState["cars"][string]) {
-  const renderPosition = carRenderPosition(frame.position);
-  const height = Math.max(0, renderPosition[1] - PROJECTED_SHADOW_Y);
+  const renderPosition = setCarRenderPosition(SHADOW_RENDER_POSITION, frame.position);
+  const height = Math.max(0, renderPosition.y - PROJECTED_SHADOW_Y);
   const lightOffsetX = -(height * SHADOW_LIGHT_DIRECTION.x) / Math.max(0.001, SHADOW_LIGHT_DIRECTION.y);
   const lightOffsetZ = -(height * SHADOW_LIGHT_DIRECTION.z) / Math.max(0.001, SHADOW_LIGHT_DIRECTION.y);
   const liftScale = 1 + Math.min(height * 0.0001, 0.28);
   const opacity = Math.max(0.2, PROJECTED_SHADOW_BASE_OPACITY - height * 0.0001);
 
   shadow.visible = true;
-  shadow.position.set(renderPosition[0] + lightOffsetX, PROJECTED_SHADOW_Y, renderPosition[2] + lightOffsetZ);
+  shadow.position.set(renderPosition.x + lightOffsetX, PROJECTED_SHADOW_Y, renderPosition.z + lightOffsetZ);
   SHADOW_QUATERNION.fromArray(frame.rotation);
   SHADOW_EULER.setFromQuaternion(SHADOW_QUATERNION, "YXZ");
   shadow.rotation.set(0, SHADOW_EULER.y, 0);
