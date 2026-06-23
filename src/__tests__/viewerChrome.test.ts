@@ -8,6 +8,11 @@ describe("viewer chrome layout", () => {
   it("keeps the player list inside a scrollable side rail", () => {
     const css = styles();
 
+    expect(css).toContain("--viewer-edge-top: max(12px, env(safe-area-inset-top, 0px))");
+    expect(css).toContain("--viewer-edge-right: max(12px, env(safe-area-inset-right, 0px))");
+    expect(css).toContain("--viewer-edge-bottom: max(12px, env(safe-area-inset-bottom, 0px))");
+    expect(css).toContain("--viewer-edge-left: max(12px, env(safe-area-inset-left, 0px))");
+    expect(css).toContain("--viewer-bottom-rail: calc(178px + var(--viewer-edge-bottom))");
     expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr)");
     expect(css).toContain("width: clamp(280px, 36vw, 420px)");
     expect(css).toContain("width: min(100%, 320px)");
@@ -15,7 +20,7 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("gap: 6px");
     expect(css).toContain(".viewer-top-left .player-list button");
     expect(css).toContain("padding: 8px");
-    expect(css).toContain("bottom: 190px");
+    expect(css).toContain("bottom: var(--viewer-bottom-rail)");
     expect(css).toContain("overflow: hidden");
     expect(css).toContain(".player-list-scroll");
     expect(css).toContain("height: 100%");
@@ -57,7 +62,8 @@ describe("viewer chrome layout", () => {
 
     expect(css).toContain(".viewer-overlay.debug");
     expect(css).toContain("left: auto");
-    expect(css).toContain("bottom: 190px");
+    expect(css).toContain("bottom: var(--viewer-bottom-rail)");
+    expect(css).toContain("max-height: calc(100% - var(--viewer-bottom-rail) - var(--viewer-edge-top))");
     expect(css).toContain("overflow-y: auto");
   });
 
@@ -67,6 +73,9 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("overflow-x: hidden");
     expect(css).toContain("max-width: 100vw");
     expect(css).toContain("width: 100vw");
+    expect(css).toContain("left: var(--viewer-edge-left)");
+    expect(css).toContain("right: var(--viewer-edge-right)");
+    expect(css).toContain("bottom: max(8px, env(safe-area-inset-bottom, 0px))");
     expect(css).toContain(".viewer canvas");
     expect(css).toContain("max-width: 100%");
     expect(css).toContain(".timeline-controls");

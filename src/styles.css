@@ -395,6 +395,11 @@ progress {
 }
 
 .viewer {
+  --viewer-edge-top: max(12px, env(safe-area-inset-top, 0px));
+  --viewer-edge-right: max(12px, env(safe-area-inset-right, 0px));
+  --viewer-edge-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  --viewer-edge-left: max(12px, env(safe-area-inset-left, 0px));
+  --viewer-bottom-rail: calc(178px + var(--viewer-edge-bottom));
   position: relative;
   width: 100%;
   max-width: 100vw;
@@ -418,10 +423,10 @@ progress {
 }
 
 .viewer-overlay.top {
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  bottom: 190px;
+  top: var(--viewer-edge-top);
+  left: var(--viewer-edge-left);
+  right: var(--viewer-edge-right);
+  bottom: var(--viewer-bottom-rail);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -429,18 +434,18 @@ progress {
 }
 
 .viewer-overlay.bottom {
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
+  left: var(--viewer-edge-left);
+  right: var(--viewer-edge-right);
+  bottom: var(--viewer-edge-bottom);
 }
 
 .viewer-overlay.debug {
-  right: 12px;
+  right: var(--viewer-edge-right);
   left: auto;
   top: auto;
-  bottom: 190px;
+  bottom: var(--viewer-bottom-rail);
   width: 190px;
-  max-height: calc(100% - 192px);
+  max-height: calc(100% - var(--viewer-bottom-rail) - var(--viewer-edge-top));
   overflow-y: auto;
   padding: 10px;
   border: 1px solid rgba(238, 246, 243, 0.14);
@@ -1069,13 +1074,13 @@ pre {
   }
 
   .viewer-overlay.top {
-    right: 12px;
-    bottom: 204px;
+    right: var(--viewer-edge-right);
+    bottom: calc(192px + var(--viewer-edge-bottom));
     overflow: hidden;
   }
 
   .viewer-overlay.bottom {
-    bottom: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
   }
 
   .viewer-overlay.debug {
