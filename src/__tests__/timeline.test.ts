@@ -289,8 +289,12 @@ describe("sampleTimeline", () => {
 
     expect(source).toContain("function sampleCarForWindow");
     expect(carWindowSamplesSource).toContain("sampleCarForWindow(timeline, carId, sampleTime)?.position");
+    expect(carWindowSamplesSource).toContain("const [, firstInsideIndex] = findFramePairIndices(timeline.frames, startTime)");
+    expect(carWindowSamplesSource).toContain("const [lastInsideIndex] = findFramePairIndices(timeline.frames, endTime)");
+    expect(carWindowSamplesSource).toContain("for (let index = firstInsideIndex; index <= lastInsideIndex; index++)");
     expect(carWindowSamplesSource).not.toContain("sampleTimeline(timeline, sampleTime)");
     expect(carWindowSamplesSource).not.toContain("timeline.frames.map");
+    expect(carWindowSamplesSource).not.toContain("for (const frame of timeline.frames)");
     expect(carWindowSamplesSource).not.toContain(".filter((time)");
     expect(carWindowSamplesSource).not.toContain("samples.slice");
   });

@@ -432,7 +432,10 @@ function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSecond
   };
 
   appendSample(startTime);
-  for (const frame of timeline.frames) {
+  const [, firstInsideIndex] = findFramePairIndices(timeline.frames, startTime);
+  const [lastInsideIndex] = findFramePairIndices(timeline.frames, endTime);
+  for (let index = firstInsideIndex; index <= lastInsideIndex; index++) {
+    const frame = timeline.frames[index];
     if (frame.t > startTime && frame.t < endTime) {
       appendSample(frame.t);
     }
