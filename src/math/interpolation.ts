@@ -12,6 +12,21 @@ export function lerpVec3(a: Vec3, b: Vec3, t: number): Vec3 {
   return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
 }
 
+export function hermiteVec3(a: Vec3, b: Vec3, velocityA: Vec3, velocityB: Vec3, t: number, spanSeconds: number): Vec3 {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const h00 = 2 * t3 - 3 * t2 + 1;
+  const h10 = t3 - 2 * t2 + t;
+  const h01 = -2 * t3 + 3 * t2;
+  const h11 = t3 - t2;
+
+  return [
+    h00 * a[0] + h10 * velocityA[0] * spanSeconds + h01 * b[0] + h11 * velocityB[0] * spanSeconds,
+    h00 * a[1] + h10 * velocityA[1] * spanSeconds + h01 * b[1] + h11 * velocityB[1] * spanSeconds,
+    h00 * a[2] + h10 * velocityA[2] * spanSeconds + h01 * b[2] + h11 * velocityB[2] * spanSeconds
+  ];
+}
+
 export function normalizeQuat(q: Quat): Quat {
   const length = Math.hypot(q[0], q[1], q[2], q[3]);
   if (length === 0) return [0, 0, 0, 1];

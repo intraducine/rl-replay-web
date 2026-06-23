@@ -1,4 +1,4 @@
-import { clamp, lerpVec3, slerpQuat } from "../math/interpolation";
+import { clamp, hermiteVec3, lerpVec3, slerpQuat } from "../math/interpolation";
 import type { CarFrame, ReplayCameraSample, ReplayTimeline, RigidBodyFrame, SampledReplayState, TimelineFrame } from "./types";
 
 type MotionKeyframe<T extends RigidBodyFrame> = {
@@ -21,9 +21,12 @@ const BALL_RESET_DISTANCE = 2600;
 const BALL_MAX_SPEED = 18000;
 const samplingIndexCache = new WeakMap<ReplayTimeline, TimelineSamplingIndex>();
 
-function interpolateRigidBody(a: RigidBodyFrame, b: RigidBodyFrame, alpha: number): RigidBodyFrame {
+function interpolateRigidBody(a: RigidBodyFrame, b: RigidBodyFrame, alpha: number, spanSeconds?: number): RigidBodyFrame {
   return {
-    position: lerpVec3(a.position, b.position, alpha),
+    position:
+      a.velocity && b.velocity && spanSeconds !== undefined
+        ? hermiteVec3(a.position, b.position, a.velocity, b.velocity, alpha, spanSeconds)
+        : lerpVec3(a.position, b.position, alpha),
     rotation: slerpQuat(a.rotation, b.rotation, alpha),
     velocity: a.velocity && b.velocity ? lerpVec3(a.velocity, b.velocity, alpha) : a.velocity ?? b.velocity,
     angularVelocity:
@@ -33,9 +36,9 @@ function interpolateRigidBody(a: RigidBodyFrame, b: RigidBodyFrame, alpha: numbe
   };
 }
 
-function interpolateCar(a: CarFrame, b: CarFrame, alpha: number): CarFrame {
+function interpolateCar(a: CarFrame, b: CarFrame, alpha: number, spanSeconds?: number): CarFrame {
   return {
-    ...interpolateRigidBody(a, b, alpha),
+    ...interpolateRigidBody(a, b, alpha, spanSeconds),
     boost: a.boost !== undefined && b.boost !== undefined ? a.boost + (b.boost - a.boost) * alpha : a.boost ?? b.boost,
     boostActive: alpha < 0.5 ? a.boostActive ?? b.boostActive : b.boostActive ?? a.boostActive,
     demolished: sampleDemolishedState(a.demolished, b.demolished, alpha),
@@ -121,7 +124,7 @@ function quatDot(a: RigidBodyFrame["rotation"], b: RigidBodyFrame["rotation"]): 
 function sampleMotionTrack<T extends RigidBodyFrame>(
   track: MotionKeyframe<T>[] | undefined,
   t: number,
-  interpolate: (a: T, b: T, alpha: number) => T,
+  interpolate: (a: T, b: T, alpha: number, spanSeconds?: number) => T,
   maxDistance: number,
   maxSpeed: number
 ): T | undefined {
@@ -148,7 +151,7 @@ function sampleMotionTrack<T extends RigidBodyFrame>(
   }
   if (span > MAX_SMOOTH_SPAN_SECONDS) return undefined;
 
-  return interpolate(previous.frame, next.frame, (t - previous.t) / span);
+  return interpolate(previous.frame, next.frame, (t - previous.t) / span, span);
 }
 
 function findFramePair(frames: TimelineFrame[], t: number): [TimelineFrame, TimelineFrame, number] {

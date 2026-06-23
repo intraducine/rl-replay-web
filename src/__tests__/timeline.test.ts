@@ -121,6 +121,39 @@ describe("sampleTimeline", () => {
     expect(sample.cars.p1.boost).toBeCloseTo(70);
   });
 
+  it("uses endpoint velocities to smooth position interpolation when available", () => {
+    const velocityTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        {
+          t: 0,
+          ball: { position: [0, 0, 0], rotation: [0, 0, 0, 1], velocity: [0, 0, 0] },
+          cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], velocity: [0, 0, 0] } }
+        },
+        {
+          t: 0.5,
+          ball: { position: [10, 0, 0], rotation: [0, 0, 0, 1], velocity: [0, 0, 0] },
+          cars: { p1: { position: [10, 0, 0], rotation: [0, 0, 0, 1], velocity: [0, 0, 0] } }
+        }
+      ]
+    };
+
+    const sample = sampleTimeline(velocityTimeline, 0.125);
+
+    expect(sample.ball?.position[0]).toBeCloseTo(1.5625);
+    expect(sample.cars.p1.position[0]).toBeCloseTo(1.5625);
+    expect(sample.cars.p1.velocity).toEqual([0, 0, 0]);
+  });
+
+  it("keeps velocity-aware interpolation behind the shared rigid body sampler", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+    const mathSource = readFileSync(resolve(process.cwd(), "src/math/interpolation.ts"), "utf8");
+
+    expect(source).toContain("hermiteVec3(a.position, b.position, a.velocity, b.velocity, alpha, spanSeconds)");
+    expect(source).toContain("interpolate(previous.frame, next.frame, (t - previous.t) / span, span)");
+    expect(mathSource).toContain("export function hermiteVec3");
+  });
+
   it("smoothly interpolates boost amount when only boost changes between samples", () => {
     const boostOnlyTimeline: ReplayTimeline = {
       ...timeline,
