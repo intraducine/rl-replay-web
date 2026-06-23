@@ -54,6 +54,7 @@ const ALPHA_RENDERED_MAIN_PARTICLES = sourceCascadeSpawnAccumulatorActiveParticl
 const ALPHA_FLAME_DENSITY_OPACITY = 1;
 const ALPHA_BOOST_MESH_FADE_IN_DURATION = sourceTimeRangeDuration(ALPHA_BOOST_CASCADE.boostMesh.fadeInTime);
 const ALPHA_BOOST_MESH_FADE_OUT_DURATION = sourceTimeRangeDuration(ALPHA_BOOST_CASCADE.boostMesh.fadeOutTime);
+const ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL = sourceIntegratedFlameVelocityOverLifeSamples();
 const BILLBOARD_ROOT_QUATERNION = new THREE.Quaternion();
 const ALPHA_LENS_FLARE_ROOT_QUATERNION = new THREE.Quaternion();
 const ALPHA_LENS_FLARE_WORLD_DIRECTION = new THREE.Vector3();
@@ -765,6 +766,32 @@ function sourceFlameWorldOffset(age: number, phase: number, localVelocity: numbe
 }
 
 function integrateFlameVelocityOverLife(phase: number): [number, number, number] {
+  const clampedPhase = THREE.MathUtils.clamp(phase, 0, 1);
+  if (clampedPhase <= 0) return ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL[0];
+
+  const scaled = clampedPhase * (ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL.length - 1);
+  const index = Math.floor(scaled);
+  const nextIndex = Math.min(index + 1, ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL.length - 1);
+  const alpha = scaled - index;
+  const current = ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL[index];
+  const next = ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL[nextIndex];
+  return [
+    THREE.MathUtils.lerp(current[0], next[0], alpha),
+    THREE.MathUtils.lerp(current[1], next[1], alpha),
+    THREE.MathUtils.lerp(current[2], next[2], alpha)
+  ];
+}
+
+function sourceIntegratedFlameVelocityOverLifeSamples(): Array<[number, number, number]> {
+  const sampleCount = Math.max(2, ALPHA_BOOST_CASCADE.flame.velocityOverLife.samples.length);
+  const samples: Array<[number, number, number]> = [];
+  for (let index = 0; index < sampleCount; index++) {
+    samples.push(sourceIntegratedFlameVelocityOverLifeAt(index / (sampleCount - 1)));
+  }
+  return samples;
+}
+
+function sourceIntegratedFlameVelocityOverLifeAt(phase: number): [number, number, number] {
   const clampedPhase = THREE.MathUtils.clamp(phase, 0, 1);
   if (clampedPhase <= 0) return sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.velocityOverLife, 0);
 

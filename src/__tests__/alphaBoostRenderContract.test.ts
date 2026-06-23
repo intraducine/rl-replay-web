@@ -253,11 +253,20 @@ describe("Alpha boost render contract", () => {
 
   it("keeps Flame particles in source world-space instead of a compact local car plume", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const runtimeIntegrationSource = carSource.slice(
+      carSource.indexOf("function integrateFlameVelocityOverLife"),
+      carSource.indexOf("function sourceIntegratedFlameVelocityOverLifeSamples")
+    );
 
     expect(carSource).toContain("sourceFlameWorldOffset");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.velocityOverLifeInWorldSpace");
     expect(carSource).toContain("localVelocity");
     expect(carSource).toContain("integrateFlameVelocityOverLife");
+    expect(carSource).toContain("ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL");
+    expect(carSource).toContain("sourceIntegratedFlameVelocityOverLifeSamples");
+    expect(carSource).toContain("sourceIntegratedFlameVelocityOverLifeAt");
+    expect(runtimeIntegrationSource).toContain("ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL");
+    expect(runtimeIntegrationSource).not.toContain("for (let step");
     expect(carSource).toContain("sourceRuntimeFlameAcceleration");
     expect(carSource).toContain("const velocityOverLife = integrateFlameVelocityOverLife(phase)");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.velocityOverLife");
@@ -271,6 +280,7 @@ describe("Alpha boost render contract", () => {
     expect(carSource).not.toContain("root.getWorldQuaternion(new THREE.Quaternion())");
     expect(carSource).not.toContain("root.localToWorld(FLAME_SPAWN_LOCAL_POSITION.clone())");
     expect(carSource).not.toContain("\n  integrateFlameVelocityOverLife(phase);\n");
+    expect(carSource).not.toContain("const steps = 6");
     expect(carSource).not.toContain("-localVelocity[0] * age");
     expect(carSource).not.toContain("-localVelocity[2] * age");
     expect(carSource).not.toContain("145 + normalizedSpeed * 285");
