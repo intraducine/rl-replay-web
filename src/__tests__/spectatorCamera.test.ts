@@ -18,6 +18,19 @@ describe("cameraRigForMode", () => {
     expect(cameraModeOptions.map((option) => option.label)).not.toContain("Player car cam");
   });
 
+  it("subscribes scene root only to render-facing viewer state", () => {
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+
+    expect(sceneRootSource).toContain('import { useShallow } from "zustand/shallow"');
+    expect(sceneRootSource).toContain("useViewerStore(\n    useShallow((state) => ({");
+    expect(sceneRootSource).toContain("coordinateOptions: state.coordinateOptions");
+    expect(sceneRootSource).toContain("selectedPlayerId: state.selectedPlayerId");
+    expect(sceneRootSource).toContain("cameraMode: state.cameraMode");
+    expect(sceneRootSource).not.toContain("const coordinateOptions = useViewerStore((state) => state.coordinateOptions)");
+    expect(sceneRootSource).not.toContain("const selectedPlayerId = useViewerStore((state) => state.selectedPlayerId)");
+    expect(sceneRootSource).not.toContain("const cameraMode = useViewerStore((state) => state.cameraMode)");
+  });
+
   it("places player car cam behind the selected car heading when ball cam is off", () => {
     const rig = cameraRigForMode(
       "player",

@@ -2,6 +2,7 @@ import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { forwardRef, useEffect, useMemo, useRef, type ElementRef, type ForwardedRef, type RefObject } from "react";
 import * as THREE from "three";
+import { useShallow } from "zustand/shallow";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
@@ -58,9 +59,13 @@ const ROCKET_LEAGUE_RENDERER_PARAMETERS: RocketLeagueRendererParameters = {
 };
 
 export function SceneRoot({ timeline }: { timeline: ReplayTimeline }) {
-  const coordinateOptions = useViewerStore((state) => state.coordinateOptions);
-  const selectedPlayerId = useViewerStore((state) => state.selectedPlayerId);
-  const cameraMode = useViewerStore((state) => state.cameraMode);
+  const { coordinateOptions, selectedPlayerId, cameraMode } = useViewerStore(
+    useShallow((state) => ({
+      coordinateOptions: state.coordinateOptions,
+      selectedPlayerId: state.selectedPlayerId,
+      cameraMode: state.cameraMode
+    }))
+  );
   const orbitControlsRef = useRef<ElementRef<typeof OrbitControls> | null>(null);
   const normalized = useMemo(() => normalizeTimelineCoordinates(timeline, coordinateOptions), [timeline, coordinateOptions]);
   const initialSample = useMemo(() => sampleTimeline(normalized, useViewerStore.getState().currentTime), [normalized]);
