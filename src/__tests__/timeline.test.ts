@@ -347,4 +347,17 @@ describe("sampleTimeline", () => {
 
     expect(sampleCarSpawnPerUnitAgesWindow(movingTimeline, "p1", 2, 1, 0.2, 1, 0)).toEqual([0.181818, 0.636364]);
   });
+
+  it("caches cumulative car distance so long boost segments do not rescan from emitter start every frame", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+    const spawnAgeSource = source.match(/function sampleCarSpawnPerUnitAgesFromEmitterStart[\s\S]*?\n}\n\nfunction carCumulativeDistanceAt/)?.[0] ?? "";
+
+    expect(source).toContain("carDistanceTrackCache");
+    expect(source).toContain("function carCumulativeDistanceAt");
+    expect(source).toContain("function carDistanceTrackForCar");
+    expect(spawnAgeSource).toContain("const distanceAtEmitterStart = carCumulativeDistanceAt(timeline, carId, emitterStartTime)");
+    expect(spawnAgeSource).toContain("const distanceAtWindowStart = carCumulativeDistanceAt(timeline, carId, windowStartTime)");
+    expect(spawnAgeSource).toContain("carWindowSamples(timeline, carId, endTime, endTime - windowStartTime)");
+    expect(spawnAgeSource).not.toContain("carWindowSamples(timeline, carId, endTime, endTime - emitterStartTime)");
+  });
 });

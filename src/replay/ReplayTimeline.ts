@@ -12,6 +12,12 @@ type TimelineSamplingIndex = {
   camera: Map<string, ReplayCameraSample[]>;
 };
 
+type CarDistanceSample = {
+  t: number;
+  position: [number, number, number] | undefined;
+  distance: number;
+};
+
 const MOTION_EPSILON_SQ = 0.01;
 const ROTATION_DOT_EPSILON = 0.99999;
 const MAX_SMOOTH_SPAN_SECONDS = 0.75;
@@ -20,6 +26,7 @@ const CAR_MAX_SPEED = 9000;
 const BALL_RESET_DISTANCE = 2600;
 const BALL_MAX_SPEED = 18000;
 const samplingIndexCache = new WeakMap<ReplayTimeline, TimelineSamplingIndex>();
+const carDistanceTrackCache = new WeakMap<ReplayTimeline, Map<string, CarDistanceSample[]>>();
 
 function interpolateRigidBody(a: RigidBodyFrame, b: RigidBodyFrame, alpha: number, spanSeconds?: number): RigidBodyFrame {
   return {
@@ -380,10 +387,19 @@ function sampleCarSpawnPerUnitAgesFromEmitterStart(
   const windowStartTime = clamp(endTime - windowSeconds, timelineStart, timelineEnd);
   if (endTime <= emitterStartTime) return [];
 
-  const { samples } = carWindowSamples(timeline, carId, endTime, endTime - emitterStartTime);
+  const distanceAtEmitterStart = carCumulativeDistanceAt(timeline, carId, emitterStartTime);
+  const distanceAtWindowStart = carCumulativeDistanceAt(timeline, carId, windowStartTime);
+  const distanceSinceEmitterStart = Math.max(0, distanceAtWindowStart - distanceAtEmitterStart);
+  const firstSpawnIndex = Math.max(1, Math.ceil((distanceSinceEmitterStart - 1e-6) / interval));
+  let nextSpawnDistance = distanceAtEmitterStart + firstSpawnIndex * interval - distanceAtWindowStart;
+  const { samples } = carWindowSamples(timeline, carId, endTime, endTime - windowStartTime);
   const ages: number[] = [];
   let cumulativeDistance = 0;
-  let nextSpawnDistance = interval;
+
+  if (nextSpawnDistance <= 1e-6 && windowStartTime < endTime) {
+    ages.push(roundSampleAge(endTime - windowStartTime));
+    nextSpawnDistance += interval;
+  }
 
   for (let index = 1; index < samples.length; index++) {
     const previous = samples[index - 1];
@@ -407,6 +423,52 @@ function sampleCarSpawnPerUnitAgesFromEmitterStart(
   }
 
   return ages.reverse();
+}
+
+function carCumulativeDistanceAt(timeline: ReplayTimeline, carId: string, timeSeconds: number): number {
+  const track = carDistanceTrackForCar(timeline, carId);
+  if (track.length === 0) return 0;
+  if (timeSeconds <= track[0].t) return track[0].distance;
+  const last = track[track.length - 1];
+  if (timeSeconds >= last.t) return last.distance;
+
+  let low = 0;
+  let high = track.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (track[mid].t < timeSeconds) low = mid + 1;
+    else high = mid - 1;
+  }
+
+  const previous = track[low - 1];
+  const currentPosition = sampleCarForWindow(timeline, carId, timeSeconds)?.position;
+  if (!previous.position || !currentPosition) return previous.distance;
+  return previous.distance + vec3Distance(previous.position, currentPosition);
+}
+
+function carDistanceTrackForCar(timeline: ReplayTimeline, carId: string): CarDistanceSample[] {
+  let timelineCache = carDistanceTrackCache.get(timeline);
+  if (!timelineCache) {
+    timelineCache = new Map();
+    carDistanceTrackCache.set(timeline, timelineCache);
+  }
+
+  const cached = timelineCache.get(carId);
+  if (cached) return cached;
+
+  const track: CarDistanceSample[] = [];
+  let distance = 0;
+  let previous: [number, number, number] | undefined;
+
+  for (const frame of timeline.frames) {
+    const position = sampleCarForWindow(timeline, carId, frame.t)?.position;
+    if (previous && position) distance += vec3Distance(previous, position);
+    track.push({ t: frame.t, position, distance });
+    previous = position;
+  }
+
+  timelineCache.set(carId, track);
+  return track;
 }
 
 function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSeconds: number, windowSeconds: number) {
