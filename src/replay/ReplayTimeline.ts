@@ -197,12 +197,14 @@ export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): S
   const next = timeline.frames[nextIndex];
   const sampledTime = previous.t + (next.t - previous.t) * alpha;
   const samplingIndex = buildSamplingIndex(timeline);
-  const carIds = new Set([...Object.keys(previous.cars), ...Object.keys(next.cars)]);
   const cars: Record<string, CarFrame> = {};
 
-  for (const id of carIds) {
-    const car = sampleCarFromFramePair(samplingIndex, previous, next, id, sampledTime, alpha);
-    if (car && !car.demolished) cars[id] = car;
+  for (const id of Object.keys(previous.cars)) {
+    appendSampledCar(cars, samplingIndex, previous, next, id, sampledTime, alpha);
+  }
+  for (const id of Object.keys(next.cars)) {
+    if (Object.prototype.hasOwnProperty.call(previous.cars, id)) continue;
+    appendSampledCar(cars, samplingIndex, previous, next, id, sampledTime, alpha);
   }
 
   const adjacentBall =
@@ -218,6 +220,19 @@ export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): S
     ball,
     cars
   };
+}
+
+function appendSampledCar(
+  cars: Record<string, CarFrame>,
+  samplingIndex: TimelineSamplingIndex,
+  previous: TimelineFrame,
+  next: TimelineFrame,
+  carId: string,
+  sampledTime: number,
+  alpha: number
+) {
+  const car = sampleCarFromFramePair(samplingIndex, previous, next, carId, sampledTime, alpha);
+  if (car && !car.demolished) cars[carId] = car;
 }
 
 function sampleCarFromFramePair(
