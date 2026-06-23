@@ -1,5 +1,5 @@
 import { Pause, Play, RotateCcw, StepBack, StepForward } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useViewerStore } from "../state/viewerStore";
 import { Button } from "../ui/Button";
 import { Slider } from "../ui/Slider";
@@ -13,6 +13,7 @@ const SPEED_STOPS = [0.25, 0.5, 1, 2, 4];
 export function TimelineControls({ events = [] }: { events?: Array<{ t: number; type: string }> }) {
   const { playing, currentTime, duration, speed, setPlaying, setCurrentTime, setSpeed, seekBy } = useViewerStore();
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const eventMarkers = useMemo(() => replayEventMarkers(events, duration), [events, duration]);
   useTimelineKeyboardShortcuts();
 
   return (
@@ -29,14 +30,14 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
         />
         <div className="event-track" aria-label="Replay event markers">
           <span className="event-track-progress" style={{ width: `${percent}%` }} />
-          {events.map((event, index) => (
+          {eventMarkers.map((event) => (
             <i
-              key={`${event.type}-${event.t}-${index}`}
+              key={event.key}
               className={`event-${event.type} tooltip-target`}
-              style={{ left: `${(event.t / Math.max(duration, 1)) * 100}%` }}
-              aria-label={eventLabel(event)}
+              style={{ left: event.left }}
+              aria-label={event.label}
             >
-              <TooltipBubble>{eventLabel(event)}</TooltipBubble>
+              <TooltipBubble>{event.label}</TooltipBubble>
             </i>
           ))}
         </div>
@@ -201,6 +202,19 @@ function isEditableEventTarget(target: EventTarget | null): boolean {
 
 function eventLabel(event: { t: number; type: string; label?: string }) {
   return event.label ? `${event.type}: ${event.label}` : event.type;
+}
+
+function replayEventMarkers(events: Array<{ t: number; type: string; label?: string }>, duration: number) {
+  const safeDuration = Math.max(duration, 1);
+  return events.map((event, index) => {
+    const label = eventLabel(event);
+    return {
+      key: `${event.type}-${event.t}-${index}`,
+      type: event.type,
+      label,
+      left: `${(event.t / safeDuration) * 100}%`
+    };
+  });
 }
 
 export function clampSpeed(value: number): number {

@@ -172,6 +172,15 @@ describe("replay insights UI", () => {
     expect(container.querySelector(".event-track .event-goal .tooltip-bubble")?.textContent).toBe("goal");
   });
 
+  it("memoizes timeline event markers so playback progress updates less marker work", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
+
+    expect(source).toContain("const eventMarkers = useMemo(() => replayEventMarkers(events, duration), [events, duration])");
+    expect(source).toContain("function replayEventMarkers");
+    expect(source).toContain("eventMarkers.map((event)");
+    expect(source).not.toContain("{events.map((event, index) => (");
+  });
+
   it("explains the primary desktop play button with a hover tooltip", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 
