@@ -55,6 +55,14 @@ describe("scoreboardStateAt", () => {
     expect(source).not.toContain("const kickoffStarts = [0, ...goals.map");
   });
 
+  it("keeps scoreboard renders stable while sub-second playback ticks do not change visible state", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/Scoreboard.tsx"), "utf8");
+
+    expect(source).toContain('import { useShallow } from "zustand/shallow"');
+    expect(source).toContain("useViewerStore(useShallow((viewerState) => scoreboardStateAt(timeline, viewerState.currentTime)))");
+    expect(source).not.toContain("const currentTime = useViewerStore((state) => state.currentTime)");
+  });
+
   it("counts goals only after they happen", () => {
     expect(scoreboardStateAt(timeline, 41)).toMatchObject({ blueScore: 0, orangeScore: 0 });
     expect(scoreboardStateAt(timeline, 42)).toMatchObject({ blueScore: 1, orangeScore: 0 });
