@@ -267,6 +267,9 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("spawnWorldPosition");
     expect(carSource).toContain("worldToLocal");
     expect(carSource).toContain("localToWorld");
+    expect(carSource).not.toContain("spawnWorldQuaternion");
+    expect(carSource).not.toContain("root.getWorldQuaternion(new THREE.Quaternion())");
+    expect(carSource).not.toContain("root.localToWorld(FLAME_SPAWN_LOCAL_POSITION.clone())");
     expect(carSource).not.toContain("\n  integrateFlameVelocityOverLife(phase);\n");
     expect(carSource).not.toContain("-localVelocity[0] * age");
     expect(carSource).not.toContain("-localVelocity[2] * age");

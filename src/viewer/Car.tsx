@@ -92,7 +92,6 @@ const ALPHA_LENS_FLARE_VIEWER_DIRECTION = sourceAttachmentViewerVector(
 type FlameParticleState = {
   phase: number;
   spawnWorldPosition: THREE.Vector3;
-  spawnWorldQuaternion: THREE.Quaternion;
   spawnLocalVelocity: [number, number, number];
   sourceAcceleration: [number, number, number];
 };
@@ -594,10 +593,11 @@ function hasCompleteFlameParticleState(state: FlameParticleState | undefined): s
 
 function spawnFlameParticleState(root: Group, origin: readonly [number, number, number], localVelocity: number[], particleIndex: number): FlameParticleState {
   FLAME_SPAWN_LOCAL_POSITION.fromArray(origin);
+  FLAME_WORLD_POSITION.copy(FLAME_SPAWN_LOCAL_POSITION);
+  root.localToWorld(FLAME_WORLD_POSITION);
   return {
     phase: 0,
-    spawnWorldPosition: root.localToWorld(FLAME_SPAWN_LOCAL_POSITION.clone()),
-    spawnWorldQuaternion: root.getWorldQuaternion(new THREE.Quaternion()),
+    spawnWorldPosition: FLAME_WORLD_POSITION.clone(),
     spawnLocalVelocity: [localVelocity[0] ?? 0, localVelocity[1] ?? 0, localVelocity[2] ?? 0],
     sourceAcceleration: sourceRuntimeFlameAcceleration(particleIndex)
   };
