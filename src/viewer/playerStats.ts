@@ -9,6 +9,7 @@ export type LivePlayerStats = {
 
 type StatEvent = Extract<ReplayEvent, { type: "goal" | "shot" | "save" | "demo" }>;
 
+const EMPTY_LIVE_PLAYER_STATS: LivePlayerStats = { goals: 0, saves: 0, shots: 0, demos: 0 };
 const statEventsCache = new WeakMap<ReplayTimeline, StatEvent[]>();
 
 export function livePlayerStatsAt(timeline: ReplayTimeline, playerId: string, timeSeconds: number): LivePlayerStats {
@@ -48,11 +49,11 @@ export function livePlayerStatsByPlayerAt(timeline: ReplayTimeline, timeSeconds:
 }
 
 export function emptyLivePlayerStats(): LivePlayerStats {
-  return { goals: 0, saves: 0, shots: 0, demos: 0 };
+  return EMPTY_LIVE_PLAYER_STATS;
 }
 
 function statsForPlayer(statsByPlayer: Record<string, LivePlayerStats>, playerId: string): LivePlayerStats {
-  statsByPlayer[playerId] ??= emptyLivePlayerStats();
+  statsByPlayer[playerId] ??= { goals: 0, saves: 0, shots: 0, demos: 0 };
   return statsByPlayer[playerId];
 }
 

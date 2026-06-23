@@ -6,7 +6,7 @@ import type { ReplayTimeline } from "../replay/types";
 import { MatchMetadataBar } from "../viewer/MatchMetadataBar";
 import { formatPlayerRank, PlayerList } from "../viewer/PlayerList";
 import { clampSpeed, snapSpeedToStop, TimelineControls } from "../viewer/TimelineControls";
-import { livePlayerStatsAt, livePlayerStatsByPlayerAt } from "../viewer/playerStats";
+import { emptyLivePlayerStats, livePlayerStatsAt, livePlayerStatsByPlayerAt } from "../viewer/playerStats";
 
 const timeline: ReplayTimeline = {
   version: 1,
@@ -118,6 +118,20 @@ describe("replay insights UI", () => {
       saves: 1,
       demos: 1
     });
+  });
+
+  it("reuses the empty live stats fallback without sharing mutable scored stats", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/playerStats.ts"), "utf8");
+    const firstEmpty = emptyLivePlayerStats();
+    const secondEmpty = emptyLivePlayerStats();
+    const scoredStats = livePlayerStatsByPlayerAt(timeline, 160)["player-0-Kehvn"];
+
+    expect(firstEmpty).toBe(secondEmpty);
+    expect(scoredStats).not.toBe(firstEmpty);
+    expect(scoredStats).toMatchObject({ goals: 1, saves: 1, demos: 1 });
+    expect(source).toContain("const EMPTY_LIVE_PLAYER_STATS");
+    expect(source).toContain("return EMPTY_LIVE_PLAYER_STATS");
+    expect(source).toContain("statsByPlayer[playerId] ??= { goals: 0, saves: 0, shots: 0, demos: 0 }");
   });
 
   it("caches sorted player stat events before scanning live replay stats", () => {
