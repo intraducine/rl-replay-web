@@ -376,23 +376,28 @@ function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSecond
   const endTime = clamp(endTimeSeconds, timeline.frames[0].t, timeline.frames[timeline.frames.length - 1].t);
   if (endTime <= startTime) return { samples: [], distance: 0 };
 
-  const sampleTimes = [
-    startTime,
-    ...timeline.frames.map((frame) => frame.t).filter((time) => time > startTime && time < endTime),
-    endTime
-  ];
   let distance = 0;
-  const samples = sampleTimes.map((sampleTime) => ({
-    t: sampleTime,
-    position: sampleCarForWindow(timeline, carId, sampleTime)?.position
-  }));
-  let previous = samples[0]?.position;
+  const samples: Array<{ t: number; position: [number, number, number] | undefined }> = [];
+  let previous: [number, number, number] | undefined;
 
-  for (const sample of samples.slice(1)) {
+  const appendSample = (sampleTime: number) => {
+    const sample = {
+      t: sampleTime,
+      position: sampleCarForWindow(timeline, carId, sampleTime)?.position
+    };
+    samples.push(sample);
     const current = sample.position;
     if (previous && current) distance += vec3Distance(previous, current);
     previous = current;
+  };
+
+  appendSample(startTime);
+  for (const frame of timeline.frames) {
+    if (frame.t > startTime && frame.t < endTime) {
+      appendSample(frame.t);
+    }
   }
+  appendSample(endTime);
 
   return { samples, distance };
 }

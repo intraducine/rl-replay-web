@@ -203,6 +203,9 @@ describe("sampleTimeline", () => {
     expect(source).toContain("function sampleCarForWindow");
     expect(carWindowSamplesSource).toContain("sampleCarForWindow(timeline, carId, sampleTime)?.position");
     expect(carWindowSamplesSource).not.toContain("sampleTimeline(timeline, sampleTime)");
+    expect(carWindowSamplesSource).not.toContain("timeline.frames.map");
+    expect(carWindowSamplesSource).not.toContain(".filter((time)");
+    expect(carWindowSamplesSource).not.toContain("samples.slice");
   });
 
   it("keeps car window distance aligned with sampled car reset and demolition rules", () => {
