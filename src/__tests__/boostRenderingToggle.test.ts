@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { Group } from "three";
 import { useViewerStore } from "../state/viewerStore";
+import type { CarFrame } from "../replay/types";
 import { setCarAlphaBoostActive } from "../viewer/carAlphaBoost";
 
 describe("boost rendering toggle", () => {
@@ -52,6 +53,41 @@ describe("boost rendering toggle", () => {
     expect(boost.visible).toBe(false);
     expect(boost.userData.alphaBoostActive).toBe(false);
     expect(boost.userData.boostMeshFade).toBe(0);
+  });
+
+  it("skips alpha boost motion payload updates when rendering is disabled", () => {
+    const car = new Group();
+    const boost = new Group();
+    const localVelocity = [1, 2, 3];
+    boost.name = "alphaBoost";
+    boost.userData.speed = 123;
+    boost.userData.localVelocity = localVelocity;
+    car.add(boost);
+
+    setCarAlphaBoostActive(car, false, { position: [0, 0, 0], rotation: [0, 0, 0, 1], velocity: [20, 0, 0] }, false);
+
+    expect(boost.userData.speed).toBe(123);
+    expect(boost.userData.localVelocity).toBe(localVelocity);
+    expect(boost.userData.localVelocity).toEqual([1, 2, 3]);
+  });
+
+  it("reuses the alpha boost local velocity payload between enabled frame updates", () => {
+    const car = new Group();
+    const boost = new Group();
+    const frame = (velocity: [number, number, number]): CarFrame => ({
+      position: [0, 0, 0],
+      rotation: [0, 0, 0, 1],
+      velocity
+    });
+    boost.name = "alphaBoost";
+    car.add(boost);
+
+    setCarAlphaBoostActive(car, true, frame([20, 0, 0]));
+    const firstLocalVelocity = boost.userData.localVelocity;
+    setCarAlphaBoostActive(car, true, frame([10, 5, 0]));
+
+    expect(boost.userData.localVelocity).toBe(firstLocalVelocity);
+    expect(boost.userData.localVelocity).toEqual([10, 5, 0]);
   });
 
   it("passes replay time into the alpha boost group for deterministic particle animation", () => {

@@ -20,18 +20,21 @@ export function setCarAlphaBoostActive(
   const boostGroup = (car.userData.alphaBoostGroup as Group | undefined) ?? (car.getObjectByName(ALPHA_BOOST_OBJECT_NAME) as Group | undefined);
   if (!boostGroup) return;
   car.userData.alphaBoostGroup = boostGroup;
-  boostGroup.userData.speed = frameSpeed(frame);
-  boostGroup.userData.localVelocity = frameLocalVelocity(car, frame);
-  if (typeof time === "number") boostGroup.userData.alphaBoostTime = time;
-  if (typeof flameDistanceWindow === "number") boostGroup.userData.alphaBoostFlameDistanceWindow = flameDistanceWindow;
-  if (Array.isArray(flameSpawnAges)) boostGroup.userData.alphaBoostFlameSpawnAges = flameSpawnAges;
-  if (typeof emitterAgeSeconds === "number") boostGroup.userData.alphaBoostEmitterAge = Math.max(0, emitterAgeSeconds);
   if (!renderingEnabled) {
     boostGroup.userData.alphaBoostActive = false;
     boostGroup.userData.boostMeshFade = 0;
     boostGroup.visible = false;
     return;
   }
+  const localVelocity = boostGroup.userData.localVelocity;
+  const localVelocityTarget: [number, number, number] =
+    Array.isArray(localVelocity) && localVelocity.length >= 3 ? (localVelocity as [number, number, number]) : [0, 0, 0];
+  boostGroup.userData.speed = frameSpeed(frame);
+  boostGroup.userData.localVelocity = frameLocalVelocity(car, frame, localVelocityTarget);
+  if (typeof time === "number") boostGroup.userData.alphaBoostTime = time;
+  if (typeof flameDistanceWindow === "number") boostGroup.userData.alphaBoostFlameDistanceWindow = flameDistanceWindow;
+  if (Array.isArray(flameSpawnAges)) boostGroup.userData.alphaBoostFlameSpawnAges = flameSpawnAges;
+  if (typeof emitterAgeSeconds === "number") boostGroup.userData.alphaBoostEmitterAge = Math.max(0, emitterAgeSeconds);
   boostGroup.userData.alphaBoostActive = active;
   if (active) boostGroup.visible = true;
 }
@@ -47,12 +50,20 @@ function frameSpeed(frame?: CarFrame) {
   return Math.hypot(velocity[0], velocity[1], velocity[2]);
 }
 
-function frameLocalVelocity(car: Group, frame?: CarFrame): [number, number, number] {
+function frameLocalVelocity(car: Group, frame: CarFrame | undefined, target: [number, number, number]): [number, number, number] {
   const velocity = frame?.velocity;
-  if (!velocity) return [0, 0, 0];
+  if (!velocity) {
+    target[0] = 0;
+    target[1] = 0;
+    target[2] = 0;
+    return target;
+  }
 
   LOCAL_VELOCITY_VECTOR.fromArray(velocity);
   LOCAL_VELOCITY_QUATERNION.copy(car.quaternion).invert();
   LOCAL_VELOCITY_VECTOR.applyQuaternion(LOCAL_VELOCITY_QUATERNION);
-  return LOCAL_VELOCITY_VECTOR.toArray();
+  target[0] = LOCAL_VELOCITY_VECTOR.x;
+  target[1] = LOCAL_VELOCITY_VECTOR.y;
+  target[2] = LOCAL_VELOCITY_VECTOR.z;
+  return target;
 }
