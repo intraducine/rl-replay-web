@@ -18,6 +18,11 @@ type CarDistanceSample = {
   distance: number;
 };
 
+type CarWindowSamples = {
+  samples: Array<{ t: number; position: [number, number, number] | undefined }>;
+  distance: number;
+};
+
 const MOTION_EPSILON_SQ = 0.01;
 const ROTATION_DOT_EPSILON = 0.99999;
 const MAX_SMOOTH_SPAN_SECONDS = 0.75;
@@ -336,6 +341,35 @@ export function sampleCarDistanceWindow(timeline: ReplayTimeline, carId: string,
   return carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds).distance;
 }
 
+export function sampleCarDistanceAndSpawnPerUnitAgesWindow(
+  timeline: ReplayTimeline,
+  carId: string,
+  endTimeSeconds: number,
+  windowSeconds: number,
+  spawnPerUnit: number,
+  spawnRateScalar: number,
+  emitterStartTimeSeconds?: number
+): { distance: number; spawnAges: number[] } {
+  const interval = 1 / (spawnPerUnit * spawnRateScalar);
+  const window = carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds);
+  if (!(interval > 0)) return { distance: window.distance, spawnAges: [] };
+
+  const spawnAges =
+    typeof emitterStartTimeSeconds === "number"
+      ? sampleCarSpawnPerUnitAgesFromEmitterStart(
+          timeline,
+          carId,
+          endTimeSeconds,
+          windowSeconds,
+          interval,
+          emitterStartTimeSeconds,
+          window
+        )
+      : sampleCarSpawnPerUnitAgesFromWindowSamples(window.samples, endTimeSeconds, windowSeconds, interval);
+
+  return { distance: window.distance, spawnAges };
+}
+
 export function sampleCarSpawnPerUnitAgesWindow(
   timeline: ReplayTimeline,
   carId: string,
@@ -359,7 +393,15 @@ export function sampleCarSpawnPerUnitAgesWindow(
     );
   }
 
-  const { samples } = carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds);
+  return sampleCarSpawnPerUnitAgesFromWindowSamples(carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds).samples, endTimeSeconds, windowSeconds, interval);
+}
+
+function sampleCarSpawnPerUnitAgesFromWindowSamples(
+  samples: CarWindowSamples["samples"],
+  endTimeSeconds: number,
+  windowSeconds: number,
+  interval: number
+) {
   const ages: number[] = [];
   let nextSpawnDistance = interval;
   let distanceFromEnd = 0;
@@ -394,7 +436,8 @@ function sampleCarSpawnPerUnitAgesFromEmitterStart(
   endTimeSeconds: number,
   windowSeconds: number,
   interval: number,
-  emitterStartTimeSeconds: number
+  emitterStartTimeSeconds: number,
+  window?: CarWindowSamples
 ) {
   if (timeline.frames.length === 0 || !(windowSeconds > 0)) return [];
 
@@ -410,7 +453,7 @@ function sampleCarSpawnPerUnitAgesFromEmitterStart(
   const distanceSinceEmitterStart = Math.max(0, distanceAtWindowStart - distanceAtEmitterStart);
   const firstSpawnIndex = Math.max(1, Math.ceil((distanceSinceEmitterStart - 1e-6) / interval));
   let nextSpawnDistance = distanceAtEmitterStart + firstSpawnIndex * interval - distanceAtWindowStart;
-  const { samples } = carWindowSamples(timeline, carId, endTime, endTime - windowStartTime);
+  const { samples } = window ?? carWindowSamples(timeline, carId, endTime, endTime - windowStartTime);
   const ages: number[] = [];
   let cumulativeDistance = 0;
 
@@ -489,7 +532,7 @@ function carDistanceTrackForCar(timeline: ReplayTimeline, carId: string): CarDis
   return track;
 }
 
-function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSeconds: number, windowSeconds: number) {
+function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSeconds: number, windowSeconds: number): CarWindowSamples {
   if (timeline.frames.length === 0 || !(windowSeconds > 0)) return { samples: [], distance: 0 };
 
   const startTime = clamp(endTimeSeconds - windowSeconds, timeline.frames[0].t, timeline.frames[timeline.frames.length - 1].t);

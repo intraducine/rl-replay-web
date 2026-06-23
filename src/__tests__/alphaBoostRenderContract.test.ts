@@ -55,13 +55,16 @@ describe("Alpha boost render contract", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
 
-    expect(sceneRootSource).toContain("sampleCarDistanceWindow(timeline, id, time, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds)");
-    expect(sceneRootSource).toContain("sampleCarSpawnPerUnitAgesWindow(");
+    expect(sceneRootSource).toContain("sampleCarDistanceAndSpawnPerUnitAgesWindow(");
+    expect(sceneRootSource).not.toContain("sampleCarDistanceWindow(timeline, id, time, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds)");
+    expect(sceneRootSource).not.toContain("sampleCarSpawnPerUnitAgesWindow(");
     expect(sceneRootSource).toContain("carBoostSegmentAt(timeline, id, time)");
     expect(sceneRootSource).toContain("let alphaBoostEmitterAge: number | undefined");
     expect(sceneRootSource).toContain("if (boosting) {");
     expect(sceneRootSource).toContain("const flameEmitterStartTime = boostSegment.start");
     expect(sceneRootSource).toContain("alphaBoostEmitterAge = time - flameEmitterStartTime");
+    expect(sceneRootSource).toContain("flameDistanceWindow = flameWindow.distance");
+    expect(sceneRootSource).toContain("flameSpawnAges = flameWindow.spawnAges");
     expect(sceneRootSource).toContain("setCarAlphaBoostActive(group, boosting, frame, boostRenderingEnabled, time, flameDistanceWindow, flameSpawnAges, alphaBoostEmitterAge)");
     expect(carSource).toContain("root.userData.alphaBoostTime");
     expect(carSource).toContain("root.userData.alphaBoostEmitterAge");

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  sampleCarDistanceAndSpawnPerUnitAgesWindow,
   sampleCarDistanceWindow,
   sampleCarSpawnPerUnitAgesWindow,
   samplePlayerBoostsAt,
@@ -369,6 +370,25 @@ describe("sampleTimeline", () => {
     expect(sampleCarSpawnPerUnitAgesWindow(movingTimeline, "p1", 1, 1, 0.5, 1)).toEqual([0.2, 0.4, 0.6, 0.8, 1]);
     expect(sampleCarSpawnPerUnitAgesWindow(movingTimeline, "p1", 1, 0.5, 0.5, 1)).toEqual([0.2, 0.4]);
     expect(sampleCarSpawnPerUnitAgesWindow(movingTimeline, "p1", 1, 0.25, 0.5, 1)).toEqual([0.2]);
+  });
+
+  it("samples Alpha Boost flame distance and SpawnPerUnit ages from one car window pass", () => {
+    const movingTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1] } } },
+        { t: 1, cars: { p1: { position: [10, 0, 0], rotation: [0, 0, 0, 1] } } }
+      ]
+    };
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+    const combinedSource = source.match(/export function sampleCarDistanceAndSpawnPerUnitAgesWindow[\s\S]*?\n}\n\nexport function sampleCarSpawnPerUnitAgesWindow/)?.[0] ?? "";
+
+    expect(sampleCarDistanceAndSpawnPerUnitAgesWindow(movingTimeline, "p1", 1, 1, 0.5, 1)).toEqual({
+      distance: 10,
+      spawnAges: [0.2, 0.4, 0.6, 0.8, 1]
+    });
+    expect(combinedSource).toContain("const window = carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds)");
+    expect(combinedSource.match(/carWindowSamples/g)).toHaveLength(1);
   });
 
   it("stops reverse SpawnPerUnit age sampling once ages leave the replay window", () => {

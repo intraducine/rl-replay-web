@@ -11,7 +11,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import type { Group, Mesh } from "three";
 import { Vector3 } from "three";
 import { normalizeTimelineCoordinates } from "../replay/ReplayNormalizer";
-import { sampleCarDistanceWindow, sampleCarSpawnPerUnitAgesWindow, samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
+import { sampleCarDistanceAndSpawnPerUnitAgesWindow, samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
 import type { ReplayPlayer, ReplayTimeline, SampledReplayState } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { Ball } from "./Ball";
@@ -471,10 +471,9 @@ function updateCars(
     let alphaBoostEmitterAge: number | undefined;
 
     if (boosting) {
-      flameDistanceWindow = sampleCarDistanceWindow(timeline, id, time, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds);
       const flameEmitterStartTime = boostSegment.start;
       alphaBoostEmitterAge = time - flameEmitterStartTime;
-      flameSpawnAges = sampleCarSpawnPerUnitAgesWindow(
+      const flameWindow = sampleCarDistanceAndSpawnPerUnitAgesWindow(
         timeline,
         id,
         time,
@@ -483,6 +482,8 @@ function updateCars(
         ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar,
         flameEmitterStartTime
       );
+      flameDistanceWindow = flameWindow.distance;
+      flameSpawnAges = flameWindow.spawnAges;
     }
 
     setCarAlphaBoostActive(group, boosting, frame, boostRenderingEnabled, time, flameDistanceWindow, flameSpawnAges, alphaBoostEmitterAge);
