@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { sampleCarDistanceWindow, sampleCarSpawnPerUnitAgesWindow, samplePlayerCameraState, sampleTimeline } from "../replay/ReplayTimeline";
 import type { ReplayTimeline } from "../replay/types";
@@ -192,6 +194,30 @@ describe("sampleTimeline", () => {
 
     expect(sampleCarDistanceWindow(movingTimeline, "p1", 2, 2)).toBeCloseTo(8);
     expect(sampleCarDistanceWindow(movingTimeline, "p1", 2, 1.5)).toBeCloseTo(5.5);
+  });
+
+  it("samples car windows without invoking the full replay sampler for each point", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+    const carWindowSamplesSource = source.match(/function carWindowSamples[\s\S]*?\n}\n\nfunction vec3Distance/)?.[0] ?? "";
+
+    expect(source).toContain("function sampleCarForWindow");
+    expect(carWindowSamplesSource).toContain("sampleCarForWindow(timeline, carId, sampleTime)?.position");
+    expect(carWindowSamplesSource).not.toContain("sampleTimeline(timeline, sampleTime)");
+  });
+
+  it("keeps car window distance aligned with sampled car reset and demolition rules", () => {
+    const demoTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1] } } },
+        { t: 0.5, cars: { p1: { position: [5, 0, 0], rotation: [0, 0, 0, 1], demolished: true } } },
+        { t: 1, cars: { p1: { position: [10, 0, 0], rotation: [0, 0, 0, 1], demolished: true } } },
+        { t: 1.5, cars: { p1: { position: [200, 0, 0], rotation: [0, 0, 0, 1], demolished: false } } }
+      ]
+    };
+
+    expect(sampleTimeline(demoTimeline, 0.75).cars.p1).toBeUndefined();
+    expect(sampleCarDistanceWindow(demoTimeline, "p1", 1.5, 1.5)).toBeCloseTo(0);
   });
 
   it("places SpawnPerUnit ages at replay-distance crossings inside the window", () => {

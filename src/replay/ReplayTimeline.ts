@@ -198,18 +198,7 @@ export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): S
   const cars: Record<string, CarFrame> = {};
 
   for (const id of carIds) {
-    const nearest = nearestCarState(previous, next, id, alpha);
-    const motion = sampleMotionTrack(samplingIndex.cars.get(id), sampledTime, interpolateCar, CAR_RESET_DISTANCE, CAR_MAX_SPEED);
-    const car =
-      nearest && motion
-        ? {
-            ...motion,
-            boost: nearest.boost ?? motion.boost,
-            boostActive: nearest.boostActive ?? motion.boostActive,
-            demolished: nearest.demolished,
-            supersonic: nearest.supersonic
-          }
-        : nearest ?? motion;
+    const car = sampleCarFromFramePair(samplingIndex, previous, next, id, sampledTime, alpha);
     if (car && !car.demolished) cars[id] = car;
   }
 
@@ -226,6 +215,36 @@ export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): S
     ball,
     cars
   };
+}
+
+function sampleCarFromFramePair(
+  samplingIndex: TimelineSamplingIndex,
+  previous: TimelineFrame,
+  next: TimelineFrame,
+  carId: string,
+  sampledTime: number,
+  alpha: number
+): CarFrame | undefined {
+  const nearest = nearestCarState(previous, next, carId, alpha);
+  const motion = sampleMotionTrack(samplingIndex.cars.get(carId), sampledTime, interpolateCar, CAR_RESET_DISTANCE, CAR_MAX_SPEED);
+  return nearest && motion
+    ? {
+        ...motion,
+        boost: nearest.boost ?? motion.boost,
+        boostActive: nearest.boostActive ?? motion.boostActive,
+        demolished: nearest.demolished,
+        supersonic: nearest.supersonic
+      }
+    : nearest ?? motion;
+}
+
+function sampleCarForWindow(timeline: ReplayTimeline, carId: string, timeSeconds: number): CarFrame | undefined {
+  const [previousIndex, nextIndex, alpha] = findFramePairIndices(timeline.frames, timeSeconds);
+  const previous = timeline.frames[previousIndex];
+  const next = timeline.frames[nextIndex];
+  const sampledTime = previous.t + (next.t - previous.t) * alpha;
+  const car = sampleCarFromFramePair(buildSamplingIndex(timeline), previous, next, carId, sampledTime, alpha);
+  return car && !car.demolished ? car : undefined;
 }
 
 export function samplePlayerCameraState(timeline: ReplayTimeline, playerId: string | undefined, timeSeconds: number): ReplayCameraSample | undefined {
@@ -365,7 +384,7 @@ function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSecond
   let distance = 0;
   const samples = sampleTimes.map((sampleTime) => ({
     t: sampleTime,
-    position: sampleTimeline(timeline, sampleTime).cars[carId]?.position
+    position: sampleCarForWindow(timeline, carId, sampleTime)?.position
   }));
   let previous = samples[0]?.position;
 
