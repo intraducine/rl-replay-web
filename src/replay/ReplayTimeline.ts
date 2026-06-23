@@ -393,7 +393,7 @@ export function sampleCarSpawnPerUnitAgesWindow(
     );
   }
 
-  return sampleCarSpawnPerUnitAgesFromWindowSamples(carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds).samples, endTimeSeconds, windowSeconds, interval);
+  return sampleCarSpawnPerUnitAgesFromWindowSamples(carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds, false).samples, endTimeSeconds, windowSeconds, interval);
 }
 
 function sampleCarSpawnPerUnitAgesFromWindowSamples(
@@ -532,7 +532,7 @@ function carDistanceTrackForCar(timeline: ReplayTimeline, carId: string): CarDis
   return track;
 }
 
-function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSeconds: number, windowSeconds: number): CarWindowSamples {
+function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSeconds: number, windowSeconds: number, measureDistance = true): CarWindowSamples {
   if (timeline.frames.length === 0 || !(windowSeconds > 0)) return { samples: [], distance: 0 };
 
   const startTime = clamp(endTimeSeconds - windowSeconds, timeline.frames[0].t, timeline.frames[timeline.frames.length - 1].t);
@@ -550,7 +550,7 @@ function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSecond
     };
     samples.push(sample);
     const current = sample.position;
-    if (previous && current) distance += vec3Distance(previous, current);
+    if (measureDistance && previous && current) distance += vec3Distance(previous, current);
     previous = current;
   };
 

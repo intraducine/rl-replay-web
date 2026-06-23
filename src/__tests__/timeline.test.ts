@@ -396,6 +396,9 @@ describe("sampleTimeline", () => {
     const spawnAgeSource = source.match(/export function sampleCarSpawnPerUnitAgesWindow[\s\S]*?\n}\n\nfunction sampleCarSpawnPerUnitAgesFromEmitterStart/)?.[0] ?? "";
 
     expect(spawnAgeSource).toContain("if (age > windowSeconds) return ages");
+    expect(spawnAgeSource).toContain("carWindowSamples(timeline, carId, endTimeSeconds, windowSeconds, false)");
+    expect(source).toContain("measureDistance = true");
+    expect(source).toContain("if (measureDistance && previous && current) distance += vec3Distance(previous, current)");
     expect(spawnAgeSource).not.toContain("ages.filter((age) => age <= windowSeconds)");
   });
 
