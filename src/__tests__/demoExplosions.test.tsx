@@ -85,6 +85,18 @@ describe("demo explosion reconstruction", () => {
     expect(source).not.toContain("spriteMaterial");
     expect(source).not.toContain("Electricity_Mat");
   });
+
+  it("builds demo explosion models in one pass with cached player teams", () => {
+    const source = readFileSyncForTest("src/viewer/DemoExplosions.tsx");
+    const modelBuilderSource = source.match(/function demoExplosionModels[\s\S]*?\n}\n\nfunction demoExplosionModel/)?.[0] ?? "";
+
+    expect(modelBuilderSource).toContain("const models: DemoExplosionModel[] = []");
+    expect(modelBuilderSource).toContain("const teamByPlayer = new Map");
+    expect(modelBuilderSource).toContain("for (const event of timeline.events)");
+    expect(modelBuilderSource).not.toContain(".filter((event)");
+    expect(modelBuilderSource).not.toContain(".map((event");
+    expect(source).not.toContain("timeline.metadata.players.find");
+  });
 });
 
 function readFileSyncForTest(path: string) {

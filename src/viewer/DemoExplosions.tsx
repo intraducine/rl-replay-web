@@ -128,20 +128,29 @@ export function DemoExplosions({ timeline, playbackTimeRef }: { timeline: Replay
 }
 
 function demoExplosionModels(timeline: ReplayTimeline): DemoExplosionModel[] {
-  return timeline.events
-    .filter((event): event is Extract<ReplayEvent, { type: "demo" }> => event.type === "demo")
-    .map((event, index) => demoExplosionModel(timeline, event, index))
-    .filter((model): model is DemoExplosionModel => Boolean(model));
+  const models: DemoExplosionModel[] = [];
+  const teamByPlayer = new Map(timeline.metadata.players.map((player) => [player.id, player.team]));
+
+  for (const event of timeline.events) {
+    if (event.type !== "demo") continue;
+    const model = demoExplosionModel(timeline, event, models.length, teamByPlayer);
+    if (model) models.push(model);
+  }
+
+  return models;
 }
 
-function demoExplosionModel(timeline: ReplayTimeline, event: Extract<ReplayEvent, { type: "demo" }>, index: number): DemoExplosionModel | undefined {
+function demoExplosionModel(
+  timeline: ReplayTimeline,
+  event: Extract<ReplayEvent, { type: "demo" }>,
+  index: number,
+  teamByPlayer: ReadonlyMap<string, 0 | 1>
+): DemoExplosionModel | undefined {
   const sample = sampleTimeline(timeline, Math.max(0, event.t - DEMO_EXPLOSION_ANCHOR_LEAD_SECONDS));
   const victimCar = event.victimId ? sample.cars[event.victimId] : undefined;
   const attackerCar = event.attackerId ? sample.cars[event.attackerId] : undefined;
   const car = victimCar ?? attackerCar;
-  const player =
-    timeline.metadata.players.find((candidate) => candidate.id === event.victimId) ??
-    timeline.metadata.players.find((candidate) => candidate.id === event.attackerId);
+  const team = (event.victimId ? teamByPlayer.get(event.victimId) : undefined) ?? (event.attackerId ? teamByPlayer.get(event.attackerId) : undefined);
   const position = car?.position ?? sample.ball?.position;
 
   if (!position) return undefined;
@@ -150,7 +159,7 @@ function demoExplosionModel(timeline: ReplayTimeline, event: Extract<ReplayEvent
     id: `demo-${index}-${event.t}-${event.victimId ?? "unknown"}-${event.attackerId ?? "unknown"}`,
     t: event.t,
     position: [position[0], position[1], position[2]],
-    team: player?.team
+    team
   };
 }
 
