@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { ReplayTimeline } from "../replay/types";
 import { scoreboardStateAt } from "../viewer/scoreboardState";
@@ -36,6 +38,18 @@ const timeline: ReplayTimeline = {
 };
 
 describe("scoreboardStateAt", () => {
+  it("uses a cached scoreboard index instead of filtering goals and clock samples every tick", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/scoreboardState.ts"), "utf8");
+
+    expect(source).toContain("scoreboardIndexCache");
+    expect(source).toContain("scoreboardIndexForTimeline(timeline)");
+    expect(source).toContain("function scoreFromGoals");
+    expect(source).toContain("while (low < high)");
+    expect(source).toContain("function latestClockSampleAt");
+    expect(source).toContain("kickoffSegmentsForTimeline");
+    expect(source).not.toContain("goals.filter((goal) => goal.t <= currentTime).length");
+  });
+
   it("counts goals only after they happen", () => {
     expect(scoreboardStateAt(timeline, 41)).toMatchObject({ blueScore: 0, orangeScore: 0 });
     expect(scoreboardStateAt(timeline, 42)).toMatchObject({ blueScore: 1, orangeScore: 0 });
