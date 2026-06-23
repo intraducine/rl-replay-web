@@ -49,6 +49,11 @@ const TMP_NEAREST_BALL_POSITION = new Vector3();
 const TMP_NEAREST_CAR_POSITION = new Vector3();
 const PLAYER_CAMERA_HEIGHT_OFFSET = new Vector3(0, DEFAULT_CAMERA_SETTINGS.height, 0);
 const PLAYER_CAMERA_TARGET_HEIGHT_OFFSET = new Vector3(0, PLAYER_CAMERA_TARGET_HEIGHT, 0);
+const DIRECTOR_EVENT_LOOKBACK_SECONDS = 3.5;
+
+type DirectorEventEntry = { event: ReplayEvent; index: number };
+
+const directorEventCache = new WeakMap<ReplayEvent[], DirectorEventEntry[]>();
 
 export function cameraRigForMode(
   mode: CameraMode,
@@ -137,18 +142,49 @@ export function directorTargetPlayerId(sample: SampledReplayState, events: Repla
 }
 
 function nearestDirectorEvent(timeSeconds: number, events: ReplayEvent[]): ReplayEvent | undefined {
+  const sortedEvents = directorEventsFor(events);
   let nearest: ReplayEvent | undefined;
-  let nearestDelta = 3.5;
+  let nearestDelta = DIRECTOR_EVENT_LOOKBACK_SECONDS;
+  let nearestOriginalIndex = Number.POSITIVE_INFINITY;
+  const lowerBound = firstDirectorEventIndexAtOrAfter(sortedEvents, timeSeconds - DIRECTOR_EVENT_LOOKBACK_SECONDS);
+  const upperTime = timeSeconds + DIRECTOR_EVENT_LOOKBACK_SECONDS;
 
-  for (const candidate of events) {
-    const delta = Math.abs(candidate.t - timeSeconds);
-    if (delta < nearestDelta) {
-      nearest = candidate;
+  for (let index = lowerBound; index < sortedEvents.length; index++) {
+    const candidate = sortedEvents[index];
+    if (candidate.event.t >= upperTime) break;
+
+    const delta = Math.abs(candidate.event.t - timeSeconds);
+    if (delta < nearestDelta || (delta === nearestDelta && candidate.index < nearestOriginalIndex)) {
+      nearest = candidate.event;
       nearestDelta = delta;
+      nearestOriginalIndex = candidate.index;
     }
   }
 
   return nearest;
+}
+
+function directorEventsFor(events: ReplayEvent[]): DirectorEventEntry[] {
+  const cached = directorEventCache.get(events);
+  if (cached) return cached;
+
+  const sortedEvents = events.map((event, index) => ({ event, index })).sort((a, b) => a.event.t - b.event.t);
+  directorEventCache.set(events, sortedEvents);
+  return sortedEvents;
+}
+
+function firstDirectorEventIndexAtOrAfter(events: DirectorEventEntry[], timeSeconds: number) {
+  let low = 0;
+  let high = events.length;
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+    if (events[mid].event.t < timeSeconds) {
+      low = mid + 1;
+    } else {
+      high = mid;
+    }
+  }
+  return low;
 }
 
 function eventPlayerIdForCamera(event?: ReplayEvent): string | undefined {
