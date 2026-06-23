@@ -27,6 +27,9 @@ describe("isCarBoostingAt", () => {
     expect(source).toContain("boostSegmentAt(timeline, carId, time)");
     expect(source).toContain("replicatedBoostSegmentsForCar");
     expect(source).toContain("inferredBoostDrainSegmentsForCar");
+    expect(source).not.toContain("timelineHasReplicatedBoostActive");
+    expect(source).not.toContain(".map((frame)");
+    expect(source).not.toContain(".filter((sample)");
   });
 
   it("returns true while a car boost amount is draining", () => {
@@ -82,6 +85,20 @@ describe("isCarBoostingAt", () => {
     };
 
     expect(isCarBoostingAt(timeline, "p1", 0.16)).toBe(false);
+  });
+
+  it("treats missing replicated boost active frames as inactive once replicated data is present", () => {
+    const timeline: ReplayTimeline = {
+      ...baseTimeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boostActive: false } } },
+        { t: 0.1, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boostActive: true } } },
+        { t: 0.2, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1] } } }
+      ]
+    };
+
+    expect(isCarBoostingAt(timeline, "p1", 0.15)).toBe(true);
+    expect(isCarBoostingAt(timeline, "p1", 0.25)).toBe(false);
   });
 
   it("finds the current replicated boost active segment start", () => {

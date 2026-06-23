@@ -53,23 +53,21 @@ function boostSegmentsForCar(timeline: ReplayTimeline, carId: string): BoostSegm
   const cached = timelineCache.get(carId);
   if (cached) return cached;
 
-  const segments = timelineHasReplicatedBoostActive(timeline, carId)
-    ? replicatedBoostSegmentsForCar(timeline, carId)
-    : inferredBoostDrainSegmentsForCar(timeline, carId);
+  const replicatedSegments = replicatedBoostSegmentsForCar(timeline, carId);
+  const segments = replicatedSegments ?? inferredBoostDrainSegmentsForCar(timeline, carId);
   timelineCache.set(carId, segments);
   return segments;
 }
 
-function timelineHasReplicatedBoostActive(timeline: ReplayTimeline, carId: string) {
-  return timeline.frames.some((frame) => frame.cars[carId]?.boostActive !== undefined);
-}
-
-function replicatedBoostSegmentsForCar(timeline: ReplayTimeline, carId: string): BoostSegment[] {
+function replicatedBoostSegmentsForCar(timeline: ReplayTimeline, carId: string): BoostSegment[] | undefined {
   const segments: BoostSegment[] = [];
   let activeStart: number | undefined;
+  let hasReplicatedBoostActive = false;
 
   for (const frame of timeline.frames) {
-    const boosting = frame.cars[carId]?.boostActive === true;
+    const boostActive = frame.cars[carId]?.boostActive;
+    if (boostActive !== undefined) hasReplicatedBoostActive = true;
+    const boosting = boostActive === true;
     if (boosting && activeStart === undefined) {
       activeStart = frame.t;
     } else if (!boosting && activeStart !== undefined) {
@@ -82,19 +80,23 @@ function replicatedBoostSegmentsForCar(timeline: ReplayTimeline, carId: string):
     segments.push({ start: activeStart, end: timelineEndTime(timeline) });
   }
 
-  return segments;
+  return hasReplicatedBoostActive ? segments : undefined;
 }
 
 function inferredBoostDrainSegmentsForCar(timeline: ReplayTimeline, carId: string): BoostSegment[] {
-  const samples = timeline.frames
-    .map((frame) => ({ t: frame.t, boost: frame.cars[carId]?.boost }))
-    .filter((sample): sample is { t: number; boost: number } => typeof sample.boost === "number");
+  const samples: Array<{ t: number; boost: number }> = [];
   const segments: BoostSegment[] = [];
   let activeStart: number | undefined;
   let lookbackIndex = 0;
 
-  for (let index = 0; index < samples.length; index++) {
-    const sample = samples[index];
+  for (const frame of timeline.frames) {
+    const boost = frame.cars[carId]?.boost;
+    if (typeof boost !== "number") continue;
+
+    const sample = { t: frame.t, boost };
+    const index = samples.length;
+    samples.push(sample);
+
     while (lookbackIndex < index && samples[lookbackIndex + 1].t <= sample.t - BOOST_LOOKBACK_SECONDS) {
       lookbackIndex++;
     }
