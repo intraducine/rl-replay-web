@@ -62,6 +62,49 @@ describe("sampleTimeline", () => {
     });
   });
 
+  it("smoothly interpolates numeric player camera settings between replay camera samples", () => {
+    const cameraTimeline: ReplayTimeline = {
+      ...timeline,
+      camera: [
+        {
+          t: 0,
+          playerId: "p1",
+          usingSecondaryCamera: true,
+          settings: { fov: 100, height: 80, angle: -4, distance: 240, stiffness: 0.2, swivel: 5, transition: 1 }
+        },
+        {
+          t: 1,
+          playerId: "p1",
+          usingSecondaryCamera: false,
+          settings: { fov: 110, height: 120, angle: -2, distance: 320, stiffness: 0.4, swivel: 9, transition: 2 }
+        }
+      ]
+    };
+
+    const sample = samplePlayerCameraState(cameraTimeline, "p1", 0.5);
+
+    expect(sample).toMatchObject({
+      usingSecondaryCamera: true,
+      settings: {
+        fov: 105,
+        height: 100,
+        angle: -3,
+        distance: 280,
+        swivel: 7,
+        transition: 1.5
+      }
+    });
+    expect(sample?.settings?.stiffness).toBeCloseTo(0.3);
+  });
+
+  it("keeps camera interpolation on numeric settings instead of replay camera toggles", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+
+    expect(source).toContain("function interpolateCameraSettings");
+    expect(source).toContain("settings: interpolateCameraSettings(previous.settings, next.settings");
+    expect(source).toContain("return {\n    ...previous,");
+  });
+
   it("linearly interpolates positions", () => {
     const sample = sampleTimeline(timeline, 1);
     expect(sample.ball?.position).toEqual([1, 2, 3]);

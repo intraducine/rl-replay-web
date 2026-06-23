@@ -1,5 +1,5 @@
-import { clamp, hermiteVec3, lerpVec3, slerpQuat } from "../math/interpolation";
-import type { CarFrame, ReplayCameraSample, ReplayTimeline, RigidBodyFrame, SampledReplayState, TimelineFrame } from "./types";
+import { clamp, hermiteVec3, lerp, lerpVec3, slerpQuat } from "../math/interpolation";
+import type { CarFrame, ReplayCameraSample, ReplayCameraSettings, ReplayTimeline, RigidBodyFrame, SampledReplayState, TimelineFrame } from "./types";
 
 type MotionKeyframe<T extends RigidBodyFrame> = {
   t: number;
@@ -265,7 +265,27 @@ export function samplePlayerCameraState(timeline: ReplayTimeline, playerId: stri
     else high = mid - 1;
   }
 
-  return track[Math.max(0, high)];
+  const previous = track[Math.max(0, high)];
+  const next = track[low];
+  const span = next.t - previous.t;
+  if (span <= 0 || !previous.settings || !next.settings) return previous;
+
+  return {
+    ...previous,
+    settings: interpolateCameraSettings(previous.settings, next.settings, (timeSeconds - previous.t) / span)
+  };
+}
+
+function interpolateCameraSettings(a: ReplayCameraSettings, b: ReplayCameraSettings, alpha: number): ReplayCameraSettings {
+  return {
+    fov: lerp(a.fov, b.fov, alpha),
+    height: lerp(a.height, b.height, alpha),
+    angle: lerp(a.angle, b.angle, alpha),
+    distance: lerp(a.distance, b.distance, alpha),
+    stiffness: lerp(a.stiffness, b.stiffness, alpha),
+    swivel: lerp(a.swivel, b.swivel, alpha),
+    transition: a.transition !== undefined && b.transition !== undefined ? lerp(a.transition, b.transition, alpha) : a.transition ?? b.transition
+  };
 }
 
 export function timelineDuration(timeline: ReplayTimeline): number {
