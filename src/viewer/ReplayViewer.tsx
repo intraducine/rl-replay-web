@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
 import type { ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
@@ -38,9 +38,8 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const sample = sampleTimeline(timeline, currentTime);
   const playerCameraState = samplePlayerCameraState(timeline, selectedPlayerId, currentTime);
   const showDebugControls = import.meta.env.DEV;
-  const boostByPlayer = Object.fromEntries(
-    timeline.metadata.players.map((player) => [player.id, sample.cars[player.id]?.boost])
-  );
+  const playerOptions = useMemo(() => timeline.metadata.players.map((player) => ({ value: player.id, label: player.name })), [timeline]);
+  const boostByPlayer = boostByPlayerFromSample(timeline, sample);
   const statsByPlayer = livePlayerStatsByPlayerAt(timeline, currentTime);
 
   useEffect(() => {
@@ -77,7 +76,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
             <Select
               label="Player"
               value={selectedPlayerId ?? ""}
-              options={timeline.metadata.players.map((player) => ({ value: player.id, label: player.name }))}
+              options={playerOptions}
               tooltip="Choose which player the player camera and controls follow"
               onChange={(event) => setSelectedPlayerId(event.currentTarget.value)}
             />
@@ -120,4 +119,12 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       </div>
     </div>
   );
+}
+
+function boostByPlayerFromSample(timeline: ReplayTimeline, sample: ReturnType<typeof sampleTimeline>) {
+  const boostByPlayer: Record<string, number | undefined> = {};
+  for (const player of timeline.metadata.players) {
+    boostByPlayer[player.id] = sample.cars[player.id]?.boost;
+  }
+  return boostByPlayer;
 }

@@ -130,6 +130,16 @@ describe("replay insights UI", () => {
     expect(playerListSource).not.toContain("state.currentTime");
   });
 
+  it("avoids extra player data allocation work in the replay viewer render path", () => {
+    const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
+
+    expect(replayViewerSource).toContain("const playerOptions = useMemo(");
+    expect(replayViewerSource).toContain("boostByPlayerFromSample(timeline, sample)");
+    expect(replayViewerSource).toContain("for (const player of timeline.metadata.players)");
+    expect(replayViewerSource).not.toContain("Object.fromEntries");
+    expect(replayViewerSource).not.toContain("options={timeline.metadata.players.map");
+  });
+
   it("renders typed event markers for goals, saves, and demos", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 
