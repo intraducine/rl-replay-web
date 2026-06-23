@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import type { ReplayTimeline } from "../replay/types";
 import { carBoostSegmentStartTime, isCarBoostingAt } from "../viewer/boostActivity";
 
@@ -17,6 +19,16 @@ const baseTimeline = {
 } satisfies Omit<ReplayTimeline, "frames">;
 
 describe("isCarBoostingAt", () => {
+  it("uses cached boost segments instead of sampling the replay timeline on every query", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/boostActivity.ts"), "utf8");
+
+    expect(source).not.toContain("sampleTimeline");
+    expect(source).toContain("boostSegmentCache");
+    expect(source).toContain("boostSegmentAt(timeline, carId, time)");
+    expect(source).toContain("replicatedBoostSegmentsForCar");
+    expect(source).toContain("inferredBoostDrainSegmentsForCar");
+  });
+
   it("returns true while a car boost amount is draining", () => {
     const timeline: ReplayTimeline = {
       ...baseTimeline,
@@ -28,6 +40,21 @@ describe("isCarBoostingAt", () => {
     };
 
     expect(isCarBoostingAt(timeline, "p1", 0.16)).toBe(true);
+  });
+
+  it("uses the lookback window for high-frequency boost drain samples", () => {
+    const timeline: ReplayTimeline = {
+      ...baseTimeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 50 } } },
+        { t: 0.03, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 49.8 } } },
+        { t: 0.06, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 49.6 } } },
+        { t: 0.09, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 49.4 } } },
+        { t: 0.12, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 49.2 } } }
+      ]
+    };
+
+    expect(isCarBoostingAt(timeline, "p1", 0.1)).toBe(true);
   });
 
   it("returns false when boost is steady or increasing", () => {
