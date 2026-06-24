@@ -126,7 +126,7 @@ describe("Champions Field color contract", () => {
     expect(championsFieldSource).toContain("emissiveIntensity: 0.24");
     expect(championsFieldSource).not.toContain("oobCrowd: new THREE.MeshStandardMaterial({\n      map: textures.stadiumTrim");
     expect(championsFieldSource).toContain("if (/CS_Stands|CS_Crowd|Crowd/i.test(meshName)) return materials.oobCrowd;");
-    expect(championsFieldSource).toContain("if (/CS_FieldLightTrim|CS_CornerArrows/i.test(meshName)) return materials.teamAccent.clone();");
+    expect(championsFieldSource).toContain("if (/CS_FieldLightTrim|CS_CornerArrows/i.test(meshName)) return fieldAccentMaterialForMesh(object, materials);");
   });
 
   it("scales the authored field surface to the standard large boost pad landmarks", () => {
@@ -160,10 +160,20 @@ describe("Champions Field color contract", () => {
 
     expect(championsFieldSource).toContain("blueGoal: new THREE.MeshStandardMaterial");
     expect(championsFieldSource).toContain("orangeGoal: new THREE.MeshStandardMaterial");
+    expect(championsFieldSource).toContain('emissive: "#0066ff"');
+    expect(championsFieldSource).toContain('emissive: "#ff4a00"');
+    expect(championsFieldSource).toContain("emissiveIntensity: 0.62");
     expect(championsFieldSource).toContain("goalMaterialForMesh(object, materials)");
+    expect(championsFieldSource).toContain("fieldAccentMaterialForMesh(object, materials)");
     expect(championsFieldSource).toContain("GOAL_MESH_BOX.setFromObject(object)");
-    expect(championsFieldSource).toContain("GOAL_MESH_CENTER.z >= 0 ? materials.blueGoal : materials.orangeGoal");
+    expect(championsFieldSource).toContain("meshCenterZ(object) >= 0 ? materials.blueGoal : materials.orangeGoal");
+    expect(championsFieldSource).toContain("meshCenterZ(object) >= 0 ? materials.blueFieldAccent : materials.orangeFieldAccent");
+    expect(championsFieldSource).toContain("blueFieldAccent: new THREE.MeshBasicMaterial");
+    expect(championsFieldSource).toContain("orangeFieldAccent: new THREE.MeshBasicMaterial");
+    expect(championsFieldSource).toContain("blending: THREE.AdditiveBlending");
+    expect(championsFieldSource).toContain("toneMapped: false");
     expect(championsFieldSource).not.toContain("if (/Goal/i.test(meshName)) return materials.goal;");
+    expect(championsFieldSource).not.toContain("return materials.teamAccent.clone();");
   });
 });
 

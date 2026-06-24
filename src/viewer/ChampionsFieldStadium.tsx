@@ -85,20 +85,20 @@ const MATERIALS = {
     envMapIntensity: 0.48
   }),
   blueGoal: new THREE.MeshStandardMaterial({
-    color: "#2f8fff",
-    emissive: "#071a35",
-    emissiveIntensity: 0.18,
-    roughness: 0.38,
-    metalness: 0.24,
-    envMapIntensity: 1.2
+    color: "#1d8cff",
+    emissive: "#0066ff",
+    emissiveIntensity: 0.62,
+    roughness: 0.3,
+    metalness: 0.18,
+    envMapIntensity: 1.35
   }),
   orangeGoal: new THREE.MeshStandardMaterial({
-    color: "#ff8a2a",
-    emissive: "#351406",
-    emissiveIntensity: 0.18,
-    roughness: 0.38,
-    metalness: 0.24,
-    envMapIntensity: 1.2
+    color: "#ff7a1f",
+    emissive: "#ff4a00",
+    emissiveIntensity: 0.62,
+    roughness: 0.3,
+    metalness: 0.18,
+    envMapIntensity: 1.35
   }),
   glow: new THREE.MeshBasicMaterial({
     color: "#ffffff",
@@ -279,11 +279,21 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
       metalness: 0.42,
       envMapIntensity: 1.12
     }),
-    teamAccent: new THREE.MeshBasicMaterial({
+    blueFieldAccent: new THREE.MeshBasicMaterial({
       map: textures.stadiumTrim,
-      color: "#ffffff",
+      color: "#1d8cff",
       transparent: true,
-      opacity: 0.72,
+      opacity: 0.86,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      toneMapped: false,
+      side: THREE.DoubleSide
+    }),
+    orangeFieldAccent: new THREE.MeshBasicMaterial({
+      map: textures.stadiumTrim,
+      color: "#ff7a1f",
+      transparent: true,
+      opacity: 0.86,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
       toneMapped: false,
@@ -431,7 +441,7 @@ function materialForMesh(object: THREE.Mesh, materials: ChampionsFieldMaterials)
   if (/CS_Tent/i.test(meshName)) return materials.tent;
   if (/CS_TV|SC_TV/i.test(meshName)) return materials.oobScreen;
   if (/OOB_Lights|FieldSpotLights|SearchLights|LightBar/i.test(meshName)) return materials.oobWarmLight.clone();
-  if (/CS_FieldLightTrim|CS_CornerArrows/i.test(meshName)) return materials.teamAccent.clone();
+  if (/CS_FieldLightTrim|CS_CornerArrows/i.test(meshName)) return fieldAccentMaterialForMesh(object, materials);
   if (/Glow|Lights|LightTrim|CornerArrows/i.test(meshName)) return materials.glow.clone();
   if (/CS_FieldWalls|WallMetal/i.test(meshName)) return materials.stadiumWallMetal;
   if (/FieldHexShell|Field|Clamp|Hex|Lattice|Trim/i.test(meshName)) return materials.stadiumTrim;
@@ -439,9 +449,17 @@ function materialForMesh(object: THREE.Mesh, materials: ChampionsFieldMaterials)
 }
 
 function goalMaterialForMesh(object: THREE.Mesh, materials: ChampionsFieldMaterials) {
+  return meshCenterZ(object) >= 0 ? materials.blueGoal : materials.orangeGoal;
+}
+
+function fieldAccentMaterialForMesh(object: THREE.Mesh, materials: ChampionsFieldMaterials) {
+  return (meshCenterZ(object) >= 0 ? materials.blueFieldAccent : materials.orangeFieldAccent).clone();
+}
+
+function meshCenterZ(object: THREE.Mesh) {
   GOAL_MESH_BOX.setFromObject(object);
   GOAL_MESH_BOX.getCenter(GOAL_MESH_CENTER);
-  return GOAL_MESH_CENTER.z >= 0 ? materials.blueGoal : materials.orangeGoal;
+  return GOAL_MESH_CENTER.z;
 }
 
 function renderOrderForMesh(meshName: string) {
