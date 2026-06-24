@@ -354,6 +354,16 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
       metalness: 0.05,
       envMapIntensity: 1.0
     }),
+    oobScreen: new THREE.MeshStandardMaterial({
+      map: textures.advertStrip,
+      emissiveMap: textures.advertStrip,
+      color: "#ffffff",
+      emissive: "#243f35",
+      emissiveIntensity: 0.52,
+      roughness: 0.3,
+      metalness: 0.18,
+      envMapIntensity: 1.25
+    }),
     cityBuilding: new THREE.MeshStandardMaterial({
       map: textures.buildingPack,
       color: "#bfc8c4",

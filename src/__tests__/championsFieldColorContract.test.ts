@@ -102,6 +102,8 @@ describe("Champions Field color contract", () => {
     expect(championsFieldSource).toContain("CS_TunnelBanners|CS_CountryFlags");
     expect(championsFieldSource).toContain("CS_SeparatedAds");
     expect(championsFieldSource).toContain("CS_FieldLightTrim|CS_CornerArrows");
+    expect(championsFieldSource).toContain("oobScreen: new THREE.MeshStandardMaterial({\n      map: textures.advertStrip");
+    expect(championsFieldSource).toContain("if (/CS_TV|SC_TV/i.test(meshName)) return materials.oobScreen;");
     expect(championsFieldSource).not.toContain("CHAMPIONS_FIELD_SOURCE_COLORS");
     expect(championsFieldSource).not.toContain("#7e6bd2");
     expect(championsFieldSource).not.toContain("#6c4083");
