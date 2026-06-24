@@ -160,6 +160,8 @@ describe("Champions Field color contract", () => {
 
     expect(championsFieldSource).toContain("blueGoal: new THREE.MeshStandardMaterial");
     expect(championsFieldSource).toContain("orangeGoal: new THREE.MeshStandardMaterial");
+    expect(championsFieldSource).toContain("map: textures.stadiumWallMetal");
+    expect(championsFieldSource).toContain("emissiveMap: textures.stadiumWallMetal");
     expect(championsFieldSource).toContain('emissive: "#0066ff"');
     expect(championsFieldSource).toContain('emissive: "#ff4a00"');
     expect(championsFieldSource).toContain("emissiveIntensity: 0.62");

@@ -279,6 +279,26 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
       metalness: 0.42,
       envMapIntensity: 1.12
     }),
+    blueGoal: new THREE.MeshStandardMaterial({
+      map: textures.stadiumWallMetal,
+      emissiveMap: textures.stadiumWallMetal,
+      color: "#1d8cff",
+      emissive: "#0066ff",
+      emissiveIntensity: 0.62,
+      roughness: 0.3,
+      metalness: 0.18,
+      envMapIntensity: 1.35
+    }),
+    orangeGoal: new THREE.MeshStandardMaterial({
+      map: textures.stadiumWallMetal,
+      emissiveMap: textures.stadiumWallMetal,
+      color: "#ff7a1f",
+      emissive: "#ff4a00",
+      emissiveIntensity: 0.62,
+      roughness: 0.3,
+      metalness: 0.18,
+      envMapIntensity: 1.35
+    }),
     blueFieldAccent: new THREE.MeshBasicMaterial({
       map: textures.stadiumTrim,
       color: "#1d8cff",
