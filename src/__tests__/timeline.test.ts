@@ -306,6 +306,7 @@ describe("sampleTimeline", () => {
     const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
     const sampleTimelineSource = source.match(/export function sampleTimeline[\s\S]*?\n}\n\nfunction appendSampledCar/)?.[0] ?? "";
 
+    expect(source).not.toContain("function findFramePair(");
     expect(source).toContain("function appendSampledCar");
     expect(sampleTimelineSource).toContain("for (const id of Object.keys(previous.cars))");
     expect(sampleTimelineSource).toContain("for (const id of Object.keys(next.cars))");

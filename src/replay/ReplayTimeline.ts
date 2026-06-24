@@ -166,11 +166,6 @@ function sampleMotionTrack<T extends RigidBodyFrame>(
   return interpolate(previous.frame, next.frame, (t - previous.t) / span, span);
 }
 
-function findFramePair(frames: TimelineFrame[], t: number): [TimelineFrame, TimelineFrame, number] {
-  const [previousIndex, nextIndex, alpha] = findFramePairIndices(frames, t);
-  return [frames[previousIndex], frames[nextIndex], alpha];
-}
-
 function findFramePairIndices(frames: TimelineFrame[], t: number): [number, number, number] {
   if (frames.length === 0) {
     throw new Error("Cannot sample an empty replay timeline.");
