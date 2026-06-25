@@ -53,10 +53,17 @@ function prepareCameraForTransfer(sample: ReplayCameraSample): ReplayCameraSampl
 }
 
 function prepareFrameForTransfer(frame: TimelineFrame): TimelineFrame {
+  const cars: TimelineFrame["cars"] = {};
+  for (const id in frame.cars) {
+    if (Object.prototype.hasOwnProperty.call(frame.cars, id)) {
+      cars[id] = prepareCarForTransfer(frame.cars[id]);
+    }
+  }
+
   return {
     t: roundNumber(frame.t, TIME_DECIMALS),
     ball: frame.ball ? prepareRigidBodyForTransfer(frame.ball) : undefined,
-    cars: Object.fromEntries(Object.entries(frame.cars).map(([id, car]) => [id, prepareCarForTransfer(car)]))
+    cars
   };
 }
 

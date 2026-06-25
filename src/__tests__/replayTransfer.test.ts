@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { prepareTimelineForTransfer } from "../replay/ReplayTransfer";
 import type { ReplayTimeline, TimelineFrame } from "../replay/types";
 
@@ -108,5 +110,16 @@ describe("prepareTimelineForTransfer", () => {
     const preparedLength = JSON.stringify(prepareTimelineForTransfer(timeline)).length;
 
     expect(preparedLength).toBeLessThan(rawLength * 0.75);
+  });
+
+  it("prepares frame cars without chained entry allocation", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTransfer.ts"), "utf8");
+    const prepareFrameSource = source.match(/function prepareFrameForTransfer[\s\S]*?\n}\n\nfunction prepareRigidBodyForTransfer/)?.[0] ?? "";
+
+    expect(prepareFrameSource).toContain("for (const id in frame.cars)");
+    expect(prepareFrameSource).toContain("Object.prototype.hasOwnProperty.call(frame.cars, id)");
+    expect(prepareFrameSource).toContain("cars[id] = prepareCarForTransfer(frame.cars[id])");
+    expect(prepareFrameSource).not.toContain("Object.entries(frame.cars)");
+    expect(prepareFrameSource).not.toContain("Object.fromEntries");
   });
 });
