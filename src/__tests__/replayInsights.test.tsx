@@ -197,6 +197,21 @@ describe("replay insights UI", () => {
     expect(replayViewerSource).not.toContain("options={timeline.metadata.players.map");
   });
 
+  it("builds synthetic actor players without chained key/filter/map allocations", () => {
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+    const completePlayersSource = sceneRootSource.match(/function completePlayers[\s\S]*?\n}\n$/)?.[0] ?? "";
+
+    expect(completePlayersSource).toContain("for (const player of players)");
+    expect(completePlayersSource).toContain("for (const id in sample.cars)");
+    expect(completePlayersSource).toContain("Object.prototype.hasOwnProperty.call(sample.cars, id)");
+    expect(completePlayersSource).toContain("if (!actors) return players");
+    expect(completePlayersSource).not.toContain("players.map((player) => player.id)");
+    expect(completePlayersSource).not.toContain("Object.keys(sample.cars)");
+    expect(completePlayersSource).not.toContain(".filter((id)");
+    expect(completePlayersSource).not.toContain(".map((id, index)");
+    expect(completePlayersSource).not.toContain("return [...players, ...actors]");
+  });
+
   it("uses one shallow viewer store selector for replay chrome state", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 

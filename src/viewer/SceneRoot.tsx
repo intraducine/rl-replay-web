@@ -563,9 +563,20 @@ function updateProjectedCarShadow(shadow: Mesh, frame: SampledReplayState["cars"
 }
 
 function completePlayers(players: ReplayPlayer[], sample: SampledReplayState): ReplayPlayer[] {
-  const knownIds = new Set(players.map((player) => player.id));
-  const actors = Object.keys(sample.cars)
-    .filter((id) => !knownIds.has(id))
-    .map((id, index): ReplayPlayer => ({ id, name: id.startsWith("actor-") ? `Car ${index + 1}` : id, team: index % 2 === 0 ? 0 : 1 }));
-  return [...players, ...actors];
+  const knownIds = new Set<string>();
+  for (const player of players) {
+    knownIds.add(player.id);
+  }
+
+  let actors: ReplayPlayer[] | undefined;
+  for (const id in sample.cars) {
+    if (!Object.prototype.hasOwnProperty.call(sample.cars, id) || knownIds.has(id)) continue;
+    const actorIndex = actors?.length ?? 0;
+    const actor = { id, name: id.startsWith("actor-") ? `Car ${actorIndex + 1}` : id, team: actorIndex % 2 === 0 ? 0 : 1 } satisfies ReplayPlayer;
+    if (actors) actors.push(actor);
+    else actors = [actor];
+  }
+
+  if (!actors) return players;
+  return players.concat(actors);
 }
