@@ -8,9 +8,12 @@ export function normalizeTimelineCoordinates(
   return {
     ...timeline,
     frames: timeline.frames.map((frame): TimelineFrame => {
-      const cars = Object.fromEntries(
-        Object.entries(frame.cars).map(([id, car]) => [id, transformRigidBodyToThree(car, options)])
-      );
+      const cars: TimelineFrame["cars"] = {};
+      for (const id in frame.cars) {
+        if (Object.prototype.hasOwnProperty.call(frame.cars, id)) {
+          cars[id] = transformRigidBodyToThree(frame.cars[id], options);
+        }
+      }
 
       return {
         ...frame,
