@@ -94,4 +94,17 @@ describe("Rocket League stadium set contract", () => {
     expect(championsFieldSource).toContain("/CS_Tent/i");
     expect(championsFieldSource).toContain("/CS_TV|SC_TV/i");
   });
+
+  it("uses scraped texture detail for lit Champions Field signage emissive maps", () => {
+    const championsFieldSource = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
+
+    expect(championsFieldSource).toContain("banners: new THREE.MeshStandardMaterial({\n      map: textures.bannerPack,\n      emissiveMap: textures.bannerPack");
+    expect(championsFieldSource).toContain("countryFlags: new THREE.MeshStandardMaterial({\n      map: textures.countryFlags,\n      emissiveMap: textures.countryFlags");
+    expect(championsFieldSource).toContain("advertStrip: new THREE.MeshStandardMaterial({\n      map: textures.advertStrip,\n      emissiveMap: textures.advertStrip");
+    expect(championsFieldSource).toContain("cityWindows: new THREE.MeshStandardMaterial({\n      map: textures.windowBarred,\n      emissiveMap: textures.windowBarred");
+    expect(championsFieldSource).toContain("if (/CS_TunnelBanners|CS_CountryFlags/i.test(meshName)) return materials.countryFlags;");
+    expect(championsFieldSource).toContain("if (/CS_SeparatedAds/i.test(meshName)) return materials.advertStrip;");
+    expect(championsFieldSource).toContain("if (/WavyFlagPatch|Tifo|CS_RLCS_Flags|Park_BannerScaffold/i.test(meshName)) return materials.banners;");
+    expect(championsFieldSource).toContain('meshName === "CityGround_01" ? materials.cityBuilding : materials.cityWindows');
+  });
 });

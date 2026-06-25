@@ -329,27 +329,30 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
     }),
     banners: new THREE.MeshStandardMaterial({
       map: textures.bannerPack,
+      emissiveMap: textures.bannerPack,
       color: "#ffffff",
       emissive: "#20100a",
-      emissiveIntensity: 0.08,
+      emissiveIntensity: 0.14,
       roughness: 0.6,
       metalness: 0.02,
       envMapIntensity: 0.95
     }),
     countryFlags: new THREE.MeshStandardMaterial({
       map: textures.countryFlags,
+      emissiveMap: textures.countryFlags,
       color: "#ffffff",
       emissive: "#101010",
-      emissiveIntensity: 0.08,
+      emissiveIntensity: 0.12,
       roughness: 0.58,
       metalness: 0.03,
       envMapIntensity: 0.95
     }),
     advertStrip: new THREE.MeshStandardMaterial({
       map: textures.advertStrip,
+      emissiveMap: textures.advertStrip,
       color: "#ffffff",
       emissive: "#171717",
-      emissiveIntensity: 0.18,
+      emissiveIntensity: 0.28,
       roughness: 0.42,
       metalness: 0.05,
       envMapIntensity: 1.0
@@ -375,6 +378,7 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
     }),
     cityWindows: new THREE.MeshStandardMaterial({
       map: textures.windowBarred,
+      emissiveMap: textures.windowBarred,
       color: "#ffffff",
       emissive: "#172722",
       emissiveIntensity: 0.42,
