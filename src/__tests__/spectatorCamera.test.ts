@@ -162,16 +162,22 @@ describe("cameraRigForMode", () => {
 
   it("reuses scratch vectors on the player camera hot path", () => {
     const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
+    const directorTargetSource = cameraSource.match(/export function directorTargetPlayerId[\s\S]*?\n}\n\nfunction nearestDirectorEvent/)?.[0] ?? "";
 
     expect(cameraSource).toContain("const TMP_CAR_POSITION = new Vector3()");
     expect(cameraSource).toContain("const TMP_CAMERA_POSITION = new Vector3()");
     expect(cameraSource).toContain("const TMP_NEAREST_CAR_POSITION = new Vector3()");
     expect(cameraSource).toContain("TMP_CAR_POSITION.fromArray(selectedCar.position)");
     expect(cameraSource).toContain("TMP_NEAREST_CAR_POSITION.fromArray(car.position).distanceToSquared(ball)");
+    expect(cameraSource).toContain("function firstSampledCarId");
+    expect(directorTargetSource).toContain("for (const id in sample.cars)");
+    expect(directorTargetSource).toContain("Object.prototype.hasOwnProperty.call(sample.cars, id)");
     expect(cameraSource).toContain("const settings = playerCameraState?.settings ?? DEFAULT_CAMERA_SETTINGS");
     expect(cameraSource).not.toContain("const carPosition = new Vector3().fromArray(selectedCar.position)");
     expect(cameraSource).not.toContain("new Vector3().fromArray(car.position).distanceToSquared(ball)");
     expect(cameraSource).not.toContain("{ ...DEFAULT_CAMERA_SETTINGS, ...playerCameraState?.settings }");
+    expect(directorTargetSource).not.toContain("Object.entries(sample.cars)");
+    expect(directorTargetSource).not.toContain("Object.keys(sample.cars)");
   });
 
   it("uses top-down camera up vector that keeps the field oriented", () => {

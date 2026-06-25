@@ -125,12 +125,14 @@ export function directorTargetPlayerId(sample: SampledReplayState, events: Repla
   const eventPlayerId = eventPlayerIdForCamera(event);
   if (eventPlayerId && sample.cars[eventPlayerId]) return eventPlayerId;
 
-  if (!sample.ball) return Object.keys(sample.cars)[0];
+  if (!sample.ball) return firstSampledCarId(sample);
   const ball = TMP_NEAREST_BALL_POSITION.fromArray(sample.ball.position);
   let bestId: string | undefined;
   let bestDistance = Number.POSITIVE_INFINITY;
 
-  for (const [id, car] of Object.entries(sample.cars)) {
+  for (const id in sample.cars) {
+    if (!Object.prototype.hasOwnProperty.call(sample.cars, id)) continue;
+    const car = sample.cars[id];
     const distance = TMP_NEAREST_CAR_POSITION.fromArray(car.position).distanceToSquared(ball);
     if (distance < bestDistance) {
       bestDistance = distance;
@@ -139,6 +141,13 @@ export function directorTargetPlayerId(sample: SampledReplayState, events: Repla
   }
 
   return bestId;
+}
+
+function firstSampledCarId(sample: SampledReplayState): string | undefined {
+  for (const id in sample.cars) {
+    if (Object.prototype.hasOwnProperty.call(sample.cars, id)) return id;
+  }
+  return undefined;
 }
 
 function nearestDirectorEvent(timeSeconds: number, events: ReplayEvent[]): ReplayEvent | undefined {
