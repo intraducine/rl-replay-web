@@ -305,9 +305,13 @@ describe("sampleTimeline", () => {
   it("samples car ids without allocating merged key collections every frame", () => {
     const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
     const sampleTimelineSource = source.match(/export function sampleTimeline[\s\S]*?\n}\n\nfunction appendSampledCar/)?.[0] ?? "";
+    const samplingIndexSource = source.match(/function buildSamplingIndex[\s\S]*?\n}\n\nfunction appendMotionKeyframe/)?.[0] ?? "";
 
     expect(source).not.toContain("function findFramePair(");
     expect(source).toContain("function appendSampledCar");
+    expect(samplingIndexSource).toContain("for (const id in frame.cars)");
+    expect(samplingIndexSource).toContain("Object.prototype.hasOwnProperty.call(frame.cars, id)");
+    expect(samplingIndexSource).not.toContain("Object.entries(frame.cars)");
     expect(sampleTimelineSource).toContain("for (const id in previous.cars)");
     expect(sampleTimelineSource).toContain("for (const id in next.cars)");
     expect(sampleTimelineSource).toContain("Object.prototype.hasOwnProperty.call(next.cars, id)");

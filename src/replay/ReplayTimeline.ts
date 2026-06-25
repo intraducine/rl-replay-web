@@ -78,7 +78,9 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
   for (const frame of timeline.frames) {
     if (frame.ball) appendMotionKeyframe(index.ball, frame.t, frame.ball);
 
-    for (const [id, car] of Object.entries(frame.cars)) {
+    for (const id in frame.cars) {
+      if (!Object.prototype.hasOwnProperty.call(frame.cars, id)) continue;
+      const car = frame.cars[id];
       let track = index.cars.get(id);
       if (!track) {
         track = [];
