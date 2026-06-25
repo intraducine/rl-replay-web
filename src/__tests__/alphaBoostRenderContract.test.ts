@@ -63,6 +63,7 @@ describe("Alpha boost render contract", () => {
     expect(sceneRootSource).toContain("if (boosting) {");
     expect(sceneRootSource).toContain("const flameEmitterStartTime = boostSegment.start");
     expect(sceneRootSource).toContain("alphaBoostEmitterAge = time - flameEmitterStartTime");
+    expect(sceneRootSource).toContain("const flameWindow = alphaBoostFlameWindowForCar(alphaBoostFlameWindowCache, timeline, id, time, flameEmitterStartTime)");
     expect(sceneRootSource).toContain("flameDistanceWindow = flameWindow.distance");
     expect(sceneRootSource).toContain("flameSpawnAges = flameWindow.spawnAges");
     expect(sceneRootSource).toContain("setCarAlphaBoostActive(group, boosting, frame, boostRenderingEnabled, time, flameDistanceWindow, flameSpawnAges, alphaBoostEmitterAge)");
@@ -70,6 +71,21 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("root.userData.alphaBoostEmitterAge");
     expect(carSource).toContain('typeof root.userData.alphaBoostTime === "number" ? root.userData.alphaBoostTime : clock.elapsedTime');
     expect(carSource).toContain("const particleSystemTime = typeof root.userData.alphaBoostEmitterAge === \"number\" ? root.userData.alphaBoostEmitterAge : replayTime");
+  });
+
+  it("caches Alpha Boost flame window sampling on the Cascade update step", () => {
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+
+    expect(sceneRootSource).toContain("type AlphaBoostFlameWindowCache = Map<string, AlphaBoostFlameWindow>");
+    expect(sceneRootSource).toContain("const alphaBoostFlameWindowCache = useRef<AlphaBoostFlameWindowCache>(new Map())");
+    expect(sceneRootSource).toContain("alphaBoostFlameWindowCache.current.clear()");
+    expect(sceneRootSource).toContain("alphaBoostFlameWindowCache.delete(id)");
+    expect(sceneRootSource).toContain("function alphaBoostFlameWindowForCar");
+    expect(sceneRootSource).toContain("const sampleTime = alphaBoostFlameWindowSampleTime(time, emitterStartTime)");
+    expect(sceneRootSource).toContain("cached.emitterStartTime === emitterStartTime && cached.sampleTime === sampleTime");
+    expect(sceneRootSource).toContain("sampleCarDistanceAndSpawnPerUnitAgesWindow(");
+    expect(sceneRootSource).toContain("ALPHA_BOOST_CASCADE.updateStepSeconds");
+    expect(sceneRootSource).toContain("Math.floor(emitterAge / step) * step");
   });
 
   it("advances alpha boost particles on the decoded Cascade update step", () => {
