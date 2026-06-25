@@ -456,8 +456,8 @@ function PlacedChampionsFieldScene({ url, materials }: { url: string; materials:
 function materialForMesh(object: THREE.Mesh, materials: ChampionsFieldMaterials) {
   const meshName = object.name;
   if (meshName === "SkyDome01") return materials.sky;
-  if (TRANSPARENT_FIELD_WALL_MESH.test(meshName)) return materials.fieldWallGlass.clone();
-  if (/Glass/i.test(meshName)) return materials.glass.clone();
+  if (TRANSPARENT_FIELD_WALL_MESH.test(meshName)) return materials.fieldWallGlass;
+  if (/Glass/i.test(meshName)) return materials.glass;
   if (/Grass|CS_StatueVegetation/i.test(meshName)) return materials.grass;
   if (/CS_Grounds_Floor|CS_Grounds_Driveway|Stairs/i.test(meshName)) return materials.stairs;
   if (/HandRail/i.test(meshName)) return materials.handrail;
@@ -470,9 +470,9 @@ function materialForMesh(object: THREE.Mesh, materials: ChampionsFieldMaterials)
   if (/CS_Statue|CS_Emblem/i.test(meshName)) return materials.oobStatue;
   if (/CS_Tent/i.test(meshName)) return materials.tent;
   if (/CS_TV|SC_TV/i.test(meshName)) return materials.oobScreen;
-  if (/OOB_Lights|FieldSpotLights|SearchLights|LightBar/i.test(meshName)) return materials.oobWarmLight.clone();
+  if (/OOB_Lights|FieldSpotLights|SearchLights|LightBar/i.test(meshName)) return materials.oobWarmLight;
   if (/CS_FieldLightTrim|CS_CornerArrows/i.test(meshName)) return fieldAccentMaterialForMesh(object, materials);
-  if (/Glow|Lights|LightTrim|CornerArrows/i.test(meshName)) return materials.glow.clone();
+  if (/Glow|Lights|LightTrim|CornerArrows/i.test(meshName)) return materials.glow;
   if (/CS_FieldWalls|WallMetal/i.test(meshName)) return materials.stadiumWallMetal;
   if (/FieldHexShell|Field|Clamp|Hex|Lattice|Trim/i.test(meshName)) return materials.stadiumTrim;
   return materials.oob;
@@ -483,7 +483,7 @@ function goalMaterialForMesh(object: THREE.Mesh, materials: ChampionsFieldMateri
 }
 
 function fieldAccentMaterialForMesh(object: THREE.Mesh, materials: ChampionsFieldMaterials) {
-  return (meshCenterZ(object) >= 0 ? materials.blueFieldAccent : materials.orangeFieldAccent).clone();
+  return meshCenterZ(object) >= 0 ? materials.blueFieldAccent : materials.orangeFieldAccent;
 }
 
 function meshCenterZ(object: THREE.Mesh) {

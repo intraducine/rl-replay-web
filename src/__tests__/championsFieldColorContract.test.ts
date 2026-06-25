@@ -172,10 +172,16 @@ describe("Champions Field color contract", () => {
     expect(championsFieldSource).toContain("GOAL_MESH_BOX.setFromObject(object)");
     expect(championsFieldSource).toContain("meshCenterZ(object) >= 0 ? materials.blueGoal : materials.orangeGoal");
     expect(championsFieldSource).toContain("meshCenterZ(object) >= 0 ? materials.blueFieldAccent : materials.orangeFieldAccent");
+    expect(championsFieldSource).toContain("if (TRANSPARENT_FIELD_WALL_MESH.test(meshName)) return materials.fieldWallGlass;");
+    expect(championsFieldSource).toContain("if (/OOB_Lights|FieldSpotLights|SearchLights|LightBar/i.test(meshName)) return materials.oobWarmLight;");
+    expect(championsFieldSource).toContain("if (/Glow|Lights|LightTrim|CornerArrows/i.test(meshName)) return materials.glow;");
     expect(championsFieldSource).toContain("blueFieldAccent: new THREE.MeshBasicMaterial");
     expect(championsFieldSource).toContain("orangeFieldAccent: new THREE.MeshBasicMaterial");
     expect(championsFieldSource).toContain("blending: THREE.AdditiveBlending");
     expect(championsFieldSource).toContain("toneMapped: false");
+    expect(championsFieldSource).not.toContain("materials.fieldWallGlass.clone()");
+    expect(championsFieldSource).not.toContain("materials.oobWarmLight.clone()");
+    expect(championsFieldSource).not.toContain("materials.glow.clone()");
     expect(championsFieldSource).not.toContain("if (/Goal/i.test(meshName)) return materials.goal;");
     expect(championsFieldSource).not.toContain("return materials.teamAccent.clone();");
   });
