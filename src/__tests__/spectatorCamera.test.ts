@@ -8,7 +8,8 @@ import {
   cameraSmoothingAlpha,
   directorTargetPlayerId,
   freeCameraKeyboardDisplacement,
-  freeCameraMoveIntentForCode
+  freeCameraMoveIntentForCode,
+  setCameraLookAt
 } from "../viewer/SpectatorCamera";
 
 describe("cameraRigForMode", () => {
@@ -184,8 +185,30 @@ describe("cameraRigForMode", () => {
     const fullFrame = cameraSmoothingAlpha(1 / 30, 8);
     const halfFrame = cameraSmoothingAlpha(1 / 60, 8);
     const twoHalfFrames = 1 - (1 - halfFrame) * (1 - halfFrame);
+    const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
 
     expect(twoHalfFrames).toBeCloseTo(fullFrame);
+    expect(cameraSource).toContain("camera.position.lerp(cameraPosition, cameraSmoothingAlpha(deltaSeconds, 7.7))");
+    expect(cameraSource).not.toContain("camera.position.lerp(cameraPosition, 0.12)");
+  });
+
+  it("applies helper camera smoothing consistently across frame rates", () => {
+    const targetPosition = new Vector3(1000, 0, 0);
+    const target = new Vector3();
+    const fullFrameCamera = {
+      position: new Vector3(),
+      lookAt: () => undefined
+    };
+    const halfFrameCamera = {
+      position: new Vector3(),
+      lookAt: () => undefined
+    };
+
+    setCameraLookAt(targetPosition, target, fullFrameCamera, 1 / 30);
+    setCameraLookAt(targetPosition, target, halfFrameCamera, 1 / 60);
+    setCameraLookAt(targetPosition, target, halfFrameCamera, 1 / 60);
+
+    expect(halfFrameCamera.position.x).toBeCloseTo(fullFrameCamera.position.x);
   });
 
   it("maps WASD/EQ keys to free camera movement intents", () => {

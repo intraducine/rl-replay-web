@@ -216,8 +216,13 @@ function vectorToTuple(vector: Vector3): [number, number, number] {
   return [vector.x, vector.y, vector.z];
 }
 
-export function setCameraLookAt(cameraPosition: Vector3, target: Vector3, camera: { position: Vector3; lookAt: (v: Vector3) => void }) {
-  camera.position.lerp(cameraPosition, 0.12);
+export function setCameraLookAt(
+  cameraPosition: Vector3,
+  target: Vector3,
+  camera: { position: Vector3; lookAt: (v: Vector3) => void },
+  deltaSeconds = 1 / 60
+) {
+  camera.position.lerp(cameraPosition, cameraSmoothingAlpha(deltaSeconds, 7.7));
   camera.lookAt(target);
 }
 
