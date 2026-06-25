@@ -111,6 +111,22 @@ describe("Alpha boost render contract", () => {
     expect(carSource).not.toContain("return Math.max(1 / ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, distanceRate * spawnPerUnit * spawnRateScalar)");
   });
 
+  it("samples Alpha Boost debug component flags once per frame instead of inside particle loops", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+
+    expect(carSource).toContain('const meshComponentEnabled = alphaBoostComponentEnabled("mesh")');
+    expect(carSource).toContain('const flameComponentEnabled = alphaBoostComponentEnabled("flame")');
+    expect(carSource).toContain('const mainComponentEnabled = alphaBoostComponentEnabled("main")');
+    expect(carSource).toContain('const lensFlareComponentEnabled = alphaBoostComponentEnabled("lensFlare")');
+    expect(carSource).toContain('const lensFlareReflectionComponentEnabled = alphaBoostComponentEnabled("lensFlareReflection")');
+    expect(carSource).toContain("mesh.visible = meshComponentEnabled");
+    expect(carSource).toContain("particle.visible = flameComponentEnabled && emitterIndex < activeFlameParticlesPerExhaust");
+    expect(carSource).toContain("particle.visible = mainComponentEnabled && particleVisibility > 0");
+    expect(carSource).not.toContain('mesh.visible = alphaBoostComponentEnabled("mesh")');
+    expect(carSource).not.toContain('particle.visible = alphaBoostComponentEnabled("flame")');
+    expect(carSource).not.toContain('particle.visible = alphaBoostComponentEnabled("main")');
+  });
+
   it("keeps boost glow on decoded particles, lens flare, and bloom instead of a web-only light", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
 

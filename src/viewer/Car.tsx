@@ -226,18 +226,23 @@ function AlphaBoost() {
     const flameSpawnRate = sourceSpawnPerUnitRateFromDistance(flameDistanceWindow, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, ALPHA_BOOST_CASCADE.flame.spawnPerUnit, ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar);
     const activeFlameParticlesPerExhaust = sourceActiveFlameParticlesPerExhaust(flameSpawnRate);
     const billboardQuaternion = root.getWorldQuaternion(BILLBOARD_ROOT_QUATERNION).invert().multiply(camera.quaternion);
+    const meshComponentEnabled = alphaBoostComponentEnabled("mesh");
+    const flameComponentEnabled = alphaBoostComponentEnabled("flame");
+    const mainComponentEnabled = alphaBoostComponentEnabled("main");
+    const lensFlareComponentEnabled = alphaBoostComponentEnabled("lensFlare");
+    const lensFlareReflectionComponentEnabled = alphaBoostComponentEnabled("lensFlareReflection");
     updateAlphaRewardBoostMeshMaterial(boostMeshMaterial, t, boostMeshFade);
 
     for (let index = 0; index < boostMeshRefs.current.length; index++) {
       const mesh = boostMeshRefs.current[index];
-      mesh.visible = alphaBoostComponentEnabled("mesh");
+      mesh.visible = meshComponentEnabled;
     }
 
     for (let index = 0; index < flameRefs.current.length; index++) {
       const particle = flameRefs.current[index];
       const emitterIndex = index % ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST;
       const exhaustIndex = Math.floor(index / ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST);
-      particle.visible = alphaBoostComponentEnabled("flame") && emitterIndex < activeFlameParticlesPerExhaust && particleVisibility > 0;
+      particle.visible = flameComponentEnabled && emitterIndex < activeFlameParticlesPerExhaust && particleVisibility > 0;
       if (!particle.visible) continue;
 
       const particleClock = sourceSpawnPerUnitParticleAge(emitterIndex, flameSpawnAges, flameSpawnRate, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds);
@@ -284,7 +289,7 @@ function AlphaBoost() {
       const screenPercentageOpacity = sourceLensFlareScreenPercentageOpacity(visibleScreenPercentage);
       sprite.scale.setScalar(sourceLensFlareWorldSize(camera, size.height, sprite, ALPHA_BOOST_CASCADE.lensFlare.sourceElement.size[0]));
       const sourceElementOpacity = sourceLensFlareElementHasMaterial() ? sourceLensFlareElementAlpha() * coneVisibility * screenPercentageOpacity * particleVisibility : 0;
-      setBoostOpacity(sprite, alphaBoostComponentEnabled("lensFlare") ? sourceElementOpacity : 0);
+      setBoostOpacity(sprite, lensFlareComponentEnabled ? sourceElementOpacity : 0);
 
       if (lensFlareReflectionRef.current) {
         const reflection = lensFlareReflectionRef.current;
@@ -299,7 +304,7 @@ function AlphaBoost() {
         const sourceDistance = camera.position.distanceTo(ALPHA_LENS_FLARE_WORLD_POSITION);
         setBoostOpacity(
           reflection,
-          alphaBoostComponentEnabled("lensFlareReflection") ? sourceLensFlareReflectionOpacity(coneVisibility, sourceDistance) * screenPercentageOpacity * particleVisibility : 0
+          lensFlareReflectionComponentEnabled ? sourceLensFlareReflectionOpacity(coneVisibility, sourceDistance) * screenPercentageOpacity * particleVisibility : 0
         );
       }
     }
@@ -307,7 +312,7 @@ function AlphaBoost() {
     for (let index = 0; index < mainRefs.current.length; index++) {
       const particle = mainRefs.current[index];
       const particleIndex = index % ALPHA_RENDERED_MAIN_PARTICLES;
-      particle.visible = alphaBoostComponentEnabled("main") && particleVisibility > 0;
+      particle.visible = mainComponentEnabled && particleVisibility > 0;
       if (!particle.visible) continue;
       const origin = ALPHA_BOOST_MAIN_BODY_POSITION;
       const particleClock = sourceParticleAge(
