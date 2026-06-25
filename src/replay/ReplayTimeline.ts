@@ -206,11 +206,17 @@ export function sampleTimeline(timeline: ReplayTimeline, timeSeconds: number): S
   const samplingIndex = buildSamplingIndex(timeline);
   const cars: Record<string, CarFrame> = {};
 
-  for (const id of Object.keys(previous.cars)) {
+  for (const id in previous.cars) {
+    if (!Object.prototype.hasOwnProperty.call(previous.cars, id)) continue;
     appendSampledCar(cars, samplingIndex, previous, next, id, sampledTime, alpha);
   }
-  for (const id of Object.keys(next.cars)) {
-    if (Object.prototype.hasOwnProperty.call(previous.cars, id)) continue;
+  for (const id in next.cars) {
+    if (
+      !Object.prototype.hasOwnProperty.call(next.cars, id) ||
+      Object.prototype.hasOwnProperty.call(previous.cars, id)
+    ) {
+      continue;
+    }
     appendSampledCar(cars, samplingIndex, previous, next, id, sampledTime, alpha);
   }
 

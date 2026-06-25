@@ -302,16 +302,19 @@ describe("sampleTimeline", () => {
     expect(sampleTimeline(timeline, 10).t).toBe(2);
   });
 
-  it("samples car ids without allocating a merged Set every frame", () => {
+  it("samples car ids without allocating merged key collections every frame", () => {
     const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
     const sampleTimelineSource = source.match(/export function sampleTimeline[\s\S]*?\n}\n\nfunction appendSampledCar/)?.[0] ?? "";
 
     expect(source).not.toContain("function findFramePair(");
     expect(source).toContain("function appendSampledCar");
-    expect(sampleTimelineSource).toContain("for (const id of Object.keys(previous.cars))");
-    expect(sampleTimelineSource).toContain("for (const id of Object.keys(next.cars))");
+    expect(sampleTimelineSource).toContain("for (const id in previous.cars)");
+    expect(sampleTimelineSource).toContain("for (const id in next.cars)");
+    expect(sampleTimelineSource).toContain("Object.prototype.hasOwnProperty.call(next.cars, id)");
     expect(sampleTimelineSource).toContain("Object.prototype.hasOwnProperty.call(previous.cars, id)");
     expect(sampleTimelineSource).not.toContain("new Set([...Object.keys(previous.cars), ...Object.keys(next.cars)])");
+    expect(sampleTimelineSource).not.toContain("Object.keys(previous.cars)");
+    expect(sampleTimelineSource).not.toContain("Object.keys(next.cars)");
   });
 
   it("measures car distance over a sampled time window with interpolated boundaries", () => {
