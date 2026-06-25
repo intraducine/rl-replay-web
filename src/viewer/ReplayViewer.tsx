@@ -52,7 +52,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       coordinateOptions: state.coordinateOptions
     }))
   );
-  const playerCameraState = samplePlayerCameraState(timeline, selectedPlayerId, currentTime);
+  const playerCameraState = cameraMode === "player" ? samplePlayerCameraState(timeline, selectedPlayerId, currentTime) : undefined;
   const showDebugControls = import.meta.env.DEV;
   const playerOptions = useMemo(() => timeline.metadata.players.map((player) => ({ value: player.id, label: player.name })), [timeline]);
   const playerIds = useMemo(() => timeline.metadata.players.map((player) => player.id), [timeline]);

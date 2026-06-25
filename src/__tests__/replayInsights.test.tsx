@@ -185,6 +185,7 @@ describe("replay insights UI", () => {
   it("avoids extra player data allocation work in the replay viewer render path", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
+    expect(replayViewerSource).toContain('const playerCameraState = cameraMode === "player" ? samplePlayerCameraState(timeline, selectedPlayerId, currentTime) : undefined');
     expect(replayViewerSource).toContain("const playerOptions = useMemo(");
     expect(replayViewerSource).toContain("const playerIds = useMemo(");
     expect(replayViewerSource).toContain("samplePlayerBoostsAt(timeline");
