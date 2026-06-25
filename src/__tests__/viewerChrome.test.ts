@@ -53,6 +53,7 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".speed-input");
     expect(css).toContain(".mobile-transport-controls");
     expect(css).toContain("display: none");
+    expect(css).toContain("grid-template-columns: repeat(3, minmax(0, 1fr))");
     expect(css).toContain(".timeline-shell .slider input");
     expect(css).toContain("margin: -2px 0 0");
   });
@@ -81,13 +82,18 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".timeline-controls");
     expect(css).toContain("min-width: 0");
     expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
+    expect(css).toContain("display: grid");
+    expect(css).toContain("grid-template-columns: repeat(3, minmax(0, 1fr))");
     expect(css).toContain("justify-content: stretch");
     expect(css).toContain(".viewer-toggle");
     expect(css).toContain("width: 100%");
+    expect(css).toContain(".control-help");
+    expect(css).toContain("display: none");
   });
 
   it("keeps touch playback controls large enough on coarse-pointer devices", () => {
     const css = styles();
+    const timelineControls = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
 
     expect(css).toContain("@media (pointer: coarse)");
     expect(css).toContain("min-height: 44px");
@@ -96,6 +102,11 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".event-track");
     expect(css).toContain("height: 12px");
     expect(css).toContain(".mobile-transport-controls .button");
-    expect(css).toContain("flex: 1 1 0");
+    expect(css).toContain("width: 100%");
+    expect(css).toContain("min-width: 0");
+    expect(timelineControls).toContain('aria-label="Mobile playback controls"');
+    expect(timelineControls).toContain('aria-label="Restart replay"');
+    expect(timelineControls).toContain('aria-label="Previous frame"');
+    expect(timelineControls).toContain('aria-label="Next frame"');
   });
 });

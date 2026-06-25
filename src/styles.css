@@ -1158,10 +1158,11 @@ pre {
   }
 
   .mobile-transport-controls {
-    display: flex;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     order: 2;
+    width: 100%;
   }
 
   .speed-control {
@@ -1171,7 +1172,7 @@ pre {
   }
 
   .control-help {
-    justify-content: center;
+    display: none;
     order: 4;
   }
 }
@@ -1193,11 +1194,9 @@ pre {
     height: 12px;
   }
 
-  .mobile-transport-controls {
-    width: 100%;
-  }
-
   .mobile-transport-controls .button {
-    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
+    padding-inline: 8px;
   }
 }

@@ -136,13 +136,35 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
         </div>
       </div>
       <div className="mobile-transport-controls" aria-label="Mobile playback controls">
+        <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart replay" className="tooltip-target">
+          Restart
+          <TooltipBubble>Restart replay</TooltipBubble>
+        </Button>
         <Button onClick={() => seekBy(-5)} className="tooltip-target">
           −5s
           <TooltipBubble>Jump backward 5 seconds</TooltipBubble>
         </Button>
+        <Button
+          icon={<StepBack size={16} />}
+          onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))}
+          aria-label="Previous frame"
+          className="tooltip-target"
+        >
+          Frame
+          <TooltipBubble>Previous frame</TooltipBubble>
+        </Button>
         <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)} className="tooltip-target">
           {playing ? "Pause" : "Play"}
           <TooltipBubble>Play or pause replay</TooltipBubble>
+        </Button>
+        <Button
+          icon={<StepForward size={16} />}
+          onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))}
+          aria-label="Next frame"
+          className="tooltip-target"
+        >
+          Frame
+          <TooltipBubble>Next frame</TooltipBubble>
         </Button>
         <Button onClick={() => seekBy(5)} className="tooltip-target">
           +5s
