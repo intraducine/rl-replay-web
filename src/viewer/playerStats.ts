@@ -54,7 +54,7 @@ function statIndexForTimeline(timeline: ReplayTimeline): StatTimelineIndex {
   let statsByPlayer: Record<string, LivePlayerStats> = EMPTY_LIVE_PLAYER_STATS_BY_PLAYER;
 
   for (const event of events) {
-    statsByPlayer = cloneStatsByPlayer(statsByPlayer);
+    statsByPlayer = { ...statsByPlayer };
     switch (event.type) {
       case "goal":
         if (event.scorerId) {
@@ -86,16 +86,8 @@ function statIndexForTimeline(timeline: ReplayTimeline): StatTimelineIndex {
 }
 
 function statsForPlayer(statsByPlayer: Record<string, LivePlayerStats>, playerId: string): LivePlayerStats {
-  statsByPlayer[playerId] ??= { goals: 0, saves: 0, shots: 0, demos: 0 };
+  statsByPlayer[playerId] = { ...(statsByPlayer[playerId] ?? EMPTY_LIVE_PLAYER_STATS) };
   return statsByPlayer[playerId];
-}
-
-function cloneStatsByPlayer(statsByPlayer: Record<string, LivePlayerStats>): Record<string, LivePlayerStats> {
-  const clone: Record<string, LivePlayerStats> = {};
-  for (const [playerId, stats] of Object.entries(statsByPlayer)) {
-    clone[playerId] = { ...stats };
-  }
-  return clone;
 }
 
 function statEventsForTimeline(timeline: ReplayTimeline): StatEvent[] {

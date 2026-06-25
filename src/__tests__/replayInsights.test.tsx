@@ -132,7 +132,7 @@ describe("replay insights UI", () => {
     expect(source).toContain("const EMPTY_LIVE_PLAYER_STATS");
     expect(source).toContain("const EMPTY_LIVE_PLAYER_STATS_BY_PLAYER");
     expect(source).toContain("return EMPTY_LIVE_PLAYER_STATS");
-    expect(source).toContain("statsByPlayer[playerId] ??= { goals: 0, saves: 0, shots: 0, demos: 0 }");
+    expect(source).toContain("statsByPlayer[playerId] = { ...(statsByPlayer[playerId] ?? EMPTY_LIVE_PLAYER_STATS) }");
   });
 
   it("caches cumulative player stat snapshots before binary lookup during playback", () => {
@@ -155,7 +155,9 @@ describe("replay insights UI", () => {
     expect(source).toContain("function statIndexForTimeline");
     expect(source).toContain("snapshots[mid].t <= timeSeconds");
     expect(source).toContain("return snapshots[low - 1]?.statsByPlayer");
-    expect(source).toContain("function cloneStatsByPlayer");
+    expect(source).toContain("statsByPlayer = { ...statsByPlayer }");
+    expect(source).not.toContain("function cloneStatsByPlayer");
+    expect(source).not.toContain("Object.entries(statsByPlayer)");
     expect(source).toContain("statEventsForTimeline(timeline)");
     expect(source).toContain("events.sort((a, b) => a.t - b.t)");
     expect(source).not.toContain("if (event.t > timeSeconds) break");
