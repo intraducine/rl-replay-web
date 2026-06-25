@@ -92,6 +92,12 @@ const ALPHA_LENS_FLARE_VIEWER_DIRECTION = sourceAttachmentViewerVector(
   { rotation: ALPHA_BOOST_CASCADE.lensFlare.sourceComponentRotation },
   [1, 0, 0]
 );
+const ALPHA_FLAME_PARTICLE_SIZES = Array.from(
+  { length: ALPHA_BOOST_ATTACHMENT_POSITIONS.length * ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST },
+  (_, index) => sourceRuntimeFlameParticleSize(index)
+);
+const ALPHA_MAIN_BODY_VELOCITIES = Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }, (_, index) => sourceMainBodyVelocity(index));
+const ALPHA_MAIN_START_SIZES = Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }, (_, index) => sourceMainStartSize(index));
 
 type FlameParticleState = {
   phase: number;
@@ -250,7 +256,7 @@ function AlphaBoost() {
       const origin = ALPHA_BOOST_ATTACHMENT_POSITIONS[exhaustIndex % ALPHA_BOOST_ATTACHMENT_POSITIONS.length];
       const age = particleClock;
       const sizeLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.sizeMultiplierLife, phase);
-      const particleSize = sourceRuntimeFlameParticleSize(index);
+      const particleSize = ALPHA_FLAME_PARTICLE_SIZES[index];
       const alphaLife = sampleAlphaBoostFloatCurve(ALPHA_BOOST_CASCADE.flame.alphaScaleOverLife, phase);
       const dynamic = sampleFlameDynamicParams(phase);
       let particleState = flameParticleStates.current[index];
@@ -322,8 +328,8 @@ function AlphaBoost() {
       );
       const phase = particleClock / ALPHA_BOOST_CASCADE.main.lifetimeSeconds;
       const age = phase * ALPHA_BOOST_CASCADE.main.lifetimeSeconds;
-      const velocity = sourceMainBodyVelocity(particleIndex);
-      const startSize = sourceMainStartSize(particleIndex);
+      const velocity = ALPHA_MAIN_BODY_VELOCITIES[particleIndex];
+      const startSize = ALPHA_MAIN_START_SIZES[particleIndex];
       const sizeLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.sizeMultiplierLife, phase);
       const particleSize = sourceMainParticleSize(startSize, sizeLife);
       const colorLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.colorScaleOverLife, phase);

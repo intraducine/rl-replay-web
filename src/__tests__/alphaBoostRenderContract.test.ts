@@ -347,6 +347,21 @@ describe("Alpha boost render contract", () => {
     expect(carSource).not.toContain("43758.5453");
   });
 
+  it("caches deterministic Alpha Boost SRand samples outside the frame loop", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const frameLoopSource = carSource.match(/useFrame\(\(\{ camera, clock \}, delta\) => \{[\s\S]*?\n  \}\);\n\n  return/)?.[0] ?? "";
+
+    expect(carSource).toContain("const ALPHA_FLAME_PARTICLE_SIZES = Array.from(");
+    expect(carSource).toContain("const ALPHA_MAIN_BODY_VELOCITIES = Array.from(");
+    expect(carSource).toContain("const ALPHA_MAIN_START_SIZES = Array.from(");
+    expect(frameLoopSource).toContain("const particleSize = ALPHA_FLAME_PARTICLE_SIZES[index]");
+    expect(frameLoopSource).toContain("const velocity = ALPHA_MAIN_BODY_VELOCITIES[particleIndex]");
+    expect(frameLoopSource).toContain("const startSize = ALPHA_MAIN_START_SIZES[particleIndex]");
+    expect(frameLoopSource).not.toContain("sourceRuntimeFlameParticleSize(index)");
+    expect(frameLoopSource).not.toContain("sourceMainBodyVelocity(particleIndex)");
+    expect(frameLoopSource).not.toContain("sourceMainStartSize(particleIndex)");
+  });
+
   it("keeps Car.tsx compatible with Vite Fast Refresh component exports", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
