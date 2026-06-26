@@ -101,11 +101,18 @@ describe("demo explosion reconstruction", () => {
     const source = readFileSyncForTest("src/viewer/DemoExplosions.tsx");
     const modelBuilderSource = source.match(/function demoExplosionModels[\s\S]*?\n}\n\nfunction demoExplosionModel/)?.[0] ?? "";
 
+    expect(source).toContain("const demoExplosionModelCache = new WeakMap<ReplayTimeline, DemoExplosionModel[]>()");
+    expect(modelBuilderSource).toContain("const cached = demoExplosionModelCache.get(timeline)");
+    expect(modelBuilderSource).toContain("if (cached) return cached");
     expect(modelBuilderSource).toContain("const models: DemoExplosionModel[] = []");
-    expect(modelBuilderSource).toContain("const teamByPlayer = new Map");
+    expect(modelBuilderSource).toContain("const teamByPlayer = new Map<string, 0 | 1>()");
+    expect(modelBuilderSource).toContain("for (const player of timeline.metadata.players)");
+    expect(modelBuilderSource).toContain("teamByPlayer.set(player.id, player.team)");
     expect(modelBuilderSource).toContain("for (const event of timeline.events)");
+    expect(modelBuilderSource).toContain("demoExplosionModelCache.set(timeline, models)");
     expect(modelBuilderSource).not.toContain(".filter((event)");
     expect(modelBuilderSource).not.toContain(".map((event");
+    expect(modelBuilderSource).not.toContain("timeline.metadata.players.map");
     expect(source).not.toContain("timeline.metadata.players.find");
   });
 });

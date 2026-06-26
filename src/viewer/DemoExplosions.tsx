@@ -70,6 +70,8 @@ type DemoExplosionModel = Omit<DemoExplosionInstance, "age"> & {
   t: number;
 };
 
+const demoExplosionModelCache = new WeakMap<ReplayTimeline, DemoExplosionModel[]>();
+
 export function demoExplosionInstances(timeline: ReplayTimeline, timeSeconds: number): DemoExplosionInstance[] {
   const instances: DemoExplosionInstance[] = [];
   for (const model of demoExplosionModels(timeline)) {
@@ -136,8 +138,14 @@ export function DemoExplosions({ timeline, playbackTimeRef }: { timeline: Replay
 }
 
 function demoExplosionModels(timeline: ReplayTimeline): DemoExplosionModel[] {
+  const cached = demoExplosionModelCache.get(timeline);
+  if (cached) return cached;
+
   const models: DemoExplosionModel[] = [];
-  const teamByPlayer = new Map(timeline.metadata.players.map((player) => [player.id, player.team]));
+  const teamByPlayer = new Map<string, 0 | 1>();
+  for (const player of timeline.metadata.players) {
+    teamByPlayer.set(player.id, player.team);
+  }
 
   for (const event of timeline.events) {
     if (event.type !== "demo") continue;
@@ -145,6 +153,7 @@ function demoExplosionModels(timeline: ReplayTimeline): DemoExplosionModel[] {
     if (model) models.push(model);
   }
 
+  demoExplosionModelCache.set(timeline, models);
   return models;
 }
 
