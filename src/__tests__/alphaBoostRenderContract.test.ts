@@ -172,7 +172,7 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("sourceLensFlareOcclusionRadius()");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.lensFlare.fixedRelativeBoundingBox.halfExtent");
     expect(carSource).not.toContain("sprite.scale.x * 0.5");
-    expect(carSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(scene.children, true)");
+    expect(carSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(scene.children, true, ALPHA_LENS_FLARE_OCCLUSION_HITS)");
     expect(carSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.camera = camera");
     expect(carSource).toContain("isAlphaLensFlareOccluder");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.lensFlare.screenPercentageMap");
@@ -196,6 +196,21 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("texture={textures.lensFlare}");
     expect(carSource).not.toContain("texture={textures.particle} tileIndex={0} color={ALPHA_LENS_FLARE_COLOR}");
     expect(carSource).not.toContain('alphaBoostComponentEnabled("lensFlare") ? sourceLensFlareElementAlpha()');
+  });
+
+  it("reuses Alpha Boost lens flare occlusion scratch arrays while preserving the nine source samples", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const occlusionSource = carSource.match(/function sourceLensFlareVisibleScreenPercentage[\s\S]*?\n}\n\nfunction sourceLensFlareOcclusionRadius/)?.[0] ?? "";
+
+    expect(carSource).toContain("const ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS = [");
+    expect(carSource).toContain("const ALPHA_LENS_FLARE_OCCLUSION_HITS: THREE.Intersection<THREE.Object3D>[] = []");
+    expect(occlusionSource).toContain("for (const [right, up] of ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS)");
+    expect(occlusionSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_HITS.length = 0");
+    expect(occlusionSource).toContain("intersectObjects(scene.children, true, ALPHA_LENS_FLARE_OCCLUSION_HITS)");
+    expect(occlusionSource).toContain("visibleSamples / ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS.length");
+    expect(occlusionSource).not.toContain("const sampleOffsets = [");
+    expect(occlusionSource).not.toContain("const hits = ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects");
+    expect((carSource.match(/\[-?0?\.?7071067811865476, -?0?\.?7071067811865476\]/g) ?? []).length).toBe(4);
   });
 
   it("preserves the source ParticleSheet_T color space for lens flare SubUV clones", () => {

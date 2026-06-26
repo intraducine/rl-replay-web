@@ -69,6 +69,18 @@ const ALPHA_LENS_FLARE_OCCLUSION_TARGET = new THREE.Vector3();
 const ALPHA_LENS_FLARE_OCCLUSION_OFFSET = new THREE.Vector3();
 const ALPHA_LENS_FLARE_OCCLUSION_CAMERA_RIGHT = new THREE.Vector3();
 const ALPHA_LENS_FLARE_OCCLUSION_CAMERA_UP = new THREE.Vector3();
+const ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS = [
+  [0, 0],
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+  [-0.7071067811865476, -0.7071067811865476],
+  [0.7071067811865476, -0.7071067811865476],
+  [-0.7071067811865476, 0.7071067811865476],
+  [0.7071067811865476, 0.7071067811865476]
+] as const;
+const ALPHA_LENS_FLARE_OCCLUSION_HITS: THREE.Intersection<THREE.Object3D>[] = [];
 const FLAME_SPAWN_LOCAL_POSITION = new THREE.Vector3();
 const FLAME_WORLD_POSITION = new THREE.Vector3();
 const FLAME_WORLD_OFFSET = new THREE.Vector3();
@@ -1000,20 +1012,9 @@ function sourceLensFlareVisibleScreenPercentage(scene: THREE.Scene, camera: THRE
   );
 
   const sourceRadius = sourceLensFlareOcclusionRadius();
-  const sampleOffsets = [
-    [0, 0],
-    [-1, 0],
-    [1, 0],
-    [0, -1],
-    [0, 1],
-    [-0.7071067811865476, -0.7071067811865476],
-    [0.7071067811865476, -0.7071067811865476],
-    [-0.7071067811865476, 0.7071067811865476],
-    [0.7071067811865476, 0.7071067811865476]
-  ] as const;
   let visibleSamples = 0;
 
-  for (const [right, up] of sampleOffsets) {
+  for (const [right, up] of ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS) {
     ALPHA_LENS_FLARE_OCCLUSION_TARGET.copy(ALPHA_LENS_FLARE_WORLD_POSITION);
     ALPHA_LENS_FLARE_OCCLUSION_TARGET.addScaledVector(ALPHA_LENS_FLARE_OCCLUSION_CAMERA_RIGHT, right * sourceRadius);
     ALPHA_LENS_FLARE_OCCLUSION_TARGET.addScaledVector(ALPHA_LENS_FLARE_OCCLUSION_CAMERA_UP, up * sourceRadius);
@@ -1023,11 +1024,12 @@ function sourceLensFlareVisibleScreenPercentage(scene: THREE.Scene, camera: THRE
     ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.camera = camera;
     ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.near = 0.01;
     ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.far = Math.max(0.01, targetDistance - 1);
-    const hits = ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(scene.children, true);
-    if (!hits.some((hit) => isAlphaLensFlareOccluder(hit.object, root))) visibleSamples++;
+    ALPHA_LENS_FLARE_OCCLUSION_HITS.length = 0;
+    ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(scene.children, true, ALPHA_LENS_FLARE_OCCLUSION_HITS);
+    if (!ALPHA_LENS_FLARE_OCCLUSION_HITS.some((hit) => isAlphaLensFlareOccluder(hit.object, root))) visibleSamples++;
   }
 
-  return visibleSamples / sampleOffsets.length;
+  return visibleSamples / ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS.length;
 }
 
 function sourceLensFlareOcclusionRadius() {
