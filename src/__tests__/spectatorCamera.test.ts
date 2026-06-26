@@ -148,11 +148,36 @@ describe("cameraRigForMode", () => {
     expect(cameraSource).toContain("if (candidate.event.t >= upperTime) break");
   });
 
+  it("caches only player-focused director events with their resolved focus player", () => {
+    const target = directorTargetPlayerId(
+      {
+        t: 31,
+        ball: { position: [1000, 120, 1000], rotation: [0, 0, 0, 1] },
+        cars: {
+          scorer: { position: [-2500, 20, -2500], rotation: [0, 0, 0, 1] },
+          close: { position: [1100, 20, 1120], rotation: [0, 0, 0, 1] }
+        }
+      },
+      [
+        { type: "goal", t: 30.9, team: 0 },
+        { type: "goal", t: 30.5, scorerId: "scorer", team: 0 }
+      ]
+    );
+    const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
+
+    expect(target).toBe("scorer");
+    expect(cameraSource).toContain("focusPlayerId: string");
+    expect(cameraSource).toContain("const focusPlayerId = eventPlayerIdForCamera(event)");
+    expect(cameraSource).toContain("if (focusPlayerId) sortedEvents.push({ event, focusPlayerId, index })");
+    expect(cameraSource).toContain("nearestDirectorEventPlayerId");
+    expect(cameraSource).not.toContain("events.map((event, index) => ({ event, index }))");
+  });
+
   it("avoids per-frame director event sorting and duplicate target resolution", () => {
     const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
 
-    expect(cameraSource).toContain("function nearestDirectorEvent");
+    expect(cameraSource).toContain("function nearestDirectorEventPlayerId");
     expect(cameraSource).toContain("directorEventsFor(events)");
     expect(cameraSource).not.toContain(".filter((candidate) => Math.abs(candidate.t - sample.t) < 3.5)");
     expect(cameraSource).not.toContain(".sort((a, b) => Math.abs(a.t - sample.t) - Math.abs(b.t - sample.t))");
