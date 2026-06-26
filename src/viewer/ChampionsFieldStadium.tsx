@@ -43,6 +43,19 @@ const CHAMPIONS_FIELD_TEXTURES: Record<ChampionsFieldTextureName, string> = {
   stairsPack: publicAsset(championsFieldTextureManifest.textures.stairsPack.browserPath),
   handrail: publicAsset(championsFieldTextureManifest.textures.handrail.browserPath)
 };
+const CHAMPIONS_FIELD_TEXTURE_URLS: string[] = [
+  CHAMPIONS_FIELD_TEXTURES.fieldGrass,
+  CHAMPIONS_FIELD_TEXTURES.stadiumTrim,
+  CHAMPIONS_FIELD_TEXTURES.stadiumWallMetal,
+  CHAMPIONS_FIELD_TEXTURES.bannerPack,
+  CHAMPIONS_FIELD_TEXTURES.countryFlags,
+  CHAMPIONS_FIELD_TEXTURES.buildingPack,
+  CHAMPIONS_FIELD_TEXTURES.windowBarred,
+  CHAMPIONS_FIELD_TEXTURES.tentFabric,
+  CHAMPIONS_FIELD_TEXTURES.advertStrip,
+  CHAMPIONS_FIELD_TEXTURES.stairsPack,
+  CHAMPIONS_FIELD_TEXTURES.handrail
+];
 
 const FIELD_SURFACE_WIDTH = 76.45;
 const FIELD_SURFACE_LENGTH = 117.75;
@@ -220,7 +233,7 @@ export function ChampionsFieldStadium() {
 }
 
 function useChampionsFieldTextures(): ChampionsFieldTextureSet {
-  const loadedTextures = useTexture(CHAMPIONS_FIELD_TEXTURE_NAMES.map((name) => CHAMPIONS_FIELD_TEXTURES[name]));
+  const loadedTextures = useTexture(CHAMPIONS_FIELD_TEXTURE_URLS);
 
   return useMemo(
     () => ({

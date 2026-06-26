@@ -110,15 +110,20 @@ describe("Rocket League stadium set contract", () => {
 
   it("loads scraped Champions Field textures without reconstructing texture maps from entries", () => {
     const championsFieldSource = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
-    const textureSetupSource = championsFieldSource.match(/const CHAMPIONS_FIELD_TEXTURES[\s\S]*?\n};\n\nconst FIELD_SURFACE_WIDTH/)?.[0] ?? "";
+    const textureSetupSource = championsFieldSource.match(/const CHAMPIONS_FIELD_TEXTURES[\s\S]*?\n};\nconst CHAMPIONS_FIELD_TEXTURE_URLS/)?.[0] ?? "";
+    const textureUrlSource = championsFieldSource.match(/const CHAMPIONS_FIELD_TEXTURE_URLS[\s\S]*?\n];/)?.[0] ?? "";
     const textureHookSource = championsFieldSource.match(/function useChampionsFieldTextures[\s\S]*?\n}\n\nfunction configureChampionsFieldTexture/)?.[0] ?? "";
 
     expect(textureSetupSource).toContain("fieldGrass: publicAsset(championsFieldTextureManifest.textures.fieldGrass.browserPath)");
     expect(textureSetupSource).toContain("handrail: publicAsset(championsFieldTextureManifest.textures.handrail.browserPath)");
+    expect(textureUrlSource).toContain("CHAMPIONS_FIELD_TEXTURES.fieldGrass");
+    expect(textureUrlSource).toContain("CHAMPIONS_FIELD_TEXTURES.handrail");
+    expect(textureHookSource).toContain("useTexture(CHAMPIONS_FIELD_TEXTURE_URLS)");
     expect(textureHookSource).toContain('fieldGrass: configureChampionsFieldTexture(loadedTextures[0], "fieldGrass")');
     expect(textureHookSource).toContain('handrail: configureChampionsFieldTexture(loadedTextures[10], "handrail")');
     expect(textureSetupSource).not.toContain("Object.fromEntries");
     expect(textureHookSource).not.toContain("Object.fromEntries");
     expect(textureHookSource).not.toContain("const entries =");
+    expect(textureHookSource).not.toContain("CHAMPIONS_FIELD_TEXTURE_NAMES.map");
   });
 });
