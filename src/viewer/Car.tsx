@@ -101,6 +101,8 @@ const SOURCE_QUATERNION = new THREE.Quaternion();
 const SOURCE_VECTOR = new THREE.Vector3();
 const SOURCE_RANDOM_FLOAT_BUFFER = new ArrayBuffer(4);
 const SOURCE_RANDOM_FLOAT_VIEW = new DataView(SOURCE_RANDOM_FLOAT_BUFFER);
+const SOURCE_RANDOM_FRACTION_CACHE: number[] = [];
+let sourceRandomCachedSeed = ALPHA_BOOST_CASCADE.randomStream.webBaseSeed >>> 0;
 const ALPHA_LENS_FLARE_VIEWER_DIRECTION = sourceAttachmentViewerVector(
   { rotation: ALPHA_BOOST_CASCADE.lensFlare.sourceComponentRotation },
   [1, 0, 0]
@@ -774,16 +776,20 @@ function sampleMainDynamicParams(phase: number, target: LiquidGoldDynamicParams)
 }
 
 function alphaParticleNoise(drawOrder: SourceRandomDrawOrder, particleIndex: number, componentIndex: number) {
-  return sourceSrandFraction(sourceParticleRandomSeed(drawOrder, particleIndex, componentIndex)) * 2 - 1;
+  return sourceParticleRandomFraction(drawOrder, particleIndex, componentIndex) * 2 - 1;
 }
 
-function sourceParticleRandomSeed(drawOrder: SourceRandomDrawOrder, particleIndex: number, componentIndex: number) {
+function sourceParticleRandomFraction(drawOrder: SourceRandomDrawOrder, particleIndex: number, componentIndex: number) {
   const drawIndex = Math.max(0, particleIndex * drawOrder.drawsPerParticle + drawOrder.firstDraw + componentIndex);
-  let seed = ALPHA_BOOST_CASCADE.randomStream.webBaseSeed >>> 0;
-  for (let draw = 0; draw <= drawIndex; draw++) {
-    seed = sourceSrandNextSeed(seed);
+  return sourceSrandFractionAt(drawIndex);
+}
+
+function sourceSrandFractionAt(drawIndex: number) {
+  for (let draw = SOURCE_RANDOM_FRACTION_CACHE.length; draw <= drawIndex; draw++) {
+    sourceRandomCachedSeed = sourceSrandNextSeed(sourceRandomCachedSeed);
+    SOURCE_RANDOM_FRACTION_CACHE[draw] = sourceSrandFraction(sourceRandomCachedSeed);
   }
-  return seed;
+  return SOURCE_RANDOM_FRACTION_CACHE[drawIndex] ?? 0;
 }
 
 function sourceSrandNextSeed(seed: number) {

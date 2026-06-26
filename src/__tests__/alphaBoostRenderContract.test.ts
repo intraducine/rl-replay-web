@@ -355,7 +355,7 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("Math.imul(seed, ALPHA_BOOST_CASCADE.randomStream.multiplier)");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.randomStream.floatOneBits");
     expect(carSource).toContain("SOURCE_RANDOM_FLOAT_VIEW.getFloat32(0, true) - 1");
-    expect(carSource).toContain("sourceParticleRandomSeed(drawOrder, particleIndex, componentIndex)");
+    expect(carSource).toContain("sourceParticleRandomFraction(drawOrder, particleIndex, componentIndex)");
     expect(carSource).toContain("particleIndex * drawOrder.drawsPerParticle + drawOrder.firstDraw + componentIndex");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.randomStream.drawOrder.flame.particleSize");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.randomStream.drawOrder.flame.acceleration");
@@ -364,6 +364,20 @@ describe("Alpha boost render contract", () => {
     expect(carSource).not.toContain("index * 32 + channel");
     expect(carSource).not.toContain("Math.sin((index + 1) * 12.9898");
     expect(carSource).not.toContain("43758.5453");
+  });
+
+  it("advances Alpha Boost SRand draws incrementally instead of replaying from the base seed per sample", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const randomFractionSource = carSource.match(/function sourceSrandFractionAt[\s\S]*?\n}\n\nfunction sourceSrandNextSeed/)?.[0] ?? "";
+
+    expect(carSource).toContain("const SOURCE_RANDOM_FRACTION_CACHE: number[] = []");
+    expect(carSource).toContain("let sourceRandomCachedSeed = ALPHA_BOOST_CASCADE.randomStream.webBaseSeed >>> 0");
+    expect(randomFractionSource).toContain("SOURCE_RANDOM_FRACTION_CACHE.length");
+    expect(randomFractionSource).toContain("sourceRandomCachedSeed = sourceSrandNextSeed(sourceRandomCachedSeed)");
+    expect(randomFractionSource).toContain("SOURCE_RANDOM_FRACTION_CACHE[draw] = sourceSrandFraction(sourceRandomCachedSeed)");
+    expect(randomFractionSource).toContain("return SOURCE_RANDOM_FRACTION_CACHE[drawIndex] ?? 0");
+    expect(carSource).not.toContain("for (let draw = 0; draw <= drawIndex; draw++)");
+    expect(carSource).not.toContain("function sourceParticleRandomSeed");
   });
 
   it("caches deterministic Alpha Boost SRand samples outside the frame loop", () => {
