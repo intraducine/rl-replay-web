@@ -54,8 +54,17 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   );
   const playerCameraState = cameraMode === "player" ? samplePlayerCameraState(timeline, selectedPlayerId, currentTime) : undefined;
   const showDebugControls = import.meta.env.DEV;
-  const playerOptions = useMemo(() => timeline.metadata.players.map((player) => ({ value: player.id, label: player.name })), [timeline]);
-  const playerIds = useMemo(() => timeline.metadata.players.map((player) => player.id), [timeline]);
+  const { playerOptions, playerIds } = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const ids: string[] = [];
+
+    for (const player of timeline.metadata.players) {
+      options.push({ value: player.id, label: player.name });
+      ids.push(player.id);
+    }
+
+    return { playerOptions: options, playerIds: ids };
+  }, [timeline.metadata.players]);
   const boostByPlayer = samplePlayerBoostsAt(timeline, playerIds, currentTime);
   const statsByPlayer = livePlayerStatsByPlayerAt(timeline, currentTime);
 
