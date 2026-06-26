@@ -19,12 +19,30 @@ export function hermiteVec3(a: Vec3, b: Vec3, velocityA: Vec3, velocityB: Vec3, 
   const h10 = t3 - 2 * t2 + t;
   const h01 = -2 * t3 + 3 * t2;
   const h11 = t3 - t2;
+  const tangentA = limitedHermiteTangent(a, b, velocityA, spanSeconds);
+  const tangentB = limitedHermiteTangent(a, b, velocityB, spanSeconds);
 
   return [
-    h00 * a[0] + h10 * velocityA[0] * spanSeconds + h01 * b[0] + h11 * velocityB[0] * spanSeconds,
-    h00 * a[1] + h10 * velocityA[1] * spanSeconds + h01 * b[1] + h11 * velocityB[1] * spanSeconds,
-    h00 * a[2] + h10 * velocityA[2] * spanSeconds + h01 * b[2] + h11 * velocityB[2] * spanSeconds
+    h00 * a[0] + h10 * tangentA[0] + h01 * b[0] + h11 * tangentB[0],
+    h00 * a[1] + h10 * tangentA[1] + h01 * b[1] + h11 * tangentB[1],
+    h00 * a[2] + h10 * tangentA[2] + h01 * b[2] + h11 * tangentB[2]
   ];
+}
+
+function limitedHermiteTangent(a: Vec3, b: Vec3, velocity: Vec3, spanSeconds: number): Vec3 {
+  const tangent: Vec3 = [velocity[0] * spanSeconds, velocity[1] * spanSeconds, velocity[2] * spanSeconds];
+  const tangentLength = Math.hypot(tangent[0], tangent[1], tangent[2]);
+  if (tangentLength === 0) return tangent;
+
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const dz = b[2] - a[2];
+  const segmentLength = Math.hypot(dx, dy, dz);
+  const maxTangentLength = segmentLength * 1.5;
+  if (tangentLength <= maxTangentLength) return tangent;
+
+  const scale = maxTangentLength / tangentLength;
+  return [tangent[0] * scale, tangent[1] * scale, tangent[2] * scale];
 }
 
 export function normalizeQuat(q: Quat): Quat {
