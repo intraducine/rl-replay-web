@@ -30,9 +30,19 @@ const CHAMPIONS_FIELD_TEXTURE_NAMES = [
   "handrail"
 ] as const;
 type ChampionsFieldTextureName = (typeof CHAMPIONS_FIELD_TEXTURE_NAMES)[number];
-const CHAMPIONS_FIELD_TEXTURES = Object.fromEntries(
-  CHAMPIONS_FIELD_TEXTURE_NAMES.map((name) => [name, publicAsset(championsFieldTextureManifest.textures[name].browserPath)])
-) as Record<ChampionsFieldTextureName, string>;
+const CHAMPIONS_FIELD_TEXTURES: Record<ChampionsFieldTextureName, string> = {
+  fieldGrass: publicAsset(championsFieldTextureManifest.textures.fieldGrass.browserPath),
+  stadiumTrim: publicAsset(championsFieldTextureManifest.textures.stadiumTrim.browserPath),
+  stadiumWallMetal: publicAsset(championsFieldTextureManifest.textures.stadiumWallMetal.browserPath),
+  bannerPack: publicAsset(championsFieldTextureManifest.textures.bannerPack.browserPath),
+  countryFlags: publicAsset(championsFieldTextureManifest.textures.countryFlags.browserPath),
+  buildingPack: publicAsset(championsFieldTextureManifest.textures.buildingPack.browserPath),
+  windowBarred: publicAsset(championsFieldTextureManifest.textures.windowBarred.browserPath),
+  tentFabric: publicAsset(championsFieldTextureManifest.textures.tentFabric.browserPath),
+  advertStrip: publicAsset(championsFieldTextureManifest.textures.advertStrip.browserPath),
+  stairsPack: publicAsset(championsFieldTextureManifest.textures.stairsPack.browserPath),
+  handrail: publicAsset(championsFieldTextureManifest.textures.handrail.browserPath)
+};
 
 const FIELD_SURFACE_WIDTH = 76.45;
 const FIELD_SURFACE_LENGTH = 117.75;
@@ -212,10 +222,22 @@ export function ChampionsFieldStadium() {
 function useChampionsFieldTextures(): ChampionsFieldTextureSet {
   const loadedTextures = useTexture(CHAMPIONS_FIELD_TEXTURE_NAMES.map((name) => CHAMPIONS_FIELD_TEXTURES[name]));
 
-  return useMemo(() => {
-    const entries = CHAMPIONS_FIELD_TEXTURE_NAMES.map((name, index) => [name, configureChampionsFieldTexture(loadedTextures[index], name)] as const);
-    return Object.fromEntries(entries) as ChampionsFieldTextureSet;
-  }, [loadedTextures]);
+  return useMemo(
+    () => ({
+      fieldGrass: configureChampionsFieldTexture(loadedTextures[0], "fieldGrass"),
+      stadiumTrim: configureChampionsFieldTexture(loadedTextures[1], "stadiumTrim"),
+      stadiumWallMetal: configureChampionsFieldTexture(loadedTextures[2], "stadiumWallMetal"),
+      bannerPack: configureChampionsFieldTexture(loadedTextures[3], "bannerPack"),
+      countryFlags: configureChampionsFieldTexture(loadedTextures[4], "countryFlags"),
+      buildingPack: configureChampionsFieldTexture(loadedTextures[5], "buildingPack"),
+      windowBarred: configureChampionsFieldTexture(loadedTextures[6], "windowBarred"),
+      tentFabric: configureChampionsFieldTexture(loadedTextures[7], "tentFabric"),
+      advertStrip: configureChampionsFieldTexture(loadedTextures[8], "advertStrip"),
+      stairsPack: configureChampionsFieldTexture(loadedTextures[9], "stairsPack"),
+      handrail: configureChampionsFieldTexture(loadedTextures[10], "handrail")
+    }),
+    [loadedTextures]
+  );
 }
 
 function configureChampionsFieldTexture(texture: THREE.Texture, name: ChampionsFieldTextureName) {

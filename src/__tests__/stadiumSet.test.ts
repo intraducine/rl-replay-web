@@ -107,4 +107,18 @@ describe("Rocket League stadium set contract", () => {
     expect(championsFieldSource).toContain("if (/WavyFlagPatch|Tifo|CS_RLCS_Flags|Park_BannerScaffold/i.test(meshName)) return materials.banners;");
     expect(championsFieldSource).toContain('meshName === "CityGround_01" ? materials.cityBuilding : materials.cityWindows');
   });
+
+  it("loads scraped Champions Field textures without reconstructing texture maps from entries", () => {
+    const championsFieldSource = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
+    const textureSetupSource = championsFieldSource.match(/const CHAMPIONS_FIELD_TEXTURES[\s\S]*?\n};\n\nconst FIELD_SURFACE_WIDTH/)?.[0] ?? "";
+    const textureHookSource = championsFieldSource.match(/function useChampionsFieldTextures[\s\S]*?\n}\n\nfunction configureChampionsFieldTexture/)?.[0] ?? "";
+
+    expect(textureSetupSource).toContain("fieldGrass: publicAsset(championsFieldTextureManifest.textures.fieldGrass.browserPath)");
+    expect(textureSetupSource).toContain("handrail: publicAsset(championsFieldTextureManifest.textures.handrail.browserPath)");
+    expect(textureHookSource).toContain('fieldGrass: configureChampionsFieldTexture(loadedTextures[0], "fieldGrass")');
+    expect(textureHookSource).toContain('handrail: configureChampionsFieldTexture(loadedTextures[10], "handrail")');
+    expect(textureSetupSource).not.toContain("Object.fromEntries");
+    expect(textureHookSource).not.toContain("Object.fromEntries");
+    expect(textureHookSource).not.toContain("const entries =");
+  });
 });
