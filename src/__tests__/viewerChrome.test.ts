@@ -91,6 +91,17 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("display: none");
   });
 
+  it("uses dynamic viewport height where supported so mobile browser chrome does not crop the viewer", () => {
+    const css = styles();
+
+    expect(css).toContain("@supports (height: 100dvh)");
+    expect(css).toContain("min-height: 100dvh");
+    expect(css).toContain("min-height: calc(100dvh - 110px)");
+    expect(css).toContain("height: min(58dvh, 520px)");
+    expect(css).toContain("min-height: calc(100vh - 110px)");
+    expect(css).toContain("height: min(58vh, 520px)");
+  });
+
   it("keeps touch playback controls large enough on coarse-pointer devices", () => {
     const css = styles();
     const timelineControls = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");

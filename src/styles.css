@@ -49,6 +49,13 @@ select {
   overflow-x: hidden;
 }
 
+@supports (height: 100dvh) {
+  body,
+  .app {
+    min-height: 100dvh;
+  }
+}
+
 .app-header {
   z-index: 5;
   display: flex;
@@ -985,6 +992,12 @@ meter {
   background: #071014;
 }
 
+@supports (height: 100dvh) {
+  .alpha-boost-debug-scene {
+    height: min(58dvh, 520px);
+  }
+}
+
 pre {
   overflow: auto;
   max-height: 360px;
@@ -1071,6 +1084,12 @@ pre {
   .viewer {
     width: 100vw;
     min-height: calc(100vh - 110px);
+  }
+
+  @supports (height: 100dvh) {
+    .viewer {
+      min-height: calc(100dvh - 110px);
+    }
   }
 
   .viewer-overlay.top {
