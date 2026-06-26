@@ -380,6 +380,19 @@ describe("Alpha boost render contract", () => {
     expect(carSource).not.toContain("function sourceParticleRandomSeed");
   });
 
+  it("caches Alpha Boost Cascade spawn offset schedules for fallback particle ages", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const spawnOffsetSource = carSource.match(/function sourceCascadeSpawnOffsets[\s\S]*?\n}\n\nfunction sourceParticleAge/)?.[0] ?? "";
+
+    expect(carSource).toContain("const SOURCE_CASCADE_SPAWN_OFFSET_CACHE = new Map<string, readonly number[]>()");
+    expect(carSource).toContain("const SOURCE_ZERO_SPAWN_OFFSETS = [0] as const");
+    expect(spawnOffsetSource).toContain("const cached = SOURCE_CASCADE_SPAWN_OFFSET_CACHE.get(cacheKey)");
+    expect(spawnOffsetSource).toContain("if (cached) return cached");
+    expect(spawnOffsetSource).toContain("SOURCE_CASCADE_SPAWN_OFFSET_CACHE.set(cacheKey, result)");
+    expect(spawnOffsetSource).toContain("offsets.push(Math.min(lifetimeSeconds, spawnTime - firstSpawnTime))");
+    expect(spawnOffsetSource).not.toContain("spawnTimes.map");
+  });
+
   it("caches deterministic Alpha Boost SRand samples outside the frame loop", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
     const frameLoopSource = carSource.match(/useFrame\(\(\{ camera, clock \}, delta\) => \{[\s\S]*?\n  \}\);\n\n  return/)?.[0] ?? "";

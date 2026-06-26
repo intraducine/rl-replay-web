@@ -102,6 +102,8 @@ const SOURCE_VECTOR = new THREE.Vector3();
 const SOURCE_RANDOM_FLOAT_BUFFER = new ArrayBuffer(4);
 const SOURCE_RANDOM_FLOAT_VIEW = new DataView(SOURCE_RANDOM_FLOAT_BUFFER);
 const SOURCE_RANDOM_FRACTION_CACHE: number[] = [];
+const SOURCE_CASCADE_SPAWN_OFFSET_CACHE = new Map<string, readonly number[]>();
+const SOURCE_ZERO_SPAWN_OFFSETS = [0] as const;
 let sourceRandomCachedSeed = ALPHA_BOOST_CASCADE.randomStream.webBaseSeed >>> 0;
 const ALPHA_LENS_FLARE_VIEWER_DIRECTION = sourceAttachmentViewerVector(
   { rotation: ALPHA_BOOST_CASCADE.lensFlare.sourceComponentRotation },
@@ -519,12 +521,17 @@ function sourceSpawnPerUnitParticleAge(
 }
 
 function sourceCascadeSpawnOffsets(spawnRate: number, lifetimeSeconds: number, updateStepSeconds: number) {
-  if (!(spawnRate > 0) || !(lifetimeSeconds > 0)) return [0];
+  if (!(spawnRate > 0) || !(lifetimeSeconds > 0)) return SOURCE_ZERO_SPAWN_OFFSETS;
 
   const sourceUpdateStep = updateStepSeconds > 0 ? updateStepSeconds : 1 / spawnRate;
+  const cacheKey = `${spawnRate}:${lifetimeSeconds}:${sourceUpdateStep}`;
+  const cached = SOURCE_CASCADE_SPAWN_OFFSET_CACHE.get(cacheKey);
+  if (cached) return cached;
+
   const updateCount = Math.max(1, Math.ceil(lifetimeSeconds / sourceUpdateStep));
-  const spawnTimes: number[] = [];
+  const offsets: number[] = [];
   let spawnFraction = 0;
+  let firstSpawnTime: number | undefined;
 
   for (let updateIndex = 1; updateIndex <= updateCount; updateIndex++) {
     spawnFraction += spawnRate * sourceUpdateStep;
@@ -532,16 +539,16 @@ function sourceCascadeSpawnOffsets(spawnRate: number, lifetimeSeconds: number, u
     if (spawnedParticles <= 0) continue;
 
     const spawnTime = updateIndex * sourceUpdateStep;
+    firstSpawnTime ??= spawnTime;
     for (let spawnedIndex = 0; spawnedIndex < spawnedParticles; spawnedIndex++) {
-      spawnTimes.push(spawnTime);
+      offsets.push(Math.min(lifetimeSeconds, spawnTime - firstSpawnTime));
     }
     spawnFraction -= spawnedParticles;
   }
 
-  if (spawnTimes.length === 0) return [0];
-
-  const firstSpawnTime = spawnTimes[0];
-  return spawnTimes.map((spawnTime) => Math.min(lifetimeSeconds, spawnTime - firstSpawnTime));
+  const result = offsets.length > 0 ? offsets : SOURCE_ZERO_SPAWN_OFFSETS;
+  SOURCE_CASCADE_SPAWN_OFFSET_CACHE.set(cacheKey, result);
+  return result;
 }
 
 function sourceParticleAge(time: number, birthOffset: number, lifetimeSeconds: number) {
