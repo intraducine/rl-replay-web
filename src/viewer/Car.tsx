@@ -294,9 +294,7 @@ function AlphaBoost() {
         flameParticleStates.current[index] = particleState;
       }
       particleState.phase = phase;
-      const worldOffset = sourceFlameWorldOffset(age, phase, particleState.spawnLocalVelocity, particleState.sourceAcceleration);
-
-      FLAME_WORLD_OFFSET.fromArray(worldOffset);
+      setSourceFlameWorldOffset(FLAME_WORLD_OFFSET, age, phase, particleState.spawnLocalVelocity, particleState.sourceAcceleration);
       FLAME_WORLD_POSITION.copy(particleState.spawnWorldPosition).add(FLAME_WORLD_OFFSET);
       particle.position.copy(root.worldToLocal(FLAME_WORLD_POSITION));
       particle.quaternion.copy(billboardQuaternion);
@@ -801,16 +799,22 @@ function sourceSrandFraction(seed: number) {
   return SOURCE_RANDOM_FLOAT_VIEW.getFloat32(0, true) - 1;
 }
 
-function sourceFlameWorldOffset(age: number, phase: number, localVelocity: number[], sourceAcceleration: readonly [number, number, number]): [number, number, number] {
-  if (!ALPHA_BOOST_CASCADE.flame.velocityOverLifeInWorldSpace) return [0, 0, 0];
+function setSourceFlameWorldOffset(
+  target: THREE.Vector3,
+  age: number,
+  phase: number,
+  localVelocity: number[],
+  sourceAcceleration: readonly [number, number, number]
+) {
+  if (!ALPHA_BOOST_CASCADE.flame.velocityOverLifeInWorldSpace) return target.set(0, 0, 0);
 
   const velocityOverLife = integrateFlameVelocityOverLife(phase);
   void localVelocity;
-  return [
+  return target.set(
     0.5 * sourceAcceleration[0] * velocityOverLife[0] * age * age,
     0.5 * sourceAcceleration[1] * velocityOverLife[1] * age * age,
     0.5 * sourceAcceleration[2] * velocityOverLife[2] * age * age
-  ];
+  );
 }
 
 function integrateFlameVelocityOverLife(phase: number): [number, number, number] {
