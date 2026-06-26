@@ -362,6 +362,25 @@ describe("Alpha boost render contract", () => {
     expect(frameLoopSource).not.toContain("sourceMainStartSize(particleIndex)");
   });
 
+  it("reuses Alpha Boost dynamic material update payloads inside the frame loop", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const frameLoopSource = carSource.match(/useFrame\(\(\{ camera, clock \}, delta\) => \{[\s\S]*?\n  \}\);\n\n  return/)?.[0] ?? "";
+    const flameDynamicSamplerSource = carSource.match(/function sampleFlameDynamicParams[\s\S]*?\n}\n\nfunction sampleMainDynamicParams/)?.[0] ?? "";
+    const mainDynamicSamplerSource = carSource.match(/function sampleMainDynamicParams[\s\S]*?\n}\n\nfunction alphaParticleNoise/)?.[0] ?? "";
+
+    expect(carSource).toContain("const ALPHA_FLAME_DYNAMIC_PARAMS: LiquidGoldDynamicParams");
+    expect(carSource).toContain("const ALPHA_MAIN_DYNAMIC_PARAMS: LiquidGoldDynamicParams");
+    expect(carSource).toContain("const ALPHA_FLAME_PARTICLE_UPDATE: LiquidGoldParticleUpdate");
+    expect(carSource).toContain("const ALPHA_MAIN_PARTICLE_UPDATE: LiquidGoldParticleUpdate");
+    expect(frameLoopSource).toContain("sampleFlameDynamicParams(phase, ALPHA_FLAME_DYNAMIC_PARAMS)");
+    expect(frameLoopSource).toContain("sampleMainDynamicParams(phase, ALPHA_MAIN_DYNAMIC_PARAMS)");
+    expect(frameLoopSource).toContain("updateLiquidGoldParticleMaterial(particle.material, ALPHA_FLAME_PARTICLE_UPDATE)");
+    expect(frameLoopSource).toContain("updateLiquidGoldParticleMaterial(particle.material, ALPHA_MAIN_PARTICLE_UPDATE)");
+    expect(frameLoopSource).not.toContain("updateLiquidGoldParticleMaterial(particle.material, {");
+    expect(flameDynamicSamplerSource).not.toContain("return {\n    distortionAmount");
+    expect(mainDynamicSamplerSource).not.toContain("return {\n    distortionAmount");
+  });
+
   it("keeps Car.tsx compatible with Vite Fast Refresh component exports", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");

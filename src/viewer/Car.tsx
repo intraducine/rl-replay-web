@@ -17,6 +17,7 @@ import {
   updateAlphaRewardBoostMeshMaterial,
   updateLiquidGoldParticleMaterial
 } from "./alphaBoostMaterial";
+import type { LiquidGoldDynamicParams, LiquidGoldParticleUpdate } from "./alphaBoostMaterial";
 import { alphaBoostBloomEnabled, alphaBoostComponentEnabled } from "./alphaBoostDebugFlags";
 import { carRenderPosition } from "./carPlacement";
 import { publicAsset } from "./publicAsset";
@@ -98,6 +99,22 @@ const ALPHA_FLAME_PARTICLE_SIZES = Array.from(
 );
 const ALPHA_MAIN_BODY_VELOCITIES = Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }, (_, index) => sourceMainBodyVelocity(index));
 const ALPHA_MAIN_START_SIZES = Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }, (_, index) => sourceMainStartSize(index));
+const ALPHA_FLAME_DYNAMIC_PARAMS: LiquidGoldDynamicParams = { distortionAmount: 0, brightness: 1, noiseAmount: 1, softAmount: 1 };
+const ALPHA_MAIN_DYNAMIC_PARAMS: LiquidGoldDynamicParams = { distortionAmount: 0, brightness: 1, noiseAmount: 1, softAmount: 1 };
+const ALPHA_FLAME_PARTICLE_UPDATE: LiquidGoldParticleUpdate = {
+  opacity: 0,
+  colorScale: 1,
+  phase: 0,
+  dynamic: ALPHA_FLAME_DYNAMIC_PARAMS,
+  time: 0
+};
+const ALPHA_MAIN_PARTICLE_UPDATE: LiquidGoldParticleUpdate = {
+  opacity: 0,
+  colorScale: 1,
+  phase: 0,
+  dynamic: ALPHA_MAIN_DYNAMIC_PARAMS,
+  time: 0
+};
 
 type FlameParticleState = {
   phase: number;
@@ -258,7 +275,7 @@ function AlphaBoost() {
       const sizeLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.sizeMultiplierLife, phase);
       const particleSize = ALPHA_FLAME_PARTICLE_SIZES[index];
       const alphaLife = sampleAlphaBoostFloatCurve(ALPHA_BOOST_CASCADE.flame.alphaScaleOverLife, phase);
-      const dynamic = sampleFlameDynamicParams(phase);
+      sampleFlameDynamicParams(phase, ALPHA_FLAME_DYNAMIC_PARAMS);
       let particleState = flameParticleStates.current[index];
       if (!hasCompleteFlameParticleState(particleState) || phase < particleState.phase) {
         particleState = spawnFlameParticleState(root, origin, localVelocity, index);
@@ -277,13 +294,11 @@ function AlphaBoost() {
         1
       );
       if (particle.material instanceof THREE.ShaderMaterial) {
-        updateLiquidGoldParticleMaterial(particle.material, {
-          opacity: Math.min(1, alphaLife * ALPHA_FLAME_DENSITY_OPACITY) * particleVisibility,
-          colorScale: 1,
-          phase,
-          dynamic,
-          time: t
-        });
+        ALPHA_FLAME_PARTICLE_UPDATE.opacity = Math.min(1, alphaLife * ALPHA_FLAME_DENSITY_OPACITY) * particleVisibility;
+        ALPHA_FLAME_PARTICLE_UPDATE.colorScale = 1;
+        ALPHA_FLAME_PARTICLE_UPDATE.phase = phase;
+        ALPHA_FLAME_PARTICLE_UPDATE.time = t;
+        updateLiquidGoldParticleMaterial(particle.material, ALPHA_FLAME_PARTICLE_UPDATE);
       }
     }
 
@@ -334,7 +349,7 @@ function AlphaBoost() {
       const particleSize = sourceMainParticleSize(startSize, sizeLife);
       const colorLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.colorScaleOverLife, phase);
       const alpha = sampleAlphaBoostFloatCurve(ALPHA_BOOST_CASCADE.main.alphaScaleOverLife, phase);
-      const dynamic = sampleMainDynamicParams(phase);
+      sampleMainDynamicParams(phase, ALPHA_MAIN_DYNAMIC_PARAMS);
 
       particle.position.set(
         origin[0] + velocity[0] * age,
@@ -344,13 +359,11 @@ function AlphaBoost() {
       particle.quaternion.copy(billboardQuaternion);
       particle.scale.set(particleSize[0], particleSize[1], 1);
       if (particle.material instanceof THREE.ShaderMaterial) {
-        updateLiquidGoldParticleMaterial(particle.material, {
-          opacity: alpha * particleVisibility,
-          colorScale: colorLife[0],
-          phase,
-          dynamic,
-          time: t
-        });
+        ALPHA_MAIN_PARTICLE_UPDATE.opacity = alpha * particleVisibility;
+        ALPHA_MAIN_PARTICLE_UPDATE.colorScale = colorLife[0];
+        ALPHA_MAIN_PARTICLE_UPDATE.phase = phase;
+        ALPHA_MAIN_PARTICLE_UPDATE.time = t;
+        updateLiquidGoldParticleMaterial(particle.material, ALPHA_MAIN_PARTICLE_UPDATE);
       }
     }
   });
@@ -732,24 +745,22 @@ function AlphaSpriteMaterial({
   );
 }
 
-function sampleFlameDynamicParams(phase: number) {
+function sampleFlameDynamicParams(phase: number, target: LiquidGoldDynamicParams) {
   const params = ALPHA_BOOST_CASCADE.flame.dynamicParams;
-  return {
-    distortionAmount: sampleAlphaBoostFloatCurve(params.distortionAmount, phase),
-    brightness: sampleAlphaBoostFloatCurve(params.brightness, phase),
-    noiseAmount: sampleAlphaBoostFloatCurve(params.noiseAmount, phase),
-    softAmount: sampleAlphaBoostFloatCurve(params.softAmount, phase)
-  };
+  target.distortionAmount = sampleAlphaBoostFloatCurve(params.distortionAmount, phase);
+  target.brightness = sampleAlphaBoostFloatCurve(params.brightness, phase);
+  target.noiseAmount = sampleAlphaBoostFloatCurve(params.noiseAmount, phase);
+  target.softAmount = sampleAlphaBoostFloatCurve(params.softAmount, phase);
+  return target;
 }
 
-function sampleMainDynamicParams(phase: number) {
+function sampleMainDynamicParams(phase: number, target: LiquidGoldDynamicParams) {
   const params = ALPHA_BOOST_CASCADE.main.dynamicParams;
-  return {
-    distortionAmount: sampleAlphaBoostFloatCurve(params.distortionAmount, phase),
-    brightness: sampleAlphaBoostFloatCurve(params.brightness, phase),
-    noiseAmount: sampleAlphaBoostFloatCurve(params.noiseAmount, phase),
-    softAmount: sampleAlphaBoostFloatCurve(params.softAmount, phase)
-  };
+  target.distortionAmount = sampleAlphaBoostFloatCurve(params.distortionAmount, phase);
+  target.brightness = sampleAlphaBoostFloatCurve(params.brightness, phase);
+  target.noiseAmount = sampleAlphaBoostFloatCurve(params.noiseAmount, phase);
+  target.softAmount = sampleAlphaBoostFloatCurve(params.softAmount, phase);
+  return target;
 }
 
 function alphaParticleNoise(drawOrder: SourceRandomDrawOrder, particleIndex: number, componentIndex: number) {
