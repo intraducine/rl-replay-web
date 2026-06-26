@@ -956,10 +956,24 @@ export function sampleAlphaBoostSourceFloatCurve(curve: AlphaBoostFloatCurve, so
   return lerp(samples[index], samples[nextIndex], alpha);
 }
 
-export function sampleAlphaBoostVectorCurve(curve: AlphaBoostVectorCurve, phase: number): [number, number, number] {
+export function sampleAlphaBoostVectorCurve(
+  curve: AlphaBoostVectorCurve,
+  phase: number,
+  target: [number, number, number] = [0, 0, 0]
+): [number, number, number] {
   const samples = curve.samples;
-  if (samples.length === 0) return [0, 0, 0];
-  if (samples.length === 1) return [...samples[0]];
+  if (samples.length === 0) {
+    target[0] = 0;
+    target[1] = 0;
+    target[2] = 0;
+    return target;
+  }
+  if (samples.length === 1) {
+    target[0] = samples[0][0];
+    target[1] = samples[0][1];
+    target[2] = samples[0][2];
+    return target;
+  }
 
   const scaled = lookupTableIndex(curve, phase, samples.length);
   const index = Math.floor(scaled);
@@ -967,7 +981,10 @@ export function sampleAlphaBoostVectorCurve(curve: AlphaBoostVectorCurve, phase:
   const alpha = scaled - index;
   const current = samples[index];
   const next = samples[nextIndex];
-  return [lerp(current[0], next[0], alpha), lerp(current[1], next[1], alpha), lerp(current[2], next[2], alpha)];
+  target[0] = lerp(current[0], next[0], alpha);
+  target[1] = lerp(current[1], next[1], alpha);
+  target[2] = lerp(current[2], next[2], alpha);
+  return target;
 }
 
 function lookupTableIndex(curve: AlphaBoostFloatCurve | AlphaBoostVectorCurve, phase: number, sampleCount: number) {

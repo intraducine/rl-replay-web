@@ -553,6 +553,11 @@ describe("Alpha boost Cascade constants", () => {
     const mainHalfSize = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.sizeMultiplierLife, 0.5);
     expect(mainHalfSize).toEqual([2.5, 2.5, 2.5]);
 
+    const target: [number, number, number] = [0, 0, 0];
+    const reused = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.sizeMultiplierLife, 0.5, target);
+    expect(reused).toBe(target);
+    expect(target).toEqual([2.5, 2.5, 2.5]);
+
     expect(sampleAlphaBoostFloatCurve(ALPHA_BOOST_CASCADE.main.alphaScaleOverLife, -1)).toBe(0.25);
     expect(sampleAlphaBoostFloatCurve(ALPHA_BOOST_CASCADE.main.alphaScaleOverLife, 2)).toBe(0);
     expect(sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.velocityOverLife, 1)).toEqual([0.23823696374893188, 0.23823696374893188, 0.23823696374893188]);

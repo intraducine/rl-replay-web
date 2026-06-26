@@ -408,6 +408,24 @@ describe("Alpha boost render contract", () => {
     expect(frameLoopSource).not.toContain("sourceMainStartSize(particleIndex)");
   });
 
+  it("reuses Alpha Boost vector curve scratch tuples inside the frame loop", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const configSource = readFileSync(resolve(process.cwd(), "src/viewer/alphaBoostConfig.ts"), "utf8");
+    const frameLoopSource = carSource.match(/useFrame\(\(\{ camera, clock \}, delta\) => \{[\s\S]*?\n  \}\);\n\n  return/)?.[0] ?? "";
+
+    expect(configSource).toContain("target: [number, number, number] = [0, 0, 0]");
+    expect(configSource).toContain("return target");
+    expect(carSource).toContain("const ALPHA_FLAME_SIZE_LIFE: [number, number, number] = [1, 1, 1]");
+    expect(carSource).toContain("const ALPHA_MAIN_SIZE_LIFE: [number, number, number] = [1, 1, 1]");
+    expect(carSource).toContain("const ALPHA_MAIN_COLOR_LIFE: [number, number, number] = [1, 1, 1]");
+    expect(frameLoopSource).toContain("sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.sizeMultiplierLife, phase, ALPHA_FLAME_SIZE_LIFE)");
+    expect(frameLoopSource).toContain("sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.sizeMultiplierLife, phase, ALPHA_MAIN_SIZE_LIFE)");
+    expect(frameLoopSource).toContain("sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.colorScaleOverLife, phase, ALPHA_MAIN_COLOR_LIFE)");
+    expect(frameLoopSource).not.toContain("sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.sizeMultiplierLife, phase);");
+    expect(frameLoopSource).not.toContain("sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.sizeMultiplierLife, phase);");
+    expect(frameLoopSource).not.toContain("sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.colorScaleOverLife, phase);");
+  });
+
   it("reuses Alpha Boost dynamic material update payloads inside the frame loop", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
     const frameLoopSource = carSource.match(/useFrame\(\(\{ camera, clock \}, delta\) => \{[\s\S]*?\n  \}\);\n\n  return/)?.[0] ?? "";

@@ -117,6 +117,9 @@ const ALPHA_MAIN_BODY_VELOCITIES = Array.from({ length: ALPHA_RENDERED_MAIN_PART
 const ALPHA_MAIN_START_SIZES = Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }, (_, index) => sourceMainStartSize(index));
 const ALPHA_FLAME_DYNAMIC_PARAMS: LiquidGoldDynamicParams = { distortionAmount: 0, brightness: 1, noiseAmount: 1, softAmount: 1 };
 const ALPHA_MAIN_DYNAMIC_PARAMS: LiquidGoldDynamicParams = { distortionAmount: 0, brightness: 1, noiseAmount: 1, softAmount: 1 };
+const ALPHA_FLAME_SIZE_LIFE: [number, number, number] = [1, 1, 1];
+const ALPHA_MAIN_SIZE_LIFE: [number, number, number] = [1, 1, 1];
+const ALPHA_MAIN_COLOR_LIFE: [number, number, number] = [1, 1, 1];
 const ALPHA_FLAME_PARTICLE_UPDATE: LiquidGoldParticleUpdate = {
   opacity: 0,
   colorScale: 1,
@@ -288,7 +291,7 @@ function AlphaBoost() {
       const phase = particleClock / ALPHA_BOOST_CASCADE.flame.lifetimeSeconds;
       const origin = ALPHA_BOOST_ATTACHMENT_POSITIONS[exhaustIndex % ALPHA_BOOST_ATTACHMENT_POSITIONS.length];
       const age = particleClock;
-      const sizeLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.sizeMultiplierLife, phase);
+      const sizeLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.flame.sizeMultiplierLife, phase, ALPHA_FLAME_SIZE_LIFE);
       const particleSize = ALPHA_FLAME_PARTICLE_SIZES[index];
       const alphaLife = sampleAlphaBoostFloatCurve(ALPHA_BOOST_CASCADE.flame.alphaScaleOverLife, phase);
       sampleFlameDynamicParams(phase, ALPHA_FLAME_DYNAMIC_PARAMS);
@@ -359,9 +362,9 @@ function AlphaBoost() {
       const age = phase * ALPHA_BOOST_CASCADE.main.lifetimeSeconds;
       const velocity = ALPHA_MAIN_BODY_VELOCITIES[particleIndex];
       const startSize = ALPHA_MAIN_START_SIZES[particleIndex];
-      const sizeLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.sizeMultiplierLife, phase);
+      const sizeLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.sizeMultiplierLife, phase, ALPHA_MAIN_SIZE_LIFE);
       const particleSize = sourceMainParticleSize(startSize, sizeLife);
-      const colorLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.colorScaleOverLife, phase);
+      const colorLife = sampleAlphaBoostVectorCurve(ALPHA_BOOST_CASCADE.main.colorScaleOverLife, phase, ALPHA_MAIN_COLOR_LIFE);
       const alpha = sampleAlphaBoostFloatCurve(ALPHA_BOOST_CASCADE.main.alphaScaleOverLife, phase);
       sampleMainDynamicParams(phase, ALPHA_MAIN_DYNAMIC_PARAMS);
 
