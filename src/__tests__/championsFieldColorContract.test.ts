@@ -160,13 +160,16 @@ describe("Champions Field color contract", () => {
   it("colors the two goal nets by their field side instead of using one gray material", () => {
     const championsFieldSource = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
 
-    expect(championsFieldSource).toContain("blueGoal: new THREE.MeshStandardMaterial");
-    expect(championsFieldSource).toContain("orangeGoal: new THREE.MeshStandardMaterial");
+    expect(championsFieldSource).toContain("TEAM_GOAL_MATERIALS");
+    expect(championsFieldSource).toContain('blue: {\n    color: "#168cff",\n    emissive: "#006bff",\n    accent: "#1b9cff"');
+    expect(championsFieldSource).toContain('orange: {\n    color: "#ff7a18",\n    emissive: "#ff5200",\n    accent: "#ff8a1c"');
+    expect(championsFieldSource).toContain("TEAM_GOAL_EMISSIVE_INTENSITY = 0.74");
+    expect(championsFieldSource).toContain("TEAM_GOAL_ACCENT_OPACITY = 0.9");
+    expect(championsFieldSource).toContain('blueGoal: createTeamGoalMaterial("blue")');
+    expect(championsFieldSource).toContain('orangeGoal: createTeamGoalMaterial("orange")');
     expect(championsFieldSource).toContain("map: textures.stadiumWallMetal");
     expect(championsFieldSource).toContain("emissiveMap: textures.stadiumWallMetal");
-    expect(championsFieldSource).toContain('emissive: "#0066ff"');
-    expect(championsFieldSource).toContain('emissive: "#ff4a00"');
-    expect(championsFieldSource).toContain("emissiveIntensity: 0.62");
+    expect(championsFieldSource).toContain("emissiveIntensity: TEAM_GOAL_EMISSIVE_INTENSITY");
     expect(championsFieldSource).toContain("goalMaterialForMesh(object, materials)");
     expect(championsFieldSource).toContain("fieldAccentMaterialForMesh(object, materials)");
     expect(championsFieldSource).toContain("GOAL_MESH_BOX.setFromObject(object)");
@@ -175,8 +178,12 @@ describe("Champions Field color contract", () => {
     expect(championsFieldSource).toContain("if (TRANSPARENT_FIELD_WALL_MESH.test(meshName)) return materials.fieldWallGlass;");
     expect(championsFieldSource).toContain("if (/OOB_Lights|FieldSpotLights|SearchLights|LightBar/i.test(meshName)) return materials.oobWarmLight;");
     expect(championsFieldSource).toContain("if (/Glow|Lights|LightTrim|CornerArrows/i.test(meshName)) return materials.glow;");
-    expect(championsFieldSource).toContain("blueFieldAccent: new THREE.MeshBasicMaterial");
-    expect(championsFieldSource).toContain("orangeFieldAccent: new THREE.MeshBasicMaterial");
+    expect(championsFieldSource).toContain('blueGoal: createTeamGoalMaterial("blue", textures.stadiumWallMetal)');
+    expect(championsFieldSource).toContain('orangeGoal: createTeamGoalMaterial("orange", textures.stadiumWallMetal)');
+    expect(championsFieldSource).toContain('blueFieldAccent: createTeamGoalAccentMaterial("blue", textures.stadiumTrim)');
+    expect(championsFieldSource).toContain('orangeFieldAccent: createTeamGoalAccentMaterial("orange", textures.stadiumTrim)');
+    expect(championsFieldSource).toContain("function createTeamGoalMaterial");
+    expect(championsFieldSource).toContain("function createTeamGoalAccentMaterial");
     expect(championsFieldSource).toContain("blending: THREE.AdditiveBlending");
     expect(championsFieldSource).toContain("toneMapped: false");
     expect(championsFieldSource).not.toContain("materials.fieldWallGlass.clone()");

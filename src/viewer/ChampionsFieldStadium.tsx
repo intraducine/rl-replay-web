@@ -65,6 +65,20 @@ const HIDDEN_FIELD_SURFACE_MESH = /^Grass_Base(?:_Flat)?$/i;
 const TRANSPARENT_FIELD_WALL_MESH = /CS_FieldWalls(?:Glass|RL)?|FieldHexShell/i;
 const GOAL_MESH_BOX = new THREE.Box3();
 const GOAL_MESH_CENTER = new THREE.Vector3();
+const TEAM_GOAL_MATERIALS = {
+  blue: {
+    color: "#168cff",
+    emissive: "#006bff",
+    accent: "#1b9cff"
+  },
+  orange: {
+    color: "#ff7a18",
+    emissive: "#ff5200",
+    accent: "#ff8a1c"
+  }
+} as const;
+const TEAM_GOAL_EMISSIVE_INTENSITY = 0.74;
+const TEAM_GOAL_ACCENT_OPACITY = 0.9;
 
 const MATERIALS = {
   field: new THREE.MeshStandardMaterial({
@@ -107,22 +121,8 @@ const MATERIALS = {
     metalness: 0.02,
     envMapIntensity: 0.48
   }),
-  blueGoal: new THREE.MeshStandardMaterial({
-    color: "#1d8cff",
-    emissive: "#0066ff",
-    emissiveIntensity: 0.62,
-    roughness: 0.3,
-    metalness: 0.18,
-    envMapIntensity: 1.35
-  }),
-  orangeGoal: new THREE.MeshStandardMaterial({
-    color: "#ff7a1f",
-    emissive: "#ff4a00",
-    emissiveIntensity: 0.62,
-    roughness: 0.3,
-    metalness: 0.18,
-    envMapIntensity: 1.35
-  }),
+  blueGoal: createTeamGoalMaterial("blue"),
+  orangeGoal: createTeamGoalMaterial("orange"),
   glow: new THREE.MeshBasicMaterial({
     color: "#ffffff",
     transparent: true,
@@ -314,46 +314,10 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
       metalness: 0.42,
       envMapIntensity: 1.12
     }),
-    blueGoal: new THREE.MeshStandardMaterial({
-      map: textures.stadiumWallMetal,
-      emissiveMap: textures.stadiumWallMetal,
-      color: "#1d8cff",
-      emissive: "#0066ff",
-      emissiveIntensity: 0.62,
-      roughness: 0.3,
-      metalness: 0.18,
-      envMapIntensity: 1.35
-    }),
-    orangeGoal: new THREE.MeshStandardMaterial({
-      map: textures.stadiumWallMetal,
-      emissiveMap: textures.stadiumWallMetal,
-      color: "#ff7a1f",
-      emissive: "#ff4a00",
-      emissiveIntensity: 0.62,
-      roughness: 0.3,
-      metalness: 0.18,
-      envMapIntensity: 1.35
-    }),
-    blueFieldAccent: new THREE.MeshBasicMaterial({
-      map: textures.stadiumTrim,
-      color: "#1d8cff",
-      transparent: true,
-      opacity: 0.86,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      toneMapped: false,
-      side: THREE.DoubleSide
-    }),
-    orangeFieldAccent: new THREE.MeshBasicMaterial({
-      map: textures.stadiumTrim,
-      color: "#ff7a1f",
-      transparent: true,
-      opacity: 0.86,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      toneMapped: false,
-      side: THREE.DoubleSide
-    }),
+    blueGoal: createTeamGoalMaterial("blue", textures.stadiumWallMetal),
+    orangeGoal: createTeamGoalMaterial("orange", textures.stadiumWallMetal),
+    blueFieldAccent: createTeamGoalAccentMaterial("blue", textures.stadiumTrim),
+    orangeFieldAccent: createTeamGoalAccentMaterial("orange", textures.stadiumTrim),
     oobCrowd: new THREE.MeshStandardMaterial({
       color: "#253528",
       emissive: "#10180f",
@@ -459,6 +423,33 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
       envMapIntensity: 1.05
     })
   };
+}
+
+function createTeamGoalMaterial(team: keyof typeof TEAM_GOAL_MATERIALS, texture?: THREE.Texture) {
+  const colors = TEAM_GOAL_MATERIALS[team];
+  return new THREE.MeshStandardMaterial({
+    map: texture,
+    emissiveMap: texture,
+    color: colors.color,
+    emissive: colors.emissive,
+    emissiveIntensity: TEAM_GOAL_EMISSIVE_INTENSITY,
+    roughness: 0.28,
+    metalness: 0.2,
+    envMapIntensity: 1.42
+  });
+}
+
+function createTeamGoalAccentMaterial(team: keyof typeof TEAM_GOAL_MATERIALS, texture?: THREE.Texture) {
+  return new THREE.MeshBasicMaterial({
+    map: texture,
+    color: TEAM_GOAL_MATERIALS[team].accent,
+    transparent: true,
+    opacity: TEAM_GOAL_ACCENT_OPACITY,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+    side: THREE.DoubleSide
+  });
 }
 
 function PlacedChampionsFieldScene({ url, materials }: { url: string; materials: ChampionsFieldMaterials }) {
