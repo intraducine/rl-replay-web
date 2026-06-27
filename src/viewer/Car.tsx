@@ -45,6 +45,9 @@ const ALPHA_BOOST_ATTACHMENT_POSITIONS = ALPHA_BOOST_CASCADE.boostMesh.sourceAtt
 const ALPHA_LENS_FLARE_POSITION = sourceAveragePosition(ALPHA_BOOST_ATTACHMENT_POSITIONS);
 const ALPHA_BOOST_MAIN_BODY_POSITION = ALPHA_LENS_FLARE_POSITION;
 const ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST = ALPHA_BOOST_CASCADE.flame.peakActiveParticles;
+const ALPHA_LENS_FLARE_OCCLUSION_STEP_SECONDS = ALPHA_BOOST_CASCADE.updateStepSeconds * 2;
+const ALPHA_LENS_FLARE_OCCLUSION_CAMERA_EPSILON_SQ = 128 * 128;
+const ALPHA_LENS_FLARE_OCCLUSION_SOURCE_EPSILON_SQ = 96 * 96;
 const SOURCE_CASCADE_SPAWN_OFFSET_CACHE = new Map<string, readonly number[]>();
 const SOURCE_ZERO_SPAWN_OFFSETS = [0] as const;
 const ALPHA_MAIN_SPAWN_BIRTH_OFFSETS = sourceCascadeSpawnOffsets(
@@ -83,6 +86,7 @@ const ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS = [
   [0.7071067811865476, 0.7071067811865476]
 ] as const;
 const ALPHA_LENS_FLARE_OCCLUSION_HITS: THREE.Intersection<THREE.Object3D>[] = [];
+const ALPHA_LENS_FLARE_OCCLUSION_OBJECTS: THREE.Object3D[] = [];
 const FLAME_SPAWN_LOCAL_POSITION = new THREE.Vector3();
 const FLAME_WORLD_POSITION = new THREE.Vector3();
 const FLAME_WORLD_OFFSET = new THREE.Vector3();
@@ -147,6 +151,13 @@ type SourceRandomDrawOrder = {
   firstDraw: number;
 };
 
+type LensFlareOcclusionCache = {
+  sampleTime: number;
+  visibleScreenPercentage: number;
+  cameraPosition: THREE.Vector3;
+  sourcePosition: THREE.Vector3;
+};
+
 export const Car = forwardRef<Group, { frame?: CarFrame; player: ReplayPlayer; selected?: boolean; showNameplate?: boolean }>(function Car(
   { frame, player, selected = false, showNameplate = true },
   ref
@@ -179,6 +190,7 @@ function AlphaBoost() {
   const flameParticleStates = useRef<FlameParticleState[]>([]);
   const lensFlareRef = useRef<THREE.Sprite | null>(null);
   const lensFlareReflectionRef = useRef<THREE.Sprite | null>(null);
+  const lensFlareOcclusionCache = useRef<LensFlareOcclusionCache>(createLensFlareOcclusionCache());
   const mainRefs = useRef<THREE.Mesh[]>([]);
   const boostMeshRefs = useRef<THREE.Group[]>([]);
   const { scene: boostMeshScene } = useGLTF(ALPHA_BOOST_MESH_ASSET);
@@ -323,7 +335,18 @@ function AlphaBoost() {
       const sprite = lensFlareRef.current;
       sprite.position.set(ALPHA_LENS_FLARE_POSITION[0], ALPHA_LENS_FLARE_POSITION[1], ALPHA_LENS_FLARE_POSITION[2]);
       const coneVisibility = sourceLensFlareConeVisibility(root, sprite, camera);
-      const visibleScreenPercentage = sourceLensFlareVisibleScreenPercentage(scene, camera, sprite, root);
+      const shouldSampleLensFlareOcclusion =
+        particleVisibility > 0 && coneVisibility > 0 && (lensFlareComponentEnabled || lensFlareReflectionComponentEnabled);
+      const visibleScreenPercentage = shouldSampleLensFlareOcclusion
+        ? sourceLensFlareVisibleScreenPercentageCached(
+            lensFlareOcclusionCache.current,
+            scene,
+            camera,
+            sprite,
+            root,
+            sourceLensFlareOcclusionSampleTime(particleSystemTime)
+          )
+        : 0;
       const screenPercentageOpacity = sourceLensFlareScreenPercentageOpacity(visibleScreenPercentage);
       sprite.scale.setScalar(sourceLensFlareWorldSize(camera, size.height, sprite, ALPHA_BOOST_CASCADE.lensFlare.sourceElement.size[0]));
       const sourceElementOpacity = sourceLensFlareElementHasMaterial() ? sourceLensFlareElementAlpha() * coneVisibility * screenPercentageOpacity * particleVisibility : 0;
@@ -1020,6 +1043,46 @@ function sourceLensFlareScreenPercentageOpacity(visibleScreenPercentage: number)
   return sampleAlphaBoostSourceFloatCurve(ALPHA_BOOST_CASCADE.lensFlare.screenPercentageMap, visibleScreenPercentage);
 }
 
+function createLensFlareOcclusionCache(): LensFlareOcclusionCache {
+  return {
+    sampleTime: Number.NaN,
+    visibleScreenPercentage: 0,
+    cameraPosition: new THREE.Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY),
+    sourcePosition: new THREE.Vector3(Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY)
+  };
+}
+
+function sourceLensFlareOcclusionSampleTime(time: number) {
+  const step = ALPHA_LENS_FLARE_OCCLUSION_STEP_SECONDS;
+  if (!(step > 0)) return time;
+  return Math.floor(Math.max(0, time) / step) * step;
+}
+
+function sourceLensFlareVisibleScreenPercentageCached(
+  cache: LensFlareOcclusionCache,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+  sprite: THREE.Sprite,
+  root: Group,
+  sampleTime: number
+) {
+  sprite.getWorldPosition(ALPHA_LENS_FLARE_WORLD_POSITION);
+  if (
+    cache.sampleTime === sampleTime &&
+    cache.cameraPosition.distanceToSquared(camera.position) <= ALPHA_LENS_FLARE_OCCLUSION_CAMERA_EPSILON_SQ &&
+    cache.sourcePosition.distanceToSquared(ALPHA_LENS_FLARE_WORLD_POSITION) <= ALPHA_LENS_FLARE_OCCLUSION_SOURCE_EPSILON_SQ
+  ) {
+    return cache.visibleScreenPercentage;
+  }
+
+  const visibleScreenPercentage = sourceLensFlareVisibleScreenPercentage(scene, camera, sprite, root);
+  cache.sampleTime = sampleTime;
+  cache.cameraPosition.copy(camera.position);
+  cache.sourcePosition.copy(ALPHA_LENS_FLARE_WORLD_POSITION);
+  cache.visibleScreenPercentage = visibleScreenPercentage;
+  return visibleScreenPercentage;
+}
+
 function sourceLensFlareVisibleScreenPercentage(scene: THREE.Scene, camera: THREE.Camera, sprite: THREE.Sprite, root: Group) {
   sprite.getWorldPosition(ALPHA_LENS_FLARE_WORLD_POSITION);
   const sourceDistance = camera.position.distanceTo(ALPHA_LENS_FLARE_WORLD_POSITION);
@@ -1032,6 +1095,7 @@ function sourceLensFlareVisibleScreenPercentage(scene: THREE.Scene, camera: THRE
   );
 
   const sourceRadius = sourceLensFlareOcclusionRadius();
+  const occluders = sourceLensFlareOcclusionObjects(scene, root, ALPHA_LENS_FLARE_OCCLUSION_OBJECTS);
   let visibleSamples = 0;
 
   for (const [right, up] of ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS) {
@@ -1045,11 +1109,19 @@ function sourceLensFlareVisibleScreenPercentage(scene: THREE.Scene, camera: THRE
     ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.near = 0.01;
     ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.far = Math.max(0.01, targetDistance - 1);
     ALPHA_LENS_FLARE_OCCLUSION_HITS.length = 0;
-    ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(scene.children, true, ALPHA_LENS_FLARE_OCCLUSION_HITS);
-    if (!ALPHA_LENS_FLARE_OCCLUSION_HITS.some((hit) => isAlphaLensFlareOccluder(hit.object, root))) visibleSamples++;
+    ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(occluders, false, ALPHA_LENS_FLARE_OCCLUSION_HITS);
+    if (ALPHA_LENS_FLARE_OCCLUSION_HITS.length === 0) visibleSamples++;
   }
 
   return visibleSamples / ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS.length;
+}
+
+function sourceLensFlareOcclusionObjects(scene: THREE.Scene, root: Group, target: THREE.Object3D[]) {
+  target.length = 0;
+  scene.traverse((object) => {
+    if (isAlphaLensFlareOccluder(object, root)) target.push(object);
+  });
+  return target;
 }
 
 function sourceLensFlareOcclusionRadius() {

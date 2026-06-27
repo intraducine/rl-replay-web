@@ -172,7 +172,8 @@ describe("Alpha boost render contract", () => {
     expect(carSource).toContain("sourceLensFlareOcclusionRadius()");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.lensFlare.fixedRelativeBoundingBox.halfExtent");
     expect(carSource).not.toContain("sprite.scale.x * 0.5");
-    expect(carSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(scene.children, true, ALPHA_LENS_FLARE_OCCLUSION_HITS)");
+    expect(carSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects(occluders, false, ALPHA_LENS_FLARE_OCCLUSION_HITS)");
+    expect(carSource).toContain("sourceLensFlareOcclusionObjects(scene, root, ALPHA_LENS_FLARE_OCCLUSION_OBJECTS)");
     expect(carSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.camera = camera");
     expect(carSource).toContain("isAlphaLensFlareOccluder");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.lensFlare.screenPercentageMap");
@@ -204,13 +205,43 @@ describe("Alpha boost render contract", () => {
 
     expect(carSource).toContain("const ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS = [");
     expect(carSource).toContain("const ALPHA_LENS_FLARE_OCCLUSION_HITS: THREE.Intersection<THREE.Object3D>[] = []");
+    expect(carSource).toContain("const ALPHA_LENS_FLARE_OCCLUSION_OBJECTS: THREE.Object3D[] = []");
+    expect(carSource).toContain("function sourceLensFlareOcclusionObjects");
+    expect(occlusionSource).toContain("const occluders = sourceLensFlareOcclusionObjects(scene, root, ALPHA_LENS_FLARE_OCCLUSION_OBJECTS)");
     expect(occlusionSource).toContain("for (const [right, up] of ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS)");
     expect(occlusionSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_HITS.length = 0");
-    expect(occlusionSource).toContain("intersectObjects(scene.children, true, ALPHA_LENS_FLARE_OCCLUSION_HITS)");
+    expect(occlusionSource).toContain("intersectObjects(occluders, false, ALPHA_LENS_FLARE_OCCLUSION_HITS)");
+    expect(occlusionSource).toContain("if (ALPHA_LENS_FLARE_OCCLUSION_HITS.length === 0) visibleSamples++");
     expect(occlusionSource).toContain("visibleSamples / ALPHA_LENS_FLARE_OCCLUSION_SAMPLE_OFFSETS.length");
+    expect(occlusionSource).not.toContain("intersectObjects(scene.children, true");
     expect(occlusionSource).not.toContain("const sampleOffsets = [");
     expect(occlusionSource).not.toContain("const hits = ALPHA_LENS_FLARE_OCCLUSION_RAYCASTER.intersectObjects");
     expect((carSource.match(/\[-?0?\.?7071067811865476, -?0?\.?7071067811865476\]/g) ?? []).length).toBe(4);
+  });
+
+  it("caches Alpha Boost lens flare occlusion at a 30 Hz visibility cadence", () => {
+    const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+    const frameLoopSource = carSource.match(/useFrame\(\(\{ camera, clock \}, delta\) => \{[\s\S]*?\n  \}\);\n\n  return/)?.[0] ?? "";
+    const cachedOcclusionSource =
+      carSource.match(/function sourceLensFlareVisibleScreenPercentageCached[\s\S]*?\n}\n\nfunction sourceLensFlareVisibleScreenPercentage/)?.[0] ?? "";
+
+    expect(carSource).toContain("type LensFlareOcclusionCache");
+    expect(carSource).toContain("const lensFlareOcclusionCache = useRef<LensFlareOcclusionCache>(createLensFlareOcclusionCache())");
+    expect(carSource).toContain("ALPHA_LENS_FLARE_OCCLUSION_STEP_SECONDS = ALPHA_BOOST_CASCADE.updateStepSeconds * 2");
+    expect(carSource).toContain("function sourceLensFlareOcclusionSampleTime");
+    expect(carSource).toContain("function sourceLensFlareVisibleScreenPercentageCached");
+    expect(frameLoopSource).toContain("const shouldSampleLensFlareOcclusion =");
+    expect(frameLoopSource).toContain("particleVisibility > 0 && coneVisibility > 0 && (lensFlareComponentEnabled || lensFlareReflectionComponentEnabled)");
+    expect(frameLoopSource).toContain("sourceLensFlareOcclusionSampleTime(particleSystemTime)");
+    expect(frameLoopSource).toContain("sourceLensFlareVisibleScreenPercentageCached(");
+    expect(cachedOcclusionSource).toContain("cache.sampleTime === sampleTime");
+    expect(cachedOcclusionSource).toContain("cache.cameraPosition.distanceToSquared(camera.position)");
+    expect(cachedOcclusionSource).toContain("cache.sourcePosition.distanceToSquared(ALPHA_LENS_FLARE_WORLD_POSITION)");
+    expect(cachedOcclusionSource).toContain("return cache.visibleScreenPercentage");
+    expect(cachedOcclusionSource).toContain("sourceLensFlareVisibleScreenPercentage(scene, camera, sprite, root)");
+    expect(cachedOcclusionSource).toContain("cache.cameraPosition.copy(camera.position)");
+    expect(cachedOcclusionSource).toContain("cache.sourcePosition.copy(ALPHA_LENS_FLARE_WORLD_POSITION)");
+    expect(frameLoopSource).not.toContain("const visibleScreenPercentage = sourceLensFlareVisibleScreenPercentage(scene, camera, sprite, root)");
   });
 
   it("preserves the source ParticleSheet_T color space for lens flare SubUV clones", () => {
