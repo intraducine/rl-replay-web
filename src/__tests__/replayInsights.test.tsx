@@ -188,9 +188,10 @@ describe("replay insights UI", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
     expect(replayViewerSource).toContain('const playerCameraState = cameraMode === "player" ? samplePlayerCameraState(timeline, selectedPlayerId, currentTime) : undefined');
-    expect(replayViewerSource).toContain("const { playerOptions, playerIds } = useMemo(");
+    expect(replayViewerSource).toContain("const { playerOptions, playerIds, playerNameById } = useMemo(");
     expect(replayViewerSource).toContain("for (const player of timeline.metadata.players)");
     expect(replayViewerSource).toContain("ids.push(player.id)");
+    expect(replayViewerSource).toContain("names.set(player.id, player.name)");
     expect(replayViewerSource).toContain("samplePlayerBoostsAt(timeline");
     expect(replayViewerSource).not.toContain("timeline.metadata.players.map");
     expect(replayViewerSource).not.toContain("sampleTimeline(timeline, currentTime)");

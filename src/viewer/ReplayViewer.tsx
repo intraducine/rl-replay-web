@@ -54,17 +54,21 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   );
   const playerCameraState = cameraMode === "player" ? samplePlayerCameraState(timeline, selectedPlayerId, currentTime) : undefined;
   const showDebugControls = import.meta.env.DEV;
-  const { playerOptions, playerIds } = useMemo(() => {
+  const { playerOptions, playerIds, playerNameById } = useMemo(() => {
     const options: { value: string; label: string }[] = [];
     const ids: string[] = [];
+    const names = new Map<string, string>();
 
     for (const player of timeline.metadata.players) {
       options.push({ value: player.id, label: player.name });
       ids.push(player.id);
+      names.set(player.id, player.name);
     }
 
-    return { playerOptions: options, playerIds: ids };
+    return { playerOptions: options, playerIds: ids, playerNameById: names };
   }, [timeline.metadata.players]);
+  const cameraLabel = cameraModeOptions.find((option) => option.value === cameraMode)?.label ?? cameraMode;
+  const selectedPlayerName = selectedPlayerId ? playerNameById.get(selectedPlayerId) : undefined;
   const boostByPlayer = samplePlayerBoostsAt(timeline, playerIds, currentTime);
   const statsByPlayer = livePlayerStatsByPlayerAt(timeline, currentTime);
 
@@ -152,7 +156,10 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         </div>
       ) : null}
       <div className="viewer-overlay bottom">
-        <TimelineControls events={timeline.events} />
+        <TimelineControls
+          events={timeline.events}
+          status={{ cameraLabel, playerName: selectedPlayerName, boostRenderingEnabled }}
+        />
       </div>
     </div>
   );

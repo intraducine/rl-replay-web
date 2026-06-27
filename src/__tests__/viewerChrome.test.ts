@@ -13,7 +13,7 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("--viewer-edge-right: max(12px, env(safe-area-inset-right, 0px))");
     expect(css).toContain("--viewer-edge-bottom: max(12px, env(safe-area-inset-bottom, 0px))");
     expect(css).toContain("--viewer-edge-left: max(12px, env(safe-area-inset-left, 0px))");
-    expect(css).toContain("--viewer-bottom-rail: calc(204px + var(--viewer-edge-bottom))");
+    expect(css).toContain("--viewer-bottom-rail: calc(256px + var(--viewer-edge-bottom))");
     expect(css).toContain(".viewer-glass-panel");
     expect(css).toContain(".viewer-panel-heading");
     expect(css).toContain("box-shadow: 0 16px 42px rgba(0, 0, 0, 0.26)");
@@ -35,7 +35,7 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("height: 100%");
     expect(css).toContain("min-height: 0");
     expect(css).toContain("overflow-y: auto");
-    expect(css).not.toContain("32vh");
+    expect(css).not.toContain("44vh");
     expect(css).toContain("box-shadow: inset 0 0 0 2px #9df2d0");
     expect(css).toContain(".tooltip-bubble");
     expect(css).toContain("visibility: hidden");
@@ -48,6 +48,8 @@ describe("viewer chrome layout", () => {
 
   it("uses compact scoreboard columns and aligned viewer controls", () => {
     const css = styles();
+    const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
+    const timelineControls = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
 
     expect(css).toContain("grid-template-columns: 48px minmax(72px, auto) 48px");
     expect(css).toContain(".viewer-control-panel");
@@ -67,6 +69,14 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("grid-template-columns: repeat(3, minmax(0, 1fr))");
     expect(css).toContain(".timeline-shell .slider input");
     expect(css).toContain("margin: -2px 0 0");
+    expect(css).toContain(".timeline-status-dock");
+    expect(css).toContain("grid-template-columns: repeat(7, minmax(92px, 1fr))");
+    expect(css).toContain(".timeline-status-chip.live");
+    expect(css).toContain("font-variant-numeric: tabular-nums");
+    expect(timelineControls).toContain('aria-label="Replay playback status"');
+    expect(timelineControls).toContain("function StatusChip");
+    expect(timelineControls).toContain("formatSpeed(speed)");
+    expect(replayViewerSource).toContain("status={{ cameraLabel, playerName: selectedPlayerName, boostRenderingEnabled }}");
   });
 
   it("docks development coordinate controls instead of floating them over the field", () => {
@@ -85,25 +95,34 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("overflow-x: hidden");
     expect(css).toContain("max-width: 100vw");
     expect(css).toContain("width: 100vw");
-    expect(css).toContain("--viewer-bottom-rail: calc(232px + var(--viewer-edge-bottom))");
+    expect(css).toContain("--viewer-bottom-rail: calc(304px + var(--viewer-edge-bottom))");
     expect(css).toContain("left: var(--viewer-edge-left)");
     expect(css).toContain("right: var(--viewer-edge-right)");
     expect(css).toContain("bottom: var(--viewer-bottom-rail)");
+    expect(css).toContain("@supports selector(:has(*))");
+    expect(css).toContain(".app:has(.viewer)");
+    expect(css).toContain("height: 100dvh");
     expect(css).toContain("bottom: max(8px, env(safe-area-inset-bottom, 0px))");
     expect(css).toContain(".viewer canvas");
     expect(css).toContain("max-width: 100%");
     expect(css).toContain(".timeline-controls");
     expect(css).toContain("min-width: 0");
-    expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
+    expect(css).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto");
     expect(css).toContain("display: grid");
     expect(css).toContain("grid-template-columns: repeat(3, minmax(0, 1fr))");
     expect(css).toContain("justify-content: stretch");
-    expect(css).toContain("max-height: min(44vh, 330px)");
+    expect(css).toContain("max-height: min(28vh, 200px)");
     expect(css).toContain("justify-content: center");
     expect(css).toContain(".viewer-toggle");
-    expect(css).toContain("width: 100%");
+    expect(css).toContain("width: auto");
     expect(css).toContain(".control-help");
     expect(css).toContain("display: none");
+    expect(css).toContain(".timeline-status-dock");
+    expect(css).toContain("display: flex");
+    expect(css).toContain("overflow-x: auto");
+    expect(css).toContain("flex: 0 0 min(112px, 42vw)");
+    expect(css).toContain(".timeline-status-chip");
+    expect(css).toContain("min-height: 38px");
   });
 
   it("uses dynamic viewport height where supported so mobile browser chrome does not crop the viewer", () => {

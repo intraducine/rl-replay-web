@@ -406,7 +406,7 @@ progress {
   --viewer-edge-right: max(12px, env(safe-area-inset-right, 0px));
   --viewer-edge-bottom: max(12px, env(safe-area-inset-bottom, 0px));
   --viewer-edge-left: max(12px, env(safe-area-inset-left, 0px));
-  --viewer-bottom-rail: calc(204px + var(--viewer-edge-bottom));
+  --viewer-bottom-rail: calc(256px + var(--viewer-edge-bottom));
   position: relative;
   width: 100%;
   max-width: 100vw;
@@ -415,6 +415,25 @@ progress {
   background:
     linear-gradient(180deg, rgba(7, 16, 20, 0.12), rgba(7, 16, 20, 0.48)),
     #071014;
+}
+
+@supports selector(:has(*)) {
+  .app:has(.viewer) {
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .app:has(.viewer) .viewer {
+    height: 100%;
+    min-height: 0;
+  }
+}
+
+@supports (height: 100dvh) and selector(:has(*)) {
+  .app:has(.viewer) {
+    height: 100dvh;
+  }
 }
 
 .viewer canvas {
@@ -764,6 +783,64 @@ progress {
     rgba(7, 16, 20, 0.86);
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(14px);
+}
+
+.timeline-status-dock {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(92px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.timeline-status-chip {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 6px 9px;
+  border: 1px solid rgba(238, 246, 243, 0.12);
+  border-radius: 7px;
+  background:
+    linear-gradient(180deg, rgba(238, 246, 243, 0.08), rgba(7, 16, 20, 0.42)),
+    rgba(7, 16, 20, 0.5);
+}
+
+.timeline-status-chip span,
+.timeline-status-chip strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-status-chip span {
+  color: #8fa4a0;
+  font-size: 0.62rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.timeline-status-chip strong {
+  color: #eef6f3;
+  font-size: 0.88rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-status-chip.live {
+  border-color: rgba(157, 242, 208, 0.42);
+  background:
+    linear-gradient(180deg, rgba(157, 242, 208, 0.16), rgba(7, 16, 20, 0.42)),
+    rgba(7, 16, 20, 0.5);
+}
+
+.timeline-status-chip.live strong {
+  color: #9df2d0;
+}
+
+.timeline-status-chip.idle strong {
+  color: #a8bbb8;
 }
 
 .timeline-shell {
@@ -1132,7 +1209,7 @@ pre {
   .viewer {
     width: 100vw;
     min-height: calc(100vh - 150px);
-    --viewer-bottom-rail: calc(232px + var(--viewer-edge-bottom));
+    --viewer-bottom-rail: calc(304px + var(--viewer-edge-bottom));
   }
 
   @supports (height: 100dvh) {
@@ -1164,7 +1241,7 @@ pre {
 
   .viewer-top-left {
     width: min(100%, 360px);
-    max-height: min(44vh, 330px);
+    max-height: min(28vh, 200px);
     padding: 9px;
     pointer-events: auto;
   }
@@ -1226,7 +1303,7 @@ pre {
 
   .viewer-selectors {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
     width: 100%;
     justify-content: stretch;
   }
@@ -1237,13 +1314,35 @@ pre {
   }
 
   .viewer-toggle {
-    width: 100%;
+    width: auto;
     justify-content: center;
   }
 
   .timeline-controls {
     gap: 9px;
     padding: 10px;
+  }
+
+  .timeline-status-dock {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(157, 242, 208, 0.5) rgba(7, 16, 20, 0.28);
+    gap: 6px;
+  }
+
+  .timeline-status-chip {
+    flex: 0 0 min(112px, 42vw);
+    min-height: 38px;
+    padding: 5px 7px;
+  }
+
+  .timeline-status-chip span {
+    font-size: 0.58rem;
+  }
+
+  .timeline-status-chip strong {
+    font-size: 0.8rem;
   }
 
   .timeline-shell .slider span {

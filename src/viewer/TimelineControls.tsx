@@ -11,7 +11,13 @@ const MIN_SPEED = 0.25;
 const MAX_SPEED = 4;
 const SPEED_STOPS = [0.25, 0.5, 1, 2, 4];
 
-export function TimelineControls({ events = [] }: { events?: Array<{ t: number; type: string }> }) {
+export type TimelineStatus = {
+  cameraLabel: string;
+  playerName?: string;
+  boostRenderingEnabled: boolean;
+};
+
+export function TimelineControls({ events = [], status }: { events?: Array<{ t: number; type: string }>; status?: TimelineStatus }) {
   const { playing, currentTime, duration, speed, setPlaying, setCurrentTime, setSpeed, seekBy } = useViewerStore(
     useShallow((state) => ({
       playing: state.playing,
@@ -25,11 +31,25 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
     }))
   );
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const remainingTime = Math.max(0, duration - currentTime);
   const eventMarkers = useMemo(() => replayEventMarkers(events, duration), [events, duration]);
   useTimelineKeyboardShortcuts();
 
   return (
     <div className="timeline-controls">
+      <div className="timeline-status-dock" aria-label="Replay playback status">
+        <StatusChip label="State" value={playing ? "Playing" : "Paused"} tone={playing ? "live" : "idle"} />
+        <StatusChip label="Now" value={`${formatTime(currentTime)} / ${formatTime(duration)}`} />
+        <StatusChip label="Left" value={`-${formatTime(remainingTime)}`} />
+        <StatusChip label="Speed" value={`${formatSpeed(speed)}x`} />
+        {status ? (
+          <>
+            <StatusChip label="Camera" value={status.cameraLabel} />
+            {status.playerName ? <StatusChip label="Player" value={status.playerName} /> : null}
+            <StatusChip label="Boost" value={status.boostRenderingEnabled ? "On" : "Off"} tone={status.boostRenderingEnabled ? "live" : "idle"} />
+          </>
+        ) : null}
+      </div>
       <div className="timeline-shell">
         <Slider
           label="Timeline"
@@ -201,6 +221,15 @@ export function TimelineControls({ events = [] }: { events?: Array<{ t: number; 
   );
 }
 
+function StatusChip({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "live" | "idle" }) {
+  return (
+    <span className={`timeline-status-chip ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </span>
+  );
+}
+
 export function useTimelineKeyboardShortcuts() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -263,4 +292,8 @@ export function formatTime(seconds: number): string {
   const minutes = Math.floor(safe / 60);
   const remainder = Math.floor(safe % 60);
   return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+}
+
+function formatSpeed(value: number): string {
+  return Number.isInteger(value) ? value.toFixed(0) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
