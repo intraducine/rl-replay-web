@@ -60,6 +60,14 @@ const CHAMPIONS_FIELD_TEXTURE_URLS: string[] = [
 const FIELD_SURFACE_WIDTH = 76.45;
 const FIELD_SURFACE_LENGTH = 117.75;
 const FIELD_SURFACE_HEIGHT = 0.035;
+const FIELD_MARKING_Y = FIELD_SURFACE_HEIGHT + 0.012;
+const FIELD_LINE_THICKNESS = 0.16;
+const CENTER_CIRCLE_RADIUS = 9.2;
+const CENTER_DOT_RADIUS = 0.52;
+const GOAL_BOX_WIDTH = 36.8;
+const GOAL_BOX_DEPTH = 14.2;
+const SIDE_LANE_OFFSET_X = 28.2;
+const SIDE_LANE_LENGTH = 70;
 const GOAL_ACCENT_Z = FIELD_SURFACE_LENGTH / 2 - 1.35;
 const GOAL_ACCENT_WIDTH = 34;
 const GOAL_ACCENT_HEIGHT = 10;
@@ -135,6 +143,9 @@ const MATERIALS = {
   }),
   blueGoal: createTeamGoalMaterial("blue"),
   orangeGoal: createTeamGoalMaterial("orange"),
+  fieldLine: createFieldMarkingMaterial("#f6fff8", 0.66),
+  blueFieldLine: createFieldMarkingMaterial(TEAM_GOAL_MATERIALS.blue.halo, 0.48),
+  orangeFieldLine: createFieldMarkingMaterial(TEAM_GOAL_MATERIALS.orange.halo, 0.5),
   blueGoalHalo: createTeamGoalHaloMaterial("blue"),
   orangeGoalHalo: createTeamGoalHaloMaterial("orange"),
   blueGoalFloorStrip: createTeamGoalFloorStripMaterial("blue"),
@@ -244,6 +255,7 @@ export function ChampionsFieldStadium() {
         <PlacedChampionsFieldScene key={url} url={url} materials={materials} />
       ))}
       <FieldSurfacePlane texture={textures.fieldGrass} />
+      <FieldMarkings materials={materials} />
       <GoalColorAccents materials={materials} />
     </group>
   );
@@ -333,6 +345,9 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
     }),
     blueGoal: createTeamGoalMaterial("blue", textures.stadiumWallMetal),
     orangeGoal: createTeamGoalMaterial("orange", textures.stadiumWallMetal),
+    fieldLine: createFieldMarkingMaterial("#f6fff8", 0.66),
+    blueFieldLine: createFieldMarkingMaterial(TEAM_GOAL_MATERIALS.blue.halo, 0.48),
+    orangeFieldLine: createFieldMarkingMaterial(TEAM_GOAL_MATERIALS.orange.halo, 0.5),
     blueFieldAccent: createTeamGoalAccentMaterial("blue", textures.stadiumTrim),
     orangeFieldAccent: createTeamGoalAccentMaterial("orange", textures.stadiumTrim),
     blueGoalHalo: createTeamGoalHaloMaterial("blue"),
@@ -446,6 +461,63 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
   };
 }
 
+function FieldMarkings({ materials }: { materials: ChampionsFieldMaterials }) {
+  const halfLength = FIELD_SURFACE_LENGTH / 2;
+  return (
+    <group position={[0, FIELD_MARKING_Y, 0]}>
+      <FieldStripe width={FIELD_SURFACE_WIDTH} depth={FIELD_LINE_THICKNESS} material={materials.fieldLine} />
+      <FieldCircle radius={CENTER_CIRCLE_RADIUS} material={materials.fieldLine} />
+      <FieldCircle radius={CENTER_DOT_RADIUS} thickness={CENTER_DOT_RADIUS} material={materials.fieldLine} />
+      <FieldStripe x={-SIDE_LANE_OFFSET_X} width={FIELD_LINE_THICKNESS} depth={SIDE_LANE_LENGTH} material={materials.fieldLine} />
+      <FieldStripe x={SIDE_LANE_OFFSET_X} width={FIELD_LINE_THICKNESS} depth={SIDE_LANE_LENGTH} material={materials.fieldLine} />
+      <GoalBoxMarkings z={halfLength - GOAL_BOX_DEPTH} material={materials.blueFieldLine} />
+      <GoalBoxMarkings z={-(halfLength - GOAL_BOX_DEPTH)} rotationY={Math.PI} material={materials.orangeFieldLine} />
+    </group>
+  );
+}
+
+function GoalBoxMarkings({ z, rotationY = 0, material }: { z: number; rotationY?: number; material: THREE.Material }) {
+  return (
+    <group position={[0, 0, z]} rotation={[0, rotationY, 0]}>
+      <FieldStripe width={GOAL_BOX_WIDTH} depth={FIELD_LINE_THICKNESS} material={material} />
+      <FieldStripe x={-GOAL_BOX_WIDTH / 2} z={GOAL_BOX_DEPTH / 2} width={FIELD_LINE_THICKNESS} depth={GOAL_BOX_DEPTH} material={material} />
+      <FieldStripe x={GOAL_BOX_WIDTH / 2} z={GOAL_BOX_DEPTH / 2} width={FIELD_LINE_THICKNESS} depth={GOAL_BOX_DEPTH} material={material} />
+      <FieldStripe z={GOAL_BOX_DEPTH} width={GOAL_BOX_WIDTH} depth={FIELD_LINE_THICKNESS} material={material} />
+    </group>
+  );
+}
+
+function FieldStripe({
+  x = 0,
+  z = 0,
+  width,
+  depth,
+  material
+}: {
+  x?: number;
+  z?: number;
+  width: number;
+  depth: number;
+  material: THREE.Material;
+}) {
+  return (
+    <mesh position={[x, 0, z]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={5}>
+      <planeGeometry args={[width, depth]} />
+      <primitive object={material} attach="material" />
+    </mesh>
+  );
+}
+
+function FieldCircle({ radius, thickness = FIELD_LINE_THICKNESS, material }: { radius: number; thickness?: number; material: THREE.Material }) {
+  const innerRadius = Math.max(0, radius - thickness);
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={5}>
+      <ringGeometry args={[innerRadius, radius, 96]} />
+      <primitive object={material} attach="material" />
+    </mesh>
+  );
+}
+
 function GoalColorAccents({ materials }: { materials: ChampionsFieldMaterials }) {
   return (
     <>
@@ -514,6 +586,18 @@ function createTeamGoalAccentMaterial(team: keyof typeof TEAM_GOAL_MATERIALS, te
     color: TEAM_GOAL_MATERIALS[team].accent,
     transparent: true,
     opacity: TEAM_GOAL_ACCENT_OPACITY,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+    side: THREE.DoubleSide
+  });
+}
+
+function createFieldMarkingMaterial(color: string, opacity: number) {
+  return new THREE.MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     toneMapped: false,

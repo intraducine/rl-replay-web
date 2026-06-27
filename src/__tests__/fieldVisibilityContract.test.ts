@@ -13,6 +13,31 @@ describe("field visibility contract", () => {
     expect(championsFieldSource).not.toContain("polygonOffsetFactor");
   });
 
+  it("adds lightweight field marking geometry above the scraped grass texture", () => {
+    const championsFieldSource = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
+
+    expect(championsFieldSource).toContain("const FIELD_MARKING_Y = FIELD_SURFACE_HEIGHT + 0.012");
+    expect(championsFieldSource).toContain("const CENTER_CIRCLE_RADIUS = 9.2");
+    expect(championsFieldSource).toContain("const GOAL_BOX_WIDTH = 36.8");
+    expect(championsFieldSource).toContain("const SIDE_LANE_OFFSET_X = 28.2");
+    expect(championsFieldSource).toContain("<FieldSurfacePlane texture={textures.fieldGrass} />");
+    expect(championsFieldSource).toContain("<FieldMarkings materials={materials} />");
+    expect(championsFieldSource).toContain("function FieldMarkings({ materials }: { materials: ChampionsFieldMaterials })");
+    expect(championsFieldSource).toContain("function GoalBoxMarkings({ z, rotationY = 0, material }");
+    expect(championsFieldSource).toContain("function FieldStripe({");
+    expect(championsFieldSource).toContain("function FieldCircle({ radius, thickness = FIELD_LINE_THICKNESS, material }");
+    expect(championsFieldSource).toContain("fieldLine: createFieldMarkingMaterial(\"#f6fff8\", 0.66)");
+    expect(championsFieldSource).toContain("blueFieldLine: createFieldMarkingMaterial(TEAM_GOAL_MATERIALS.blue.halo, 0.48)");
+    expect(championsFieldSource).toContain("orangeFieldLine: createFieldMarkingMaterial(TEAM_GOAL_MATERIALS.orange.halo, 0.5)");
+    expect(championsFieldSource).toContain("<ringGeometry args={[innerRadius, radius, 96]} />");
+    expect(championsFieldSource).toContain("renderOrder={5}");
+    expect(championsFieldSource).toContain("GoalBoxMarkings z={halfLength - GOAL_BOX_DEPTH} material={materials.blueFieldLine}");
+    expect(championsFieldSource).toContain("GoalBoxMarkings z={-(halfLength - GOAL_BOX_DEPTH)} rotationY={Math.PI} material={materials.orangeFieldLine}");
+    expect(championsFieldSource).toContain("function createFieldMarkingMaterial(color: string, opacity: number)");
+    expect(championsFieldSource).toContain("blending: THREE.AdditiveBlending");
+    expect(championsFieldSource).toContain("toneMapped: false");
+  });
+
   it("uses shadow maps plus a yaw-aligned projected vehicle silhouette instead of a fixed unrotated blob", () => {
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
     const lightingSource = readFileSync(resolve(process.cwd(), "src/viewer/RocketLeagueLighting.tsx"), "utf8");
