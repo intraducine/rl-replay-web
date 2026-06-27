@@ -60,6 +60,13 @@ const CHAMPIONS_FIELD_TEXTURE_URLS: string[] = [
 const FIELD_SURFACE_WIDTH = 76.45;
 const FIELD_SURFACE_LENGTH = 117.75;
 const FIELD_SURFACE_HEIGHT = 0.035;
+const GOAL_ACCENT_Z = FIELD_SURFACE_LENGTH / 2 - 1.35;
+const GOAL_ACCENT_WIDTH = 34;
+const GOAL_ACCENT_HEIGHT = 10;
+const GOAL_ACCENT_CENTER_Y = 4.8;
+const GOAL_FLOOR_STRIP_Y = 0.12;
+const GOAL_FLOOR_STRIP_WIDTH = 35.5;
+const GOAL_FLOOR_STRIP_DEPTH = 0.42;
 const HIDDEN_EFFECT_MESH = /(Body_Octane|BoostPad|Circle_Sprite|CS_FieldFog|CS_FieldGlow|CS_LightCones|CS_StadiumLightBar_Cone|DroneBotThruster|Quad01|S_EV_SimpleLightBeam|SpotLightBeam|Stadium_LightCones|TexPropPlane)/i;
 const HIDDEN_FIELD_SURFACE_MESH = /^Grass_Base(?:_Flat)?$/i;
 const TRANSPARENT_FIELD_WALL_MESH = /CS_FieldWalls(?:Glass|RL)?|FieldHexShell/i;
@@ -69,16 +76,21 @@ const TEAM_GOAL_MATERIALS = {
   blue: {
     color: "#168cff",
     emissive: "#006bff",
-    accent: "#1b9cff"
+    accent: "#1b9cff",
+    halo: "#18a7ff"
   },
   orange: {
     color: "#ff7a18",
     emissive: "#ff5200",
-    accent: "#ff8a1c"
+    accent: "#ff8a1c",
+    halo: "#ff8a1c"
   }
 } as const;
 const TEAM_GOAL_EMISSIVE_INTENSITY = 0.74;
 const TEAM_GOAL_ACCENT_OPACITY = 0.9;
+const TEAM_GOAL_HALO_OPACITY = 0.28;
+const TEAM_GOAL_LIGHT_INTENSITY = 7.5;
+const TEAM_GOAL_LIGHT_DISTANCE = 4200;
 
 const MATERIALS = {
   field: new THREE.MeshStandardMaterial({
@@ -123,6 +135,10 @@ const MATERIALS = {
   }),
   blueGoal: createTeamGoalMaterial("blue"),
   orangeGoal: createTeamGoalMaterial("orange"),
+  blueGoalHalo: createTeamGoalHaloMaterial("blue"),
+  orangeGoalHalo: createTeamGoalHaloMaterial("orange"),
+  blueGoalFloorStrip: createTeamGoalFloorStripMaterial("blue"),
+  orangeGoalFloorStrip: createTeamGoalFloorStripMaterial("orange"),
   glow: new THREE.MeshBasicMaterial({
     color: "#ffffff",
     transparent: true,
@@ -228,6 +244,7 @@ export function ChampionsFieldStadium() {
         <PlacedChampionsFieldScene key={url} url={url} materials={materials} />
       ))}
       <FieldSurfacePlane texture={textures.fieldGrass} />
+      <GoalColorAccents materials={materials} />
     </group>
   );
 }
@@ -318,6 +335,10 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
     orangeGoal: createTeamGoalMaterial("orange", textures.stadiumWallMetal),
     blueFieldAccent: createTeamGoalAccentMaterial("blue", textures.stadiumTrim),
     orangeFieldAccent: createTeamGoalAccentMaterial("orange", textures.stadiumTrim),
+    blueGoalHalo: createTeamGoalHaloMaterial("blue"),
+    orangeGoalHalo: createTeamGoalHaloMaterial("orange"),
+    blueGoalFloorStrip: createTeamGoalFloorStripMaterial("blue"),
+    orangeGoalFloorStrip: createTeamGoalFloorStripMaterial("orange"),
     oobCrowd: new THREE.MeshStandardMaterial({
       color: "#253528",
       emissive: "#10180f",
@@ -425,6 +446,54 @@ function createTextureBackedMaterials(textures: ChampionsFieldTextureSet) {
   };
 }
 
+function GoalColorAccents({ materials }: { materials: ChampionsFieldMaterials }) {
+  return (
+    <>
+      <TeamGoalAccent
+        z={GOAL_ACCENT_Z}
+        haloMaterial={materials.blueGoalHalo}
+        floorStripMaterial={materials.blueGoalFloorStrip}
+        color={TEAM_GOAL_MATERIALS.blue.halo}
+      />
+      <TeamGoalAccent
+        z={-GOAL_ACCENT_Z}
+        rotationY={Math.PI}
+        haloMaterial={materials.orangeGoalHalo}
+        floorStripMaterial={materials.orangeGoalFloorStrip}
+        color={TEAM_GOAL_MATERIALS.orange.halo}
+      />
+    </>
+  );
+}
+
+function TeamGoalAccent({
+  z,
+  rotationY = 0,
+  haloMaterial,
+  floorStripMaterial,
+  color
+}: {
+  z: number;
+  rotationY?: number;
+  haloMaterial: THREE.Material;
+  floorStripMaterial: THREE.Material;
+  color: string;
+}) {
+  return (
+    <group position={[0, 0, z]} rotation={[0, rotationY, 0]}>
+      <pointLight position={[0, GOAL_ACCENT_CENTER_Y, 0]} color={color} intensity={TEAM_GOAL_LIGHT_INTENSITY} distance={TEAM_GOAL_LIGHT_DISTANCE} decay={2} />
+      <mesh position={[0, GOAL_ACCENT_CENTER_Y, 0]} renderOrder={6}>
+        <planeGeometry args={[GOAL_ACCENT_WIDTH, GOAL_ACCENT_HEIGHT]} />
+        <primitive object={haloMaterial} attach="material" />
+      </mesh>
+      <mesh position={[0, GOAL_FLOOR_STRIP_Y, -0.7]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={7}>
+        <planeGeometry args={[GOAL_FLOOR_STRIP_WIDTH, GOAL_FLOOR_STRIP_DEPTH]} />
+        <primitive object={floorStripMaterial} attach="material" />
+      </mesh>
+    </group>
+  );
+}
+
 function createTeamGoalMaterial(team: keyof typeof TEAM_GOAL_MATERIALS, texture?: THREE.Texture) {
   const colors = TEAM_GOAL_MATERIALS[team];
   return new THREE.MeshStandardMaterial({
@@ -442,6 +511,30 @@ function createTeamGoalMaterial(team: keyof typeof TEAM_GOAL_MATERIALS, texture?
 function createTeamGoalAccentMaterial(team: keyof typeof TEAM_GOAL_MATERIALS, texture?: THREE.Texture) {
   return new THREE.MeshBasicMaterial({
     map: texture,
+    color: TEAM_GOAL_MATERIALS[team].accent,
+    transparent: true,
+    opacity: TEAM_GOAL_ACCENT_OPACITY,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+    side: THREE.DoubleSide
+  });
+}
+
+function createTeamGoalHaloMaterial(team: keyof typeof TEAM_GOAL_MATERIALS) {
+  return new THREE.MeshBasicMaterial({
+    color: TEAM_GOAL_MATERIALS[team].halo,
+    transparent: true,
+    opacity: TEAM_GOAL_HALO_OPACITY,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+    side: THREE.DoubleSide
+  });
+}
+
+function createTeamGoalFloorStripMaterial(team: keyof typeof TEAM_GOAL_MATERIALS) {
+  return new THREE.MeshBasicMaterial({
     color: TEAM_GOAL_MATERIALS[team].accent,
     transparent: true,
     opacity: TEAM_GOAL_ACCENT_OPACITY,

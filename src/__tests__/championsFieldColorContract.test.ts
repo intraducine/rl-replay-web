@@ -161,12 +161,18 @@ describe("Champions Field color contract", () => {
     const championsFieldSource = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
 
     expect(championsFieldSource).toContain("TEAM_GOAL_MATERIALS");
-    expect(championsFieldSource).toContain('blue: {\n    color: "#168cff",\n    emissive: "#006bff",\n    accent: "#1b9cff"');
-    expect(championsFieldSource).toContain('orange: {\n    color: "#ff7a18",\n    emissive: "#ff5200",\n    accent: "#ff8a1c"');
+    expect(championsFieldSource).toContain('blue: {\n    color: "#168cff",\n    emissive: "#006bff",\n    accent: "#1b9cff",\n    halo: "#18a7ff"');
+    expect(championsFieldSource).toContain('orange: {\n    color: "#ff7a18",\n    emissive: "#ff5200",\n    accent: "#ff8a1c",\n    halo: "#ff8a1c"');
     expect(championsFieldSource).toContain("TEAM_GOAL_EMISSIVE_INTENSITY = 0.74");
     expect(championsFieldSource).toContain("TEAM_GOAL_ACCENT_OPACITY = 0.9");
+    expect(championsFieldSource).toContain("TEAM_GOAL_HALO_OPACITY = 0.28");
+    expect(championsFieldSource).toContain("TEAM_GOAL_LIGHT_INTENSITY = 7.5");
     expect(championsFieldSource).toContain('blueGoal: createTeamGoalMaterial("blue")');
     expect(championsFieldSource).toContain('orangeGoal: createTeamGoalMaterial("orange")');
+    expect(championsFieldSource).toContain('blueGoalHalo: createTeamGoalHaloMaterial("blue")');
+    expect(championsFieldSource).toContain('orangeGoalHalo: createTeamGoalHaloMaterial("orange")');
+    expect(championsFieldSource).toContain('blueGoalFloorStrip: createTeamGoalFloorStripMaterial("blue")');
+    expect(championsFieldSource).toContain('orangeGoalFloorStrip: createTeamGoalFloorStripMaterial("orange")');
     expect(championsFieldSource).toContain("map: textures.stadiumWallMetal");
     expect(championsFieldSource).toContain("emissiveMap: textures.stadiumWallMetal");
     expect(championsFieldSource).toContain("emissiveIntensity: TEAM_GOAL_EMISSIVE_INTENSITY");
@@ -182,8 +188,16 @@ describe("Champions Field color contract", () => {
     expect(championsFieldSource).toContain('orangeGoal: createTeamGoalMaterial("orange", textures.stadiumWallMetal)');
     expect(championsFieldSource).toContain('blueFieldAccent: createTeamGoalAccentMaterial("blue", textures.stadiumTrim)');
     expect(championsFieldSource).toContain('orangeFieldAccent: createTeamGoalAccentMaterial("orange", textures.stadiumTrim)');
+    expect(championsFieldSource).toContain("<GoalColorAccents materials={materials} />");
+    expect(championsFieldSource).toContain("function GoalColorAccents");
+    expect(championsFieldSource).toContain("function TeamGoalAccent");
     expect(championsFieldSource).toContain("function createTeamGoalMaterial");
     expect(championsFieldSource).toContain("function createTeamGoalAccentMaterial");
+    expect(championsFieldSource).toContain("function createTeamGoalHaloMaterial");
+    expect(championsFieldSource).toContain("function createTeamGoalFloorStripMaterial");
+    expect(championsFieldSource).toContain("<pointLight");
+    expect(championsFieldSource).toContain("GOAL_ACCENT_Z = FIELD_SURFACE_LENGTH / 2 - 1.35");
+    expect(championsFieldSource).toContain("GOAL_ACCENT_WIDTH = 34");
     expect(championsFieldSource).toContain("blending: THREE.AdditiveBlending");
     expect(championsFieldSource).toContain("toneMapped: false");
     expect(championsFieldSource).not.toContain("materials.fieldWallGlass.clone()");
