@@ -347,6 +347,66 @@ describe("sampleTimeline", () => {
     expect(sampleTimelineSource).not.toContain("Object.keys(next.cars)");
   });
 
+  it("keeps time-coherent sampling correct when playback seeks forward and backward", () => {
+    const movingTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        {
+          t: 0,
+          ball: { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
+          cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 100 } }
+        },
+        {
+          t: 1,
+          ball: { position: [100, 0, 0], rotation: [0, 0, 0, 1] },
+          cars: { p1: { position: [100, 0, 0], rotation: [0, 0, 0, 1], boost: 80 } }
+        },
+        {
+          t: 2,
+          ball: { position: [200, 0, 0], rotation: [0, 0, 0, 1] },
+          cars: { p1: { position: [200, 0, 0], rotation: [0, 0, 0, 1], boost: 60 } }
+        }
+      ],
+      camera: [
+        { t: 0, playerId: "p1", settings: { fov: 100, height: 80, angle: -4, distance: 240, stiffness: 0.2, swivel: 5 } },
+        { t: 1, playerId: "p1", settings: { fov: 110, height: 100, angle: -3, distance: 270, stiffness: 0.35, swivel: 7 } },
+        { t: 2, playerId: "p1", settings: { fov: 120, height: 120, angle: -2, distance: 300, stiffness: 0.5, swivel: 9 } }
+      ]
+    };
+
+    expect(sampleTimeline(movingTimeline, 1.75).cars.p1.position[0]).toBeCloseTo(175);
+    expect(sampleTimeline(movingTimeline, 0.25).cars.p1.position[0]).toBeCloseTo(25);
+    expect(sampleTimeline(movingTimeline, 1.25).ball?.position[0]).toBeCloseTo(125);
+    expect(samplePlayerBoostsAt(movingTimeline, ["p1"], 0.75)).toEqual({ p1: 85 });
+    expect(samplePlayerCameraState(movingTimeline, "p1", 1.5)?.settings?.fov).toBeCloseTo(115);
+    expect(samplePlayerCameraState(movingTimeline, "p1", 0.5)?.settings?.fov).toBeCloseTo(105);
+  });
+
+  it("uses cursor-backed time lookups across replay timeline hot paths", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
+    const framePairSource = source.match(/function findFramePairIndices[\s\S]*?\n}\n\nfunction nearestCarState/)?.[0] ?? "";
+    const motionTrackSource = source.match(/function sampleMotionTrack[\s\S]*?\n}\n\nfunction findFramePairIndices/)?.[0] ?? "";
+    const cameraSource = source.match(/export function samplePlayerCameraState[\s\S]*?\n}\n\nfunction interpolateCameraSettings/)?.[0] ?? "";
+    const distanceSource = source.match(/function carCumulativeDistanceAt[\s\S]*?\n}\n\nfunction carDistanceTrackForCar/)?.[0] ?? "";
+
+    expect(source).toContain("const atOrAfterTimeCursorCache = new WeakMap<ReadonlyArray<{ t: number }>, number>()");
+    expect(source).toContain("const afterTimeCursorCache = new WeakMap<ReadonlyArray<{ t: number }>, number>()");
+    expect(source).toContain("const TIME_CURSOR_LINEAR_SCAN_LIMIT = 48");
+    expect(source).toContain("function firstTimeIndexAtOrAfter");
+    expect(source).toContain("function firstTimeIndexAfter");
+    expect(source).toContain("function firstTimeIndex");
+    expect(source).toContain("function firstTimeIndexBinary");
+    expect(framePairSource).toContain("const low = firstTimeIndexAtOrAfter(frames, clamped)");
+    expect(motionTrackSource).toContain("const low = firstTimeIndexAtOrAfter(track, t)");
+    expect(cameraSource).toContain("const low = firstTimeIndexAfter(track, timeSeconds)");
+    expect(distanceSource).toContain("const low = firstTimeIndexAtOrAfter(track, timeSeconds)");
+    expect(source).toContain("const cached = cursorCache.get(samples)");
+    expect(source).toContain("while (index < samples.length - 1 && isBeforeTarget(samples[index].t, timeSeconds))");
+    expect(source).toContain("while (index > 0 && !isBeforeTarget(samples[index - 1].t, timeSeconds))");
+    expect(source).toContain("scanned++");
+    expect(source).toContain("if (scanned > TIME_CURSOR_LINEAR_SCAN_LIMIT) return firstTimeIndexBinary");
+  });
+
   it("measures car distance over a sampled time window with interpolated boundaries", () => {
     const movingTimeline: ReplayTimeline = {
       ...timeline,

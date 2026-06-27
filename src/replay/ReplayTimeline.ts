@@ -30,8 +30,11 @@ const CAR_RESET_DISTANCE = 1800;
 const CAR_MAX_SPEED = 9000;
 const BALL_RESET_DISTANCE = 2600;
 const BALL_MAX_SPEED = 18000;
+const TIME_CURSOR_LINEAR_SCAN_LIMIT = 48;
 const samplingIndexCache = new WeakMap<ReplayTimeline, TimelineSamplingIndex>();
 const carDistanceTrackCache = new WeakMap<ReplayTimeline, Map<string, CarDistanceSample[]>>();
+const atOrAfterTimeCursorCache = new WeakMap<ReadonlyArray<{ t: number }>, number>();
+const afterTimeCursorCache = new WeakMap<ReadonlyArray<{ t: number }>, number>();
 
 function interpolateRigidBody(a: RigidBodyFrame, b: RigidBodyFrame, alpha: number, spanSeconds?: number): RigidBodyFrame {
   return {
@@ -146,13 +149,7 @@ function sampleMotionTrack<T extends RigidBodyFrame>(
   if (track.length === 1 || t <= track[0].t) return track[0].frame;
   if (t >= track[track.length - 1].t) return track[track.length - 1].frame;
 
-  let low = 0;
-  let high = track.length - 1;
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    if (track[mid].t < t) low = mid + 1;
-    else high = mid - 1;
-  }
+  const low = firstTimeIndexAtOrAfter(track, t);
 
   const next = track[low];
   const previous = track[low - 1];
@@ -174,14 +171,7 @@ function findFramePairIndices(frames: TimelineFrame[], t: number): [number, numb
   }
 
   const clamped = clamp(t, frames[0].t, frames[frames.length - 1].t);
-  let low = 0;
-  let high = frames.length - 1;
-
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    if (frames[mid].t < clamped) low = mid + 1;
-    else high = mid - 1;
-  }
+  const low = firstTimeIndexAtOrAfter(frames, clamped);
 
   const nextIndex = clamp(low, 0, frames.length - 1);
   const prevIndex = clamp(nextIndex - 1, 0, frames.length - 1);
@@ -305,13 +295,8 @@ export function samplePlayerCameraState(timeline: ReplayTimeline, playerId: stri
   if (timeSeconds <= track[0].t) return track[0];
   if (timeSeconds >= track[track.length - 1].t) return track[track.length - 1];
 
-  let low = 0;
-  let high = track.length - 1;
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    if (track[mid].t <= timeSeconds) low = mid + 1;
-    else high = mid - 1;
-  }
+  const low = firstTimeIndexAfter(track, timeSeconds);
+  const high = low - 1;
 
   const previous = track[Math.max(0, high)];
   const next = track[low];
@@ -496,13 +481,7 @@ function carCumulativeDistanceAt(timeline: ReplayTimeline, carId: string, timeSe
   const last = track[track.length - 1];
   if (timeSeconds >= last.t) return last.distance;
 
-  let low = 0;
-  let high = track.length - 1;
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-    if (track[mid].t < timeSeconds) low = mid + 1;
-    else high = mid - 1;
-  }
+  const low = firstTimeIndexAtOrAfter(track, timeSeconds);
 
   const previous = track[low - 1];
   const currentPosition = sampleCarForWindow(timeline, carId, timeSeconds)?.position;
@@ -569,6 +548,65 @@ function carWindowSamples(timeline: ReplayTimeline, carId: string, endTimeSecond
   appendSample(endTime);
 
   return { samples, distance };
+}
+
+function firstTimeIndexAtOrAfter<T extends { t: number }>(samples: readonly T[], timeSeconds: number): number {
+  return firstTimeIndex(samples, timeSeconds, atOrAfterTimeCursorCache, (sampleTime, targetTime) => sampleTime < targetTime);
+}
+
+function firstTimeIndexAfter<T extends { t: number }>(samples: readonly T[], timeSeconds: number): number {
+  return firstTimeIndex(samples, timeSeconds, afterTimeCursorCache, (sampleTime, targetTime) => sampleTime <= targetTime);
+}
+
+function firstTimeIndex<T extends { t: number }>(
+  samples: readonly T[],
+  timeSeconds: number,
+  cursorCache: WeakMap<ReadonlyArray<{ t: number }>, number>,
+  isBeforeTarget: (sampleTime: number, targetTime: number) => boolean
+): number {
+  if (samples.length === 0) return 0;
+
+  const cached = cursorCache.get(samples);
+  if (cached !== undefined) {
+    let index = clamp(cached, 0, samples.length - 1);
+    let scanned = 0;
+    if (isBeforeTarget(samples[index].t, timeSeconds)) {
+      while (index < samples.length - 1 && isBeforeTarget(samples[index].t, timeSeconds)) {
+        index++;
+        scanned++;
+        if (scanned > TIME_CURSOR_LINEAR_SCAN_LIMIT) return firstTimeIndexBinary(samples, timeSeconds, cursorCache, isBeforeTarget);
+      }
+    } else {
+      while (index > 0 && !isBeforeTarget(samples[index - 1].t, timeSeconds)) {
+        index--;
+        scanned++;
+        if (scanned > TIME_CURSOR_LINEAR_SCAN_LIMIT) return firstTimeIndexBinary(samples, timeSeconds, cursorCache, isBeforeTarget);
+      }
+    }
+    cursorCache.set(samples, index);
+    return index;
+  }
+
+  return firstTimeIndexBinary(samples, timeSeconds, cursorCache, isBeforeTarget);
+}
+
+function firstTimeIndexBinary<T extends { t: number }>(
+  samples: readonly T[],
+  timeSeconds: number,
+  cursorCache: WeakMap<ReadonlyArray<{ t: number }>, number>,
+  isBeforeTarget: (sampleTime: number, targetTime: number) => boolean
+): number {
+  let low = 0;
+  let high = samples.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (isBeforeTarget(samples[mid].t, timeSeconds)) low = mid + 1;
+    else high = mid - 1;
+  }
+
+  const index = clamp(low, 0, samples.length - 1);
+  cursorCache.set(samples, index);
+  return index;
 }
 
 function vec3Distance(a: [number, number, number], b: [number, number, number]) {
