@@ -7,15 +7,24 @@ describe("viewer chrome layout", () => {
 
   it("keeps the player list inside a scrollable side rail", () => {
     const css = styles();
+    const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
     expect(css).toContain("--viewer-edge-top: max(12px, env(safe-area-inset-top, 0px))");
     expect(css).toContain("--viewer-edge-right: max(12px, env(safe-area-inset-right, 0px))");
     expect(css).toContain("--viewer-edge-bottom: max(12px, env(safe-area-inset-bottom, 0px))");
     expect(css).toContain("--viewer-edge-left: max(12px, env(safe-area-inset-left, 0px))");
-    expect(css).toContain("--viewer-bottom-rail: calc(178px + var(--viewer-edge-bottom))");
-    expect(css).toContain("grid-template-rows: auto auto minmax(0, 1fr)");
-    expect(css).toContain("width: clamp(280px, 36vw, 420px)");
-    expect(css).toContain("width: min(100%, 320px)");
+    expect(css).toContain("--viewer-bottom-rail: calc(204px + var(--viewer-edge-bottom))");
+    expect(css).toContain(".viewer-glass-panel");
+    expect(css).toContain(".viewer-panel-heading");
+    expect(css).toContain("box-shadow: 0 16px 42px rgba(0, 0, 0, 0.26)");
+    expect(css).toContain("grid-template-rows: auto auto auto minmax(0, 1fr)");
+    expect(css).toContain("width: clamp(292px, 34vw, 430px)");
+    expect(css).toContain("width: min(100%, 360px)");
+    expect(replayViewerSource).toContain('className="viewer-top-left viewer-glass-panel" aria-label="Match HUD"');
+    expect(replayViewerSource).toContain('className="viewer-control-panel viewer-glass-panel" aria-label="Camera and rendering controls"');
+    expect(replayViewerSource).toContain('<div className="viewer-panel-heading">');
+    expect(replayViewerSource).toContain('<div className="viewer-scoreboard-row">');
+    expect(replayViewerSource).toContain('<div className="viewer-metadata-strip">');
     expect(css).toContain(".viewer-top-left .player-list");
     expect(css).toContain("gap: 6px");
     expect(css).toContain(".viewer-top-left .player-list button");
@@ -42,7 +51,9 @@ describe("viewer chrome layout", () => {
 
     expect(css).toContain("grid-template-columns: 48px minmax(72px, auto) 48px");
     expect(css).toContain(".viewer-control-panel");
-    expect(css).toContain("align-items: end");
+    expect(css).toContain("align-items: start");
+    expect(css).toContain("width: min(520px, 44vw)");
+    expect(css).toContain("grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto");
     expect(css).toContain("grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr)");
     expect(css).toContain(".transport-controls");
     expect(css).toContain("grid-column: 2");
@@ -74,8 +85,10 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("overflow-x: hidden");
     expect(css).toContain("max-width: 100vw");
     expect(css).toContain("width: 100vw");
+    expect(css).toContain("--viewer-bottom-rail: calc(232px + var(--viewer-edge-bottom))");
     expect(css).toContain("left: var(--viewer-edge-left)");
     expect(css).toContain("right: var(--viewer-edge-right)");
+    expect(css).toContain("bottom: var(--viewer-bottom-rail)");
     expect(css).toContain("bottom: max(8px, env(safe-area-inset-bottom, 0px))");
     expect(css).toContain(".viewer canvas");
     expect(css).toContain("max-width: 100%");
@@ -85,6 +98,8 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("display: grid");
     expect(css).toContain("grid-template-columns: repeat(3, minmax(0, 1fr))");
     expect(css).toContain("justify-content: stretch");
+    expect(css).toContain("max-height: min(44vh, 330px)");
+    expect(css).toContain("justify-content: center");
     expect(css).toContain(".viewer-toggle");
     expect(css).toContain("width: 100%");
     expect(css).toContain(".control-help");
@@ -96,9 +111,9 @@ describe("viewer chrome layout", () => {
 
     expect(css).toContain("@supports (height: 100dvh)");
     expect(css).toContain("min-height: 100dvh");
-    expect(css).toContain("min-height: calc(100dvh - 110px)");
+    expect(css).toContain("min-height: calc(100dvh - 150px)");
     expect(css).toContain("height: min(58dvh, 520px)");
-    expect(css).toContain("min-height: calc(100vh - 110px)");
+    expect(css).toContain("min-height: calc(100vh - 150px)");
     expect(css).toContain("height: min(58vh, 520px)");
   });
 

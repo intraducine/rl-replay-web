@@ -84,13 +84,24 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
     <div className="viewer">
       <SceneRoot timeline={timeline} />
       <div className="viewer-overlay top">
-        <div className="viewer-top-left">
-          <Scoreboard timeline={timeline} />
-          <MatchMetadataBar timeline={timeline} />
+        <div className="viewer-top-left viewer-glass-panel" aria-label="Match HUD">
+          <div className="viewer-panel-heading">
+            <span>Match</span>
+            {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">BALL CAM</div> : null}
+          </div>
+          <div className="viewer-scoreboard-row">
+            <Scoreboard timeline={timeline} />
+          </div>
+          <div className="viewer-metadata-strip">
+            <MatchMetadataBar timeline={timeline} />
+          </div>
           <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} statsByPlayer={statsByPlayer} />
         </div>
-        <div className="viewer-control-panel">
-          {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">BALL CAM</div> : null}
+        <div className="viewer-control-panel viewer-glass-panel" aria-label="Camera and rendering controls">
+          <div className="viewer-panel-heading">
+            <span>Camera</span>
+            <span>{boostRenderingEnabled ? "Boost on" : "Boost off"}</span>
+          </div>
           <div className="viewer-selectors">
             <Select
               label="Camera"

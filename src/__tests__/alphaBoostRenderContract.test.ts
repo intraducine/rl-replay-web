@@ -386,6 +386,7 @@ describe("Alpha boost render contract", () => {
 
     expect(carSource).toContain("const SOURCE_CASCADE_SPAWN_OFFSET_CACHE = new Map<string, readonly number[]>()");
     expect(carSource).toContain("const SOURCE_ZERO_SPAWN_OFFSETS = [0] as const");
+    expect(carSource.indexOf("const SOURCE_CASCADE_SPAWN_OFFSET_CACHE")).toBeLessThan(carSource.indexOf("const ALPHA_MAIN_SPAWN_BIRTH_OFFSETS"));
     expect(spawnOffsetSource).toContain("const cached = SOURCE_CASCADE_SPAWN_OFFSET_CACHE.get(cacheKey)");
     expect(spawnOffsetSource).toContain("if (cached) return cached");
     expect(spawnOffsetSource).toContain("SOURCE_CASCADE_SPAWN_OFFSET_CACHE.set(cacheKey, result)");

@@ -45,6 +45,8 @@ const ALPHA_BOOST_ATTACHMENT_POSITIONS = ALPHA_BOOST_CASCADE.boostMesh.sourceAtt
 const ALPHA_LENS_FLARE_POSITION = sourceAveragePosition(ALPHA_BOOST_ATTACHMENT_POSITIONS);
 const ALPHA_BOOST_MAIN_BODY_POSITION = ALPHA_LENS_FLARE_POSITION;
 const ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST = ALPHA_BOOST_CASCADE.flame.peakActiveParticles;
+const SOURCE_CASCADE_SPAWN_OFFSET_CACHE = new Map<string, readonly number[]>();
+const SOURCE_ZERO_SPAWN_OFFSETS = [0] as const;
 const ALPHA_MAIN_SPAWN_BIRTH_OFFSETS = sourceCascadeSpawnOffsets(
   ALPHA_BOOST_CASCADE.main.spawnRate,
   sourceEmitterSimulationWindow(ALPHA_BOOST_CASCADE.main.lifetimeSeconds, ALPHA_BOOST_CASCADE.main.emitterDurationSeconds),
@@ -102,8 +104,6 @@ const SOURCE_VECTOR = new THREE.Vector3();
 const SOURCE_RANDOM_FLOAT_BUFFER = new ArrayBuffer(4);
 const SOURCE_RANDOM_FLOAT_VIEW = new DataView(SOURCE_RANDOM_FLOAT_BUFFER);
 const SOURCE_RANDOM_FRACTION_CACHE: number[] = [];
-const SOURCE_CASCADE_SPAWN_OFFSET_CACHE = new Map<string, readonly number[]>();
-const SOURCE_ZERO_SPAWN_OFFSETS = [0] as const;
 let sourceRandomCachedSeed = ALPHA_BOOST_CASCADE.randomStream.webBaseSeed >>> 0;
 const ALPHA_LENS_FLARE_VIEWER_DIRECTION = sourceAttachmentViewerVector(
   { rotation: ALPHA_BOOST_CASCADE.lensFlare.sourceComponentRotation },
