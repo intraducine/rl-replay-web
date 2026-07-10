@@ -22,52 +22,57 @@ export function PlayerList({
   );
 
   return (
-    <div className="player-list-scroll">
+    <div className="player-list-scroll" aria-label="Players">
       <div className="player-list">
         {timeline.metadata.players.map((player) => {
           const boost = boostByPlayer[player.id];
           const stats = statsByPlayer[player.id] ?? emptyLivePlayerStats();
           const boostLabel = boost === undefined ? "--" : boost.toFixed(1);
           const rank = formatPlayerRank(player.rank);
+          const hasRank = Boolean(player.rank && (player.rank.skillTier !== undefined || player.rank.mmr !== undefined));
           return (
             <button
+              type="button"
               key={player.id}
               className={`${teamClassName(player.team)} ${selectedPlayerId === player.id ? "selected" : ""}`}
               onClick={() => setSelectedPlayerId(player.id)}
-              aria-label={`Select ${player.name}`}
+              aria-label={`Follow ${player.name}${boost === undefined ? "" : `, ${Math.round(boost)} percent boost`}`}
+              aria-pressed={selectedPlayerId === player.id}
             >
-              <TooltipBubble>Select {player.name}</TooltipBubble>
+              <TooltipBubble>Follow {player.name}</TooltipBubble>
               <span className="player-row">
-                <span>{player.name}</span>
+                <strong>{player.name}</strong>
                 <span className="boost-value tooltip-target">
-                  {boostLabel}
+                  {boostLabel}<small> boost</small>
                   <TooltipBubble>Interpolated boost amount</TooltipBubble>
                 </span>
               </span>
               <span className="player-stats">
-                <span className="tooltip-target">
-                  {stats.goals} Goals
+                <span className="tooltip-target" aria-label={`${stats.goals} goals`}>
+                  <strong>{stats.goals}</strong> G
                   <TooltipBubble>Goals scored by this player</TooltipBubble>
                 </span>
-                <span className="tooltip-target">
-                  {stats.saves} Saves
+                <span className="tooltip-target" aria-label={`${stats.saves} saves`}>
+                  <strong>{stats.saves}</strong> Sv
                   <TooltipBubble>Saves credited to this player</TooltipBubble>
                 </span>
-                <span className="tooltip-target">
-                  {stats.shots} Shots
+                <span className="tooltip-target" aria-label={`${stats.shots} shots`}>
+                  <strong>{stats.shots}</strong> Sh
                   <TooltipBubble>Shots credited to this player</TooltipBubble>
                 </span>
-                <span className="tooltip-target">
-                  {stats.demos} Demos
+                <span className="tooltip-target" aria-label={`${stats.demos} demolitions`}>
+                  <strong>{stats.demos}</strong> D
                   <TooltipBubble>Demolitions credited to this player</TooltipBubble>
                 </span>
               </span>
-              <span className="player-rank tooltip-target">
-                {rank.label}
-                <TooltipBubble>{rank.tooltip}</TooltipBubble>
-              </span>
+              {hasRank ? (
+                <span className="player-rank tooltip-target">
+                  {rank.label}
+                  <TooltipBubble>{rank.tooltip}</TooltipBubble>
+                </span>
+              ) : null}
               <span className="boost-meter-wrap tooltip-target">
-                <meter min={0} max={100} value={boost ?? 0} />
+                <meter min={0} max={100} value={boost ?? 0} aria-label={`${player.name} boost`} />
                 <TooltipBubble>Interpolated boost meter</TooltipBubble>
               </span>
             </button>

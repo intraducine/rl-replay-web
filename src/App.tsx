@@ -1,4 +1,4 @@
-import { Activity, Bug, FolderOpen, Upload } from "lucide-react";
+import { Bug, FolderOpen, MonitorPlay, Upload } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import { useReplayStore } from "./state/replayStore";
 import { Button } from "./ui/Button";
@@ -18,16 +18,17 @@ export function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <button className="brand tooltip-target" onClick={() => setPage("upload")}>
-          <Activity size={22} />
-          <span>RL Replay Viewer</span>
+        <button type="button" className="brand tooltip-target" onClick={() => setPage("upload")}>
+          <span className="brand-dot" aria-hidden="true" />
+          <span>Replay</span>
           <TooltipBubble>Return to replay upload</TooltipBubble>
         </button>
-        <nav>
+        <nav aria-label="Primary navigation">
           <Button
             variant={page === "upload" ? "primary" : "ghost"}
             icon={<Upload size={16} />}
             tooltip="Upload or open a replay file"
+            aria-current={page === "upload" ? "page" : undefined}
             onClick={() => setPage("upload")}
           >
             Upload
@@ -36,11 +37,18 @@ export function App() {
             variant={page === "library" ? "primary" : "ghost"}
             icon={<FolderOpen size={16} />}
             tooltip="Open saved local replays"
+            aria-current={page === "library" ? "page" : undefined}
             onClick={() => setPage("library")}
           >
             Library
           </Button>
-          <Button variant={page === "replay" ? "primary" : "ghost"} tooltip="View the current replay" onClick={() => setPage("replay")}>
+          <Button
+            variant={page === "replay" ? "primary" : "ghost"}
+            icon={<MonitorPlay size={16} />}
+            tooltip="View the current replay"
+            aria-current={page === "replay" ? "page" : undefined}
+            onClick={() => setPage("replay")}
+          >
             Viewer
           </Button>
           {showDebugTools ? (
@@ -48,6 +56,7 @@ export function App() {
               variant={page === "debug" ? "primary" : "ghost"}
               icon={<Bug size={16} />}
               tooltip="Inspect replay parser and boost rendering details"
+              aria-current={page === "debug" ? "page" : undefined}
               onClick={() => setPage("debug")}
             >
               Debug
@@ -56,9 +65,11 @@ export function App() {
         </nav>
       </header>
       {page === "upload" ? <UploadPage onOpenReplay={() => setPage("replay")} /> : null}
-      {page === "library" ? <ReplayLibraryPage onOpenReplay={() => setPage("replay")} /> : null}
+      {page === "library" ? <ReplayLibraryPage onOpenReplay={() => setPage("replay")} onUpload={() => setPage("upload")} /> : null}
       <Suspense fallback={<main className="empty-state">Loading viewer...</main>}>
-        {page === "replay" ? <ReplayPage timeline={timeline} /> : null}
+        {page === "replay" ? (
+          <ReplayPage timeline={timeline} onUpload={() => setPage("upload")} onOpenLibrary={() => setPage("library")} />
+        ) : null}
         {showDebugTools && page === "debug" ? <DebugReplayPage /> : null}
       </Suspense>
     </div>

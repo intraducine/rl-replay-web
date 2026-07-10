@@ -38,9 +38,9 @@ describe("ReplayStorage", () => {
 
     expect(source).toContain("library-summary");
     expect(source).toContain("saved replays");
-    expect(source).toContain("used");
-    expect(source).toContain("No saved replays");
-    expect(source).toContain("Upload a replay or open the bundled sample");
+    expect(source).toContain("stored on this device");
+    expect(source).toContain("No saved replays yet");
+    expect(source).toContain("Open a replay once and it will stay available here on this device");
     expect(source).toContain('tooltip="Remove every saved replay from this browser"');
     expect(source).toContain('tooltip="Delete this saved replay"');
   });
@@ -49,6 +49,6 @@ describe("ReplayStorage", () => {
     const source = readFileSync(resolve(process.cwd(), "src/pages/ReplayLibraryPage.tsx"), "utf8");
 
     expect(source).toContain("setTimeline(undefined)");
-    expect(source).toContain("timeline?.metadata.id === record.id");
+    expect(source).toContain("timeline?.metadata.id === pending.record.id");
   });
 });

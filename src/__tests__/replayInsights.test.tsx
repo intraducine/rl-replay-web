@@ -83,14 +83,15 @@ describe("replay insights UI", () => {
     const { container } = render(<PlayerList timeline={timeline} />);
 
     expect(container.textContent).toContain("Kehvn");
-    expect(container.textContent).toContain("0 Goals");
-    expect(container.textContent).toContain("0 Saves");
-    expect(container.textContent).toContain("0 Shots");
-    expect(container.textContent).toContain("0 Demos");
+    expect(container.textContent).toContain("0 G");
+    expect(container.textContent).toContain("0 Sv");
+    expect(container.textContent).toContain("0 Sh");
+    expect(container.textContent).toContain("0 D");
     expect(container.textContent).not.toContain("616");
     expect(container.textContent).not.toContain("Paint");
     expect(container.textContent).not.toContain("ping");
-    expect(container.textContent).toContain("Rank not saved");
+    expect(container.textContent).not.toContain("Rank not saved");
+    expect(container.querySelector('[aria-label="0 goals"]')).not.toBeNull();
     expect(container.querySelector(".tooltip-bubble")).not.toBeNull();
   });
 
@@ -188,12 +189,12 @@ describe("replay insights UI", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
     expect(replayViewerSource).toContain('const playerCameraState = cameraMode === "player" ? samplePlayerCameraState(timeline, selectedPlayerId, currentTime) : undefined');
-    expect(replayViewerSource).toContain("const { playerOptions, playerIds, playerNameById } = useMemo(");
+    expect(replayViewerSource).toContain("const { playerOptions, playerIds, playerById, playerNameById } = useMemo(");
     expect(replayViewerSource).toContain("for (const player of timeline.metadata.players)");
     expect(replayViewerSource).toContain("ids.push(player.id)");
     expect(replayViewerSource).toContain("names.set(player.id, player.name)");
     expect(replayViewerSource).toContain("samplePlayerBoostsAt(timeline");
-    expect(replayViewerSource).not.toContain("timeline.metadata.players.map");
+    expect(replayViewerSource).toContain("new Map(timeline.metadata.players.map");
     expect(replayViewerSource).not.toContain("sampleTimeline(timeline, currentTime)");
     expect(replayViewerSource).not.toContain("boostByPlayerFromSample");
     expect(replayViewerSource).not.toContain("Object.fromEntries");
@@ -234,7 +235,8 @@ describe("replay insights UI", () => {
     expect(container.querySelector(".event-goal")).not.toBeNull();
     expect(container.querySelector(".event-save")).not.toBeNull();
     expect(container.querySelector(".event-demo")).not.toBeNull();
-    expect(container.querySelector(".event-track .event-goal .tooltip-bubble")?.textContent).toBe("goal");
+    expect(container.querySelector(".event-track .event-goal .tooltip-bubble")?.textContent).toBe("goal · 1:57");
+    expect(container.querySelector(".event-track .event-goal")?.getAttribute("aria-label")).toContain("Jump to goal at 1:57");
   });
 
   it("memoizes timeline event markers so playback progress updates less marker work", () => {
@@ -282,30 +284,28 @@ describe("replay insights UI", () => {
     expect(shortcutSource).not.toContain("useViewerStore((state) => state.seekBy)");
     expect(shortcutSource).not.toContain("useViewerStore((state) => state.setCurrentTime)");
     expect(shortcutSource).not.toContain("useViewerStore((state) => state.setPlaying)");
-    expect(source).toContain("Space Play/Pause");
-    expect(source).toContain("WASD Move");
-    expect(source).toContain("Q/E Down/Up");
-    expect(source).toContain("Mouse Drag Orbit");
+    expect(source).toContain("<kbd>Space</kbd> Play/Pause");
+    expect(source).toContain("<kbd>WASD</kbd> Move");
+    expect(source).toContain("<kbd>Q/E</kbd> Down/Up");
+    expect(source).toContain("<kbd>Mouse drag</kbd> Orbit");
     expect(source).toContain("TooltipBubble");
   });
 
-  it("uses a bounded speed slider and numeric input instead of a dropdown", () => {
+  it("uses a bounded speed menu that matches the broadcast replay rail", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
 
     expect(source).toContain('type="range"');
-    expect(source).toContain('type="number"');
+    expect(source).toContain('<select value={speed} aria-label="Playback speed"');
     expect(source).toContain("clampSpeed");
     expect(source).toContain("snapSpeedToStop");
-    expect(source).toContain('aria-label="Speed stops"');
-    expect(source).not.toContain("<Select");
+    expect(source).toContain("SPEED_STOPS.map");
   });
 
-  it("explains each sticky speed stop with a hover tooltip", () => {
+  it("explains the playback speed menu with a hover tooltip", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 
-    const stopTooltips = [...container.querySelectorAll(".speed-stops .tooltip-bubble")].map((node) => node.textContent);
-
-    expect(stopTooltips).toEqual(["Set playback speed to 0.25x", "Set playback speed to 0.5x", "Set playback speed to 1x", "Set playback speed to 2x", "Set playback speed to 4x"]);
+    expect(container.querySelector(".speed-select .tooltip-bubble")?.textContent).toBe("Playback speed");
+    expect(container.querySelectorAll('.speed-select option')).toHaveLength(5);
   });
 
   it("explains the viewer selector controls with hover tooltips", () => {

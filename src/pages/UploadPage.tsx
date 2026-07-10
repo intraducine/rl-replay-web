@@ -49,7 +49,7 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
   return (
     <main className="page upload-page">
       <section className="upload-workspace">
-        <FileDropzone onFile={parseFile} />
+        <FileDropzone onFile={parseFile} disabled={parsing} />
         <div className="upload-sidebar">
           <p className="project-label">Rocket League replay analysis</p>
           <h1>Open a Rocket League replay in a real-time 3D viewer.</h1>
@@ -72,15 +72,18 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
       </section>
       {parsing ? (
         <Panel title="Opening replay">
-          <div className="progress-row">
+          <div className="progress-row" aria-live="polite">
             <progress max={1} value={progress ?? 0.15} />
             <span>{progressStage || "Reading replay file"}</span>
           </div>
         </Panel>
       ) : null}
-      {error ? <div className="error-box">{error}</div> : null}
+      {error ? <div className="error-box" role="alert">{error}</div> : null}
       {timeline ? (
-        <Panel title="Last opened replay">
+        <Panel
+          title="Last opened replay"
+          actions={<Button variant="primary" onClick={onOpenReplay}>Open viewer</Button>}
+        >
           <dl className="metadata-grid replay-summary-grid">
             <div>
               <dt>Name</dt>
@@ -88,7 +91,7 @@ export function UploadPage({ onOpenReplay }: { onOpenReplay: () => void }) {
             </div>
             <div>
               <dt>Map</dt>
-              <dd>{timeline.metadata.mapName ?? "Unknown"}</dd>
+              <dd>{timeline.metadata.mapName?.toLowerCase() === "cs_p" ? "Champions Field" : timeline.metadata.mapName ?? "Unknown"}</dd>
             </div>
             <div>
               <dt>Players</dt>

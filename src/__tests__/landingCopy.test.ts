@@ -53,11 +53,10 @@ describe("landing page copy and favicon", () => {
   it("keeps upload and opened-replay summary layouts compact", () => {
     const css = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
-    expect(css).toContain("min-height: 220px");
+    expect(css).toContain("min-height: 390px");
     expect(css).toContain(".replay-summary-grid");
-    expect(css).toContain("repeat(3, minmax(88px, max-content))");
-    expect(css).toContain("justify-content: start");
-    expect(css).toContain(".replay-summary-grid div:first-child");
-    expect(css).toContain("max-width: min(420px, 100%)");
+    expect(css).toContain("repeat(3, minmax(88px, 1fr))");
+    expect(css).toContain(".upload-workspace");
+    expect(css).toContain("width: min(1120px, 100%)");
   });
 });

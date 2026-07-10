@@ -1,6 +1,6 @@
-import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { PNG } from "pngjs";
 import { describe, expect, it } from "vitest";
 
 type ScrapedTextureManifest = {
@@ -209,17 +209,23 @@ describe("Champions Field color contract", () => {
 });
 
 function identifyGeometry(path: string) {
-  return execFileSync("magick", ["identify", "-format", "%wx%h", path], { encoding: "utf8" });
+  const image = PNG.sync.read(readFileSync(path));
+  return `${image.width}x${image.height}`;
 }
 
 function averageRgb(path: string) {
-  const pixel = execFileSync("magick", [path, "-resize", "1x1!", "txt:-"], { encoding: "utf8" })
-    .split("\n")
-    .find((line) => line.includes("srgb("));
-  if (!pixel) throw new Error(`Unable to read average pixel for ${path}`);
-  const rgb = pixel.match(/\((\d+),(\d+),(\d+)\)/);
-  if (!rgb) throw new Error(`Unable to parse average pixel for ${path}: ${pixel}`);
-  return rgb.slice(1).map(Number);
+  const image = PNG.sync.read(readFileSync(path));
+  const totals = [0, 0, 0];
+  let totalAlpha = 0;
+  for (let offset = 0; offset < image.data.length; offset += 4) {
+    const alpha = image.data[offset + 3] / 255;
+    totals[0] += image.data[offset] * alpha;
+    totals[1] += image.data[offset + 1] * alpha;
+    totals[2] += image.data[offset + 2] * alpha;
+    totalAlpha += alpha;
+  }
+  if (totalAlpha === 0) throw new Error(`Unable to read visible pixels for ${path}`);
+  return totals.map((value) => Math.round(value / totalAlpha));
 }
 
 function maxChannelDelta([r, g, b]: number[]) {

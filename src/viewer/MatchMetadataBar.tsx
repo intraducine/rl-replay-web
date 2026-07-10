@@ -19,7 +19,7 @@ export function MatchMetadataBar({ timeline }: { timeline: ReplayTimeline }) {
   ].filter((item): item is { value: string; tooltip: string } => Boolean(item));
 
   return (
-    <div className="match-metadata-bar">
+    <div className="match-metadata-bar" aria-label="Replay details">
       {items.map((item, index) => (
         <span key={`${item.value}-${index}`} className="tooltip-target">
           {item.value}

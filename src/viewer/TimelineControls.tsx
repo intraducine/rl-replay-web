@@ -1,9 +1,8 @@
-import { Pause, Play, RotateCcw, StepBack, StepForward } from "lucide-react";
+import { Pause, Play, RotateCcw, SkipBack, SkipForward, StepBack, StepForward } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import { useViewerStore } from "../state/viewerStore";
 import { Button } from "../ui/Button";
-import { Slider } from "../ui/Slider";
 import { TooltipBubble } from "../ui/Tooltip";
 import { stepFrame } from "./PlaybackController";
 
@@ -36,197 +35,83 @@ export function TimelineControls({ events = [], status }: { events?: Array<{ t: 
   useTimelineKeyboardShortcuts();
 
   return (
-    <div className="timeline-controls">
-      <div className="timeline-status-dock" aria-label="Replay playback status">
-        <StatusChip label="State" value={playing ? "Playing" : "Paused"} tone={playing ? "live" : "idle"} />
-        <StatusChip label="Now" value={`${formatTime(currentTime)} / ${formatTime(duration)}`} />
-        <StatusChip label="Left" value={`-${formatTime(remainingTime)}`} />
-        <StatusChip label="Speed" value={`${formatSpeed(speed)}x`} />
-        {status ? (
-          <>
-            <StatusChip label="Camera" value={status.cameraLabel} />
-            {status.playerName ? <StatusChip label="Player" value={status.playerName} /> : null}
-            <StatusChip label="Boost" value={status.boostRenderingEnabled ? "On" : "Off"} tone={status.boostRenderingEnabled ? "live" : "idle"} />
-          </>
-        ) : null}
-      </div>
-      <div className="timeline-shell">
-        <Slider
-          label="Timeline"
-          valueLabel={`${formatTime(currentTime)} / ${formatTime(duration)}`}
-          min={0}
-          max={Math.max(duration, 1)}
-          step={0.01}
-          value={currentTime}
-          onChange={(event) => setCurrentTime(Number(event.currentTarget.value))}
-        />
-        <div className="event-track" aria-label="Replay event markers">
-          <span className="event-track-progress" style={{ width: `${percent}%` }} />
-          {eventMarkers.map((event) => (
-            <i
-              key={event.key}
-              className={`event-${event.type} tooltip-target`}
-              style={{ left: event.left }}
-              aria-label={event.label}
-            >
-              <TooltipBubble>{event.label}</TooltipBubble>
-            </i>
-          ))}
-        </div>
-      </div>
-      <div className="control-row">
-        <div className="transport-controls">
-          <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart" className="tooltip-target">
-            <TooltipBubble>Restart replay</TooltipBubble>
-          </Button>
-          <Button onClick={() => seekBy(-5)} className="tooltip-target">
-            −5s
-            <TooltipBubble>Jump backward 5 seconds</TooltipBubble>
-          </Button>
-          <Button
-            icon={<StepBack size={16} />}
-            onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))}
-            aria-label="Previous frame"
-            className="tooltip-target"
-          >
-            <TooltipBubble>Previous frame</TooltipBubble>
-          </Button>
-          <Button
-            variant="primary"
-            icon={playing ? <Pause size={16} /> : <Play size={16} />}
-            onClick={() => setPlaying(!playing)}
-            className="tooltip-target"
-          >
-            {playing ? "Pause" : "Play"}
-            <TooltipBubble>Play or pause replay</TooltipBubble>
-          </Button>
-          <Button
-            icon={<StepForward size={16} />}
-            onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))}
-            aria-label="Next frame"
-            className="tooltip-target"
-          >
-            <TooltipBubble>Next frame</TooltipBubble>
-          </Button>
-          <Button onClick={() => seekBy(5)} className="tooltip-target">
-            +5s
-            <TooltipBubble>Jump forward 5 seconds</TooltipBubble>
-          </Button>
-        </div>
-        <div className="speed-control">
-          <label className="speed-slider tooltip-target">
-            <span>Speed</span>
+    <div className="timeline-controls" aria-label="Replay playback controls">
+      <div className="timeline-line">
+        <span className="timeline-time" aria-label={`${formatTime(currentTime)} of ${formatTime(duration)}`}>
+          <strong>{formatTime(currentTime)}</strong><span>/ {formatTime(duration)}</span>
+        </span>
+        <div className="timeline-scrubber">
+          <label>
+            <span className="sr-only">Replay timeline</span>
             <input
               type="range"
-              min={MIN_SPEED}
-              max={MAX_SPEED}
+              min={0}
+              max={Math.max(duration, 1)}
               step={0.01}
-              list="speed-stops"
-              value={speed}
-              onChange={(event) => setSpeed(snapSpeedToStop(Number(event.currentTarget.value)))}
+              value={currentTime}
+              aria-label="Timeline"
+              aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
+              onChange={(event) => setCurrentTime(Number(event.currentTarget.value))}
             />
-            <datalist id="speed-stops">
-              {SPEED_STOPS.map((value) => (
-                <option key={value} value={value} label={`${value}x`} />
-              ))}
-            </datalist>
-            <span className="speed-stops" aria-label="Speed stops">
-              {SPEED_STOPS.map((value) => (
-                <button key={value} type="button" className="tooltip-target" onClick={() => setSpeed(value)} aria-label={`Set speed to ${value}x`}>
-                  {value}x
-                  <TooltipBubble>Set playback speed to {value}x</TooltipBubble>
-                </button>
-              ))}
-            </span>
-            <TooltipBubble>Playback speed</TooltipBubble>
           </label>
-          <label className="speed-input tooltip-target">
-            <span className="sr-only">Playback speed value</span>
-            <input
-              type="number"
-              min={MIN_SPEED}
-              max={MAX_SPEED}
-              step={0.25}
-              value={speed}
-              onChange={(event) => setSpeed(clampSpeed(Number(event.currentTarget.value)))}
-            />
-            <span>x</span>
-            <TooltipBubble>Enter playback speed from 0.25x to 4x</TooltipBubble>
-          </label>
+          <div className="event-track" aria-label="Replay event markers">
+            <span className="event-track-progress" style={{ width: `${percent}%` }} />
+            {eventMarkers.map((event) => (
+              <button
+                type="button"
+                key={event.key}
+                className={`event-${event.type} tooltip-target`}
+                style={{ left: event.left }}
+                aria-label={`Jump to ${event.label} at ${formatTime(event.t)}`}
+                onClick={() => setCurrentTime(event.t)}
+              >
+                <TooltipBubble>{event.label} · {formatTime(event.t)}</TooltipBubble>
+              </button>
+            ))}
+          </div>
         </div>
+        <span className="timeline-remaining"><b>{formatTime(remainingTime)}</b> left</span>
       </div>
+
+      <div className="control-row">
+        <span className="playback-state" aria-live="polite">{playing ? "Playing" : "Paused"}</span>
+        <div className="transport-controls">
+          <Button icon={<RotateCcw size={17} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" tooltip="Go to replay start" />
+          <Button onClick={() => seekBy(-5)} aria-label="Jump backward 5 seconds" tooltip="Jump backward 5 seconds">−5s</Button>
+          <Button icon={<StepBack size={18} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" tooltip="Previous frame" />
+          <Button
+            variant="primary"
+            icon={playing ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
+            onClick={() => setPlaying(!playing)}
+            aria-label={playing ? "Pause replay" : "Play replay"}
+            tooltip="Play or pause replay"
+          />
+          <Button icon={<StepForward size={18} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" tooltip="Next frame" />
+          <Button onClick={() => seekBy(5)} aria-label="Jump forward 5 seconds" tooltip="Jump forward 5 seconds">+5s</Button>
+          <Button icon={<SkipForward size={17} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" tooltip="Go to replay end" />
+        </div>
+        <label className="speed-select tooltip-target">
+          <span>Speed</span>
+          <select value={speed} aria-label="Playback speed" onChange={(event) => setSpeed(clampSpeed(Number(event.currentTarget.value)))}>
+            {SPEED_STOPS.map((value) => <option key={value} value={value}>{formatSpeed(value)}×</option>)}
+          </select>
+          <TooltipBubble>Playback speed</TooltipBubble>
+        </label>
+      </div>
+
       <div className="mobile-transport-controls" aria-label="Mobile playback controls">
-        <Button icon={<RotateCcw size={16} />} onClick={() => setCurrentTime(0)} aria-label="Restart replay" className="tooltip-target">
-          Restart
-          <TooltipBubble>Restart replay</TooltipBubble>
-        </Button>
-        <Button onClick={() => seekBy(-5)} className="tooltip-target">
-          −5s
-          <TooltipBubble>Jump backward 5 seconds</TooltipBubble>
-        </Button>
-        <Button
-          icon={<StepBack size={16} />}
-          onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))}
-          aria-label="Previous frame"
-          className="tooltip-target"
-        >
-          Frame
-          <TooltipBubble>Previous frame</TooltipBubble>
-        </Button>
-        <Button variant="primary" icon={playing ? <Pause size={16} /> : <Play size={16} />} onClick={() => setPlaying(!playing)} className="tooltip-target">
-          {playing ? "Pause" : "Play"}
-          <TooltipBubble>Play or pause replay</TooltipBubble>
-        </Button>
-        <Button
-          icon={<StepForward size={16} />}
-          onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))}
-          aria-label="Next frame"
-          className="tooltip-target"
-        >
-          Frame
-          <TooltipBubble>Next frame</TooltipBubble>
-        </Button>
-        <Button onClick={() => seekBy(5)} className="tooltip-target">
-          +5s
-          <TooltipBubble>Jump forward 5 seconds</TooltipBubble>
-        </Button>
+        <Button icon={<SkipBack size={16} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" tooltip="Go to replay start" />
+        <Button onClick={() => seekBy(-5)}>−5s</Button>
+        <Button variant="primary" icon={playing ? <Pause size={18} /> : <Play size={18} />} onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause replay" : "Play replay"} />
+        <Button onClick={() => seekBy(5)}>+5s</Button>
+        <Button icon={<SkipForward size={16} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" tooltip="Go to replay end" />
       </div>
-      <div className="control-help" aria-label="Playback shortcuts">
-        <span className="tooltip-target">
-          Space Play/Pause
-          <TooltipBubble>Press Space to pause or resume playback</TooltipBubble>
-        </span>
-        <span className="tooltip-target">
-          ←/→ 5s
-          <TooltipBubble>Press Left or Right to jump five seconds</TooltipBubble>
-        </span>
-        <span className="tooltip-target">
-          Shift + ←/→ 1s
-          <TooltipBubble>Hold Shift with Left or Right to scrub one second</TooltipBubble>
-        </span>
-        <span className="tooltip-target">
-          WASD Move
-          <TooltipBubble>Move the free camera across the field</TooltipBubble>
-        </span>
-        <span className="tooltip-target">
-          Q/E Down/Up
-          <TooltipBubble>Move the free camera vertically</TooltipBubble>
-        </span>
-        <span className="tooltip-target">
-          Mouse Drag Orbit
-          <TooltipBubble>Drag in free camera to look around</TooltipBubble>
-        </span>
+
+      <div className="sr-only" aria-label="Replay playback status">
+        {status ? `${status.cameraLabel} camera. ${status.playerName ?? "No player selected"}. Boost rendering ${status.boostRenderingEnabled ? "on" : "off"}.` : null}
+        <kbd>Space</kbd> Play/Pause. <kbd>WASD</kbd> Move. <kbd>Q/E</kbd> Down/Up. <kbd>Mouse drag</kbd> Orbit.
       </div>
     </div>
-  );
-}
-
-function StatusChip({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "live" | "idle" }) {
-  return (
-    <span className={`timeline-status-chip ${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </span>
   );
 }
 
@@ -266,15 +151,13 @@ function eventLabel(event: { t: number; type: string; label?: string }) {
 
 function replayEventMarkers(events: Array<{ t: number; type: string; label?: string }>, duration: number) {
   const safeDuration = Math.max(duration, 1);
-  return events.map((event, index) => {
-    const label = eventLabel(event);
-    return {
-      key: `${event.type}-${event.t}-${index}`,
-      type: event.type,
-      label,
-      left: `${(event.t / safeDuration) * 100}%`
-    };
-  });
+  return events.map((event, index) => ({
+    key: `${event.type}-${event.t}-${index}`,
+    type: event.type,
+    label: eventLabel(event),
+    t: event.t,
+    left: `${(event.t / safeDuration) * 100}%`
+  }));
 }
 
 export function clampSpeed(value: number): number {
