@@ -1,4 +1,6 @@
 import { ChevronLeft, ChevronRight, Users, X } from "lucide-react";
+import { CircularProgressbar } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 import { useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { samplePlayerBoostsAt, samplePlayerCameraState, timelineDuration } from "../replay/ReplayTimeline";
@@ -77,6 +79,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const statsByPlayer = livePlayerStatsByPlayerAt(timeline, currentTime);
   const selectedStats = selectedPlayerId ? statsByPlayer[selectedPlayerId] : undefined;
   const selectedBoost = selectedPlayerId ? boostByPlayer[selectedPlayerId] : undefined;
+  const selectedBoostValue = Math.max(0, Math.min(100, selectedBoost ?? 0));
 
   useEffect(() => {
     setDuration(timelineDuration(timeline));
@@ -173,11 +176,17 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
             </div>
           </div>
           <div className="selected-player-boost" aria-label={`${Math.round(selectedBoost ?? 0)} percent boost`}>
-            <strong>{Math.round(selectedBoost ?? 0)}</strong>
+            <CircularProgressbar value={selectedBoostValue} text={`${Math.round(selectedBoostValue)}`} strokeWidth={10} />
             <span>Boost</span>
           </div>
-          {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? <div className="ball-cam-indicator">Ball cam</div> : null}
         </section>
+      ) : null}
+
+      {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? (
+        <div className="ball-cam-warning" role="status" aria-live="polite">
+          <strong>Ball cam</strong>
+          <span>Camera locked to ball</span>
+        </div>
       ) : null}
 
       {showDebugControls ? (

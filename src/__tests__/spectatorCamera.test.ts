@@ -48,7 +48,9 @@ describe("cameraRigForMode", () => {
     );
 
     expect(rig.position).toEqual([730, 150, 2000]);
-    expect(rig.target).toEqual([1080, 140, 2000]);
+    expect(rig.target[0]).toBeCloseTo(1080);
+    expect(rig.target[1]).toBeCloseTo(135.85, 1);
+    expect(rig.target[2]).toBeCloseTo(2000);
     expect(rig.up).toEqual([0, 1, 0]);
     expect(rig.fov).toBe(110);
   });
@@ -68,7 +70,9 @@ describe("cameraRigForMode", () => {
       { playerId: "p1", t: 0, settings: { fov: 110, height: 100, angle: -3, distance: 270, stiffness: 0.35, swivel: 7 } }
     );
 
-    expect(rig.target).toEqual([1080, 140, 2000]);
+    expect(rig.target[0]).toBeCloseTo(1080);
+    expect(rig.target[1]).toBeCloseTo(135.85, 1);
+    expect(rig.target[2]).toBeCloseTo(2000);
     expect(rig.ballCam).toBe(false);
   });
 
@@ -91,6 +95,20 @@ describe("cameraRigForMode", () => {
     expect(rig.position[1]).toBeCloseTo(150);
     expect(rig.position[2]).toBeCloseTo(2270);
     expect(rig.target).toEqual([1000, 220, 1200]);
+  });
+
+  it("keeps the ball camera safely above and behind ball travel", () => {
+    const rig = cameraRigForMode("ball", {
+      t: 0,
+      ball: { position: [0, 100, 0], rotation: [0, 0, 0, 1], velocity: [1200, 200, 0] },
+      cars: {}
+    });
+
+    expect(rig.position[0]).toBeLessThan(-1000);
+    expect(rig.position[1]).toBeGreaterThan(700);
+    expect(Math.hypot(rig.position[0], rig.position[1] - 100, rig.position[2])).toBeGreaterThan(1400);
+    expect(rig.target[0]).toBeGreaterThan(0);
+    expect(rig.fov).toBe(72);
   });
 
   it("chooses the car nearest the ball for director focus", () => {
@@ -181,8 +199,8 @@ describe("cameraRigForMode", () => {
     expect(cameraSource).toContain("directorEventsFor(events)");
     expect(cameraSource).not.toContain(".filter((candidate) => Math.abs(candidate.t - sample.t) < 3.5)");
     expect(cameraSource).not.toContain(".sort((a, b) => Math.abs(a.t - sample.t) - Math.abs(b.t - sample.t))");
-    expect(sceneRootSource).toContain('const cameraRigMode = state.cameraMode === "director" ? "player" : state.cameraMode');
-    expect(sceneRootSource).toContain("cameraRigMode,\n      sample,\n      cameraPlayerId,");
+    expect(sceneRootSource).toContain("state.cameraMode,\n      sample,\n      cameraPlayerId,");
+    expect(sceneRootSource).not.toContain("cameraRigMode");
   });
 
   it("reuses scratch vectors on the player camera hot path", () => {
@@ -219,7 +237,7 @@ describe("cameraRigForMode", () => {
     const cameraSource = readFileSync(resolve(process.cwd(), "src/viewer/SpectatorCamera.ts"), "utf8");
 
     expect(twoHalfFrames).toBeCloseTo(fullFrame);
-    expect(cameraSource).toContain("camera.position.lerp(cameraPosition, cameraSmoothingAlpha(deltaSeconds, 7.7))");
+    expect(cameraSource).toContain("camera.position.lerp(cameraPosition, cameraSmoothingAlpha(deltaSeconds, 30))");
     expect(cameraSource).not.toContain("camera.position.lerp(cameraPosition, 0.12)");
   });
 
@@ -296,13 +314,24 @@ describe("cameraRigForMode", () => {
     expect(cameraSource).not.toContain("new Vector3().copy(forward).cross(WORLD_UP)");
   });
 
-  it("starts free camera at its closest orbit distance for first-person-style control", () => {
+  it("implements free camera as in-place first-person look instead of an orbit", () => {
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
 
-    expect(sceneRootSource).toContain("const FREE_CAMERA_INITIAL_POSITION: [number, number, number] = [0, 160, 0]");
-    expect(sceneRootSource).toContain("const FREE_CAMERA_TARGET: [number, number, number] = [0, 160, -1]");
-    expect(sceneRootSource).toContain("const FREE_CAMERA_MIN_DISTANCE = 1");
-    expect(sceneRootSource).toContain("minDistance={FREE_CAMERA_MIN_DISTANCE}");
-    expect(sceneRootSource).toContain("target={FREE_CAMERA_TARGET}");
+    expect(sceneRootSource).toContain("const SAFE_INITIAL_CAMERA_POSITION: [number, number, number] = [0, 620, 1400]");
+    expect(sceneRootSource).toContain("function FirstPersonFreeCameraControls");
+    expect(sceneRootSource).toContain('new THREE.Euler(0, 0, 0, "YXZ")');
+    expect(sceneRootSource).toContain('canvas.addEventListener("pointerdown", handlePointerDown)');
+    expect(sceneRootSource).toContain("camera.quaternion.setFromEuler(yawPitch)");
+    expect(sceneRootSource).not.toContain("OrbitControls");
+  });
+
+  it("attaches replay cameras directly to interpolated state while easing director cuts", () => {
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+
+    expect(sceneRootSource).toContain('state.cameraMode !== "director"');
+    expect(sceneRootSource).toContain("camera.position.copy(tmpDesired)");
+    expect(sceneRootSource).toContain("smoothedTarget.current.copy(tmpTarget)");
+    expect(sceneRootSource).toContain("camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, 10.5))");
+    expect(sceneRootSource).toContain("externalSeek || cameraChanged");
   });
 });

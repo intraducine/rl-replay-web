@@ -287,7 +287,7 @@ describe("replay insights UI", () => {
     expect(source).toContain("<kbd>Space</kbd> Play/Pause");
     expect(source).toContain("<kbd>WASD</kbd> Move");
     expect(source).toContain("<kbd>Q/E</kbd> Down/Up");
-    expect(source).toContain("<kbd>Mouse drag</kbd> Orbit");
+    expect(source).toContain("<kbd>Mouse drag</kbd> Look");
     expect(source).toContain("TooltipBubble");
   });
 

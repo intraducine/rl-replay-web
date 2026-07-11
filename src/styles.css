@@ -226,7 +226,7 @@ progress { width: 100%; height: 8px; accent-color: var(--cyan); }
 .error-box { width: min(1120px, 100%); padding: 12px 14px; border: 1px solid rgba(255, 95, 103, .55); color: #ffd1d3; background: rgba(255, 95, 103, .1); }
 
 .viewer {
-  --bottom-rail: 174px;
+  --bottom-rail: 190px;
   position: relative;
   width: 100%;
   height: 100%;
@@ -235,8 +235,26 @@ progress { width: 100%; height: 8px; accent-color: var(--cyan); }
   background: #050c11;
 }
 
-.app:has(.viewer) { height: 100vh; min-height: 0; }
+.app:has(.viewer) { position: relative; display: block; height: 100vh; min-height: 0; }
 @supports (height: 100dvh) { .app:has(.viewer) { height: 100dvh; } }
+.app:has(.viewer) .app-header {
+  position: absolute;
+  z-index: 20;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  width: auto;
+  min-height: 50px;
+  padding: 5px 9px;
+  border: 1px solid rgba(126, 157, 177, .3);
+  border-radius: 12px;
+  background: rgba(5, 14, 21, .91);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .34);
+  backdrop-filter: blur(14px);
+}
+.app:has(.viewer) .brand { min-height: 38px; padding-right: 14px; }
+.app:has(.viewer) .app-header nav { width: auto; }
+.app:has(.viewer) .app-header nav .button { min-height: 38px; }
 .viewer canvas { display: block; width: 100% !important; height: 100% !important; max-width: 100%; }
 
 .viewer-overlay { position: absolute; z-index: 6; pointer-events: none; }
@@ -260,18 +278,22 @@ progress { width: 100%; height: 8px; accent-color: var(--cyan); }
 .camera-segment.boost:has(input:checked) { color: var(--cyan); background: rgba(140, 233, 231, .08); }
 .camera-segment.boost:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 2px; }
 
-.selected-player-hud { position: absolute; z-index: 7; bottom: calc(var(--bottom-rail) + 24px); left: 22px; display: grid; grid-template-columns: minmax(220px, 1fr) 76px; align-items: center; width: min(390px, calc(100% - 44px)); min-height: 82px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .16); border-left: 8px solid var(--blue); background: rgba(8, 18, 27, .92); box-shadow: 0 12px 34px rgba(0, 0, 0, .34); }
+.selected-player-hud { position: absolute; z-index: 7; bottom: calc(var(--bottom-rail) + 24px); left: 24px; display: grid; grid-template-columns: minmax(220px, 1fr) 82px; align-items: center; width: min(410px, calc(100% - 48px)); min-height: 84px; overflow: hidden; border: 1px solid rgba(255, 255, 255, .16); border-left: 9px solid var(--blue); background: rgba(8, 18, 27, .94); box-shadow: 0 12px 34px rgba(0, 0, 0, .34); clip-path: polygon(2% 0, 91% 0, 100% 100%, 0 100%); }
 .selected-player-hud.orange { border-left-color: var(--orange); }
 .selected-player-copy { display: grid; gap: 3px; padding: 11px 16px; }
 .selected-player-copy > span { color: var(--muted); font-size: .63rem; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
 .selected-player-copy > strong { overflow: hidden; color: var(--text); font-size: 1.45rem; font-style: italic; font-weight: 950; letter-spacing: .02em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
 .selected-player-stats { display: flex; gap: 12px; color: var(--muted); font-size: .68rem; font-weight: 850; }
 .selected-player-stats b { color: var(--text); }
-.selected-player-boost { display: grid; place-items: center; align-content: center; width: 58px; height: 58px; border: 4px solid var(--blue); border-right-color: #2b3c47; border-radius: 50%; }
-.orange .selected-player-boost { border-color: var(--orange); border-right-color: #2b3c47; }
-.selected-player-boost strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
-.selected-player-boost span { color: var(--muted); font-size: .52rem; font-weight: 900; text-transform: uppercase; }
-.ball-cam-indicator { position: absolute; right: 6px; bottom: 4px; color: var(--cyan); font-size: .55rem; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+.selected-player-boost { position: relative; width: 64px; height: 64px; }
+.viewer .selected-player-boost .CircularProgressbar .CircularProgressbar-path { stroke: var(--blue); transition: stroke-dashoffset 100ms linear; }
+.viewer .selected-player-hud.orange .selected-player-boost .CircularProgressbar-path { stroke: var(--orange); }
+.viewer .selected-player-boost .CircularProgressbar .CircularProgressbar-trail { stroke: #2a3b48; }
+.viewer .selected-player-boost .CircularProgressbar .CircularProgressbar-text { fill: var(--text); font-size: 28px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.selected-player-boost > span { position: absolute; right: 0; bottom: 5px; left: 0; color: var(--muted); font-size: .47rem; font-weight: 900; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+.ball-cam-warning { position: absolute; z-index: 8; bottom: calc(var(--bottom-rail) + 30px); left: 50%; display: grid; justify-items: center; gap: 1px; padding: 5px 16px 6px; border-top: 2px solid #ff5b45; border-bottom: 2px solid #ff5b45; color: #ff6a53; background: rgba(24, 5, 4, .78); text-transform: uppercase; transform: translateX(-50%); text-shadow: 0 0 12px rgba(255, 64, 40, .66); }
+.ball-cam-warning strong { font-size: .83rem; font-style: italic; letter-spacing: .12em; }
+.ball-cam-warning span { color: #ffb0a5; font-size: .5rem; font-weight: 800; letter-spacing: .09em; }
 
 .roster-tab { position: absolute; z-index: 8; top: 48%; left: 0; display: grid; grid-template-columns: auto auto; place-items: center; gap: 4px; width: 58px; height: 62px; padding: 0; border: 1px solid var(--line); border-left: 0; border-radius: 0 6px 6px 0; color: var(--text); background: rgba(7, 16, 24, .94); cursor: pointer; }
 .roster-tab .tooltip-bubble { top: 50%; bottom: auto; left: calc(100% + 8px); transform: translate(4px, -50%); }
@@ -373,8 +395,8 @@ pre { overflow: auto; max-height: 360px; margin: 8px 0 0; padding: 12px; backgro
 @media (max-width: 1000px) {
   .debug-page { grid-template-columns: 1fr; }
   .debug-page > .panel:first-child { grid-row: auto; }
-  .broadcast-scoreboard { top: 12px; }
-  .camera-dock { top: 88px; right: 12px; }
+  .broadcast-scoreboard { top: 80px; }
+  .camera-dock { top: 16px; right: 12px; }
 }
 
 @media (max-width: 760px) {
@@ -393,20 +415,26 @@ pre { overflow: auto; max-height: 360px; margin: 8px 0 0; padding: 12px; backgro
   .capability-list { grid-template-columns: 1fr; }
   .replay-summary-grid { grid-template-columns: 1fr 1fr; }
 
-  .viewer { --bottom-rail: 166px; min-height: calc(100vh - 93px); }
-  @supports (height: 100dvh) { .viewer { min-height: calc(100dvh - 93px); } }
+  .app:has(.viewer) .app-header { top: 8px; right: 8px; left: 8px; display: flex; gap: 3px; min-height: 46px; padding: 3px 5px; }
+  .app:has(.viewer) .brand { min-height: 38px; padding: 0 8px 0 4px; font-size: .92rem; }
+  .app:has(.viewer) .app-header nav { display: grid; flex: 1; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  .app:has(.viewer) .app-header nav .button { min-height: 38px; }
+  .viewer { --bottom-rail: 170px; min-height: 100vh; }
+  @supports (height: 100dvh) { .viewer { min-height: 100dvh; } }
+  .broadcast-scoreboard { top: 62px; }
   .scoreboard { grid-template-columns: 50px 88px 50px; min-height: 50px; }
   .scoreboard > div { padding: 7px 9px; font-size: 1.4rem; }
   .scoreboard .clock { font-size: 1.25rem; }
-  .camera-dock { top: 70px; right: 8px; left: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .camera-dock { top: 120px; right: 8px; left: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .camera-segment { min-width: 0; }
   .camera-segment select { padding: 0 5px; }
   .roster-tab { top: 42%; width: 48px; }
   .roster-drawer { top: 64px; bottom: calc(var(--bottom-rail) + 8px); }
-  .selected-player-hud { bottom: calc(var(--bottom-rail) + 12px); left: 10px; grid-template-columns: minmax(0, 1fr) 62px; width: min(330px, calc(100% - 20px)); min-height: 70px; }
+  .selected-player-hud { bottom: calc(var(--bottom-rail) + 12px); left: 10px; grid-template-columns: minmax(0, 1fr) 62px; width: min(330px, calc(100% - 20px)); min-height: 70px; clip-path: polygon(2% 0, 92% 0, 100% 100%, 0 100%); }
   .selected-player-copy { padding: 8px 12px; }
   .selected-player-copy > strong { font-size: 1.1rem; }
-  .selected-player-boost { width: 49px; height: 49px; }
+  .selected-player-boost { width: 50px; height: 50px; }
+  .ball-cam-warning { bottom: calc(var(--bottom-rail) + 94px); }
   .viewer-overlay.debug { display: none; }
   .timeline-controls { min-height: var(--bottom-rail); gap: 12px; padding: 12px 10px 14px; }
   .timeline-line { grid-template-columns: auto minmax(0, 1fr); gap: 9px; }

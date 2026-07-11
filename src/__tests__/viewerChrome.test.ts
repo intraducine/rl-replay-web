@@ -9,7 +9,7 @@ describe("viewer chrome layout", () => {
     const css = styles();
     const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
-    expect(css).toContain("--bottom-rail: 174px");
+    expect(css).toContain("--bottom-rail: 190px");
     expect(css).toContain(".broadcast-scoreboard");
     expect(css).toContain("left: 50%");
     expect(css).toContain(".camera-dock");
@@ -56,8 +56,32 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("grid-template-columns: repeat(5, minmax(0, 1fr))");
     expect(css).toContain("@media (pointer: coarse)");
     expect(css).toContain("min-height: 44px");
-    expect(css).toContain("min-height: calc(100dvh - 93px)");
+    expect(css).toContain("min-height: 100dvh");
     expect(source).toContain('aria-label="Mobile playback controls"');
+  });
+
+  it("renders a live circular boost meter and a separate red ball-cam warning", () => {
+    const css = styles();
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
+
+    expect(source).toContain("CircularProgressbar");
+    expect(source).toContain("value={selectedBoostValue}");
+    expect(source).toContain('className="ball-cam-warning"');
+    expect(source).not.toContain("ball-cam-indicator");
+    expect(css).toContain(".CircularProgressbar-path");
+    expect(css).toContain("stroke-dashoffset 100ms linear");
+    expect(css).toContain(".ball-cam-warning");
+    expect(css).toContain("color: #ff6a53");
+  });
+
+  it("floats the replay header over the field like the selected reference", () => {
+    const css = styles();
+    const app = readFileSync(resolve(process.cwd(), "src/App.tsx"), "utf8");
+
+    expect(css).toContain(".app:has(.viewer) .app-header");
+    expect(css).toContain("backdrop-filter: blur(14px)");
+    expect(css).toContain("border-radius: 12px");
+    expect(app).toContain('page !== "replay"');
   });
 
   it("provides visible keyboard focus and reduced-motion behavior", () => {

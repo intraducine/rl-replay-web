@@ -1,6 +1,5 @@
-import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { forwardRef, useEffect, useMemo, useRef, type ElementRef, type ForwardedRef, type RefObject } from "react";
+import { forwardRef, useEffect, useMemo, useRef, type ForwardedRef } from "react";
 import * as THREE from "three";
 import { useShallow } from "zustand/shallow";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -37,8 +36,7 @@ import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 const PLAYBACK_UI_COMMIT_FPS = 30;
 const PLAYBACK_UI_COMMIT_INTERVAL_SECONDS = 1 / PLAYBACK_UI_COMMIT_FPS;
 const EXTERNAL_SEEK_EPSILON_SECONDS = 0.05;
-const FIELD_SHADOW_CATCHER_Y = 2;
-const PROJECTED_SHADOW_Y = FIELD_SHADOW_CATCHER_Y + 0.6;
+const PROJECTED_SHADOW_Y = 12;
 const PROJECTED_SHADOW_BASE_OPACITY = 0.28;
 const SHADOW_LIGHT_DIRECTION = new Vector3(2600, 6200, 3400).normalize();
 const SHADOW_QUATERNION = new THREE.Quaternion();
@@ -51,10 +49,9 @@ type AlphaBoostFlameWindow = {
   spawnAges: number[];
 };
 type AlphaBoostFlameWindowCache = Map<string, AlphaBoostFlameWindow>;
-const FREE_CAMERA_INITIAL_POSITION: [number, number, number] = [0, 160, 0];
-const FREE_CAMERA_TARGET: [number, number, number] = [0, 160, -1];
-const FREE_CAMERA_MIN_DISTANCE = 1;
-const FREE_CAMERA_MAX_DISTANCE = 12000;
+const SAFE_INITIAL_CAMERA_POSITION: [number, number, number] = [0, 620, 1400];
+const FREE_CAMERA_LOOK_SENSITIVITY = 0.0022;
+const FREE_CAMERA_PITCH_LIMIT = Math.PI / 2 - 0.035;
 type RocketLeagueRendererParameters = THREE.WebGLRendererParameters & {
   outputBufferType: THREE.TextureDataType;
 };
@@ -73,9 +70,20 @@ export function SceneRoot({ timeline }: { timeline: ReplayTimeline }) {
       cameraMode: state.cameraMode
     }))
   );
-  const orbitControlsRef = useRef<ElementRef<typeof OrbitControls> | null>(null);
   const normalized = useMemo(() => normalizeTimelineCoordinates(timeline, coordinateOptions), [timeline, coordinateOptions]);
   const initialSample = useMemo(() => sampleTimeline(normalized, useViewerStore.getState().currentTime), [normalized]);
+  const initialCameraRig = useMemo(
+    () =>
+      cameraRigForMode(
+        cameraMode,
+        initialSample,
+        selectedPlayerId,
+        normalized.events,
+        samplePlayerCameraState(normalized, selectedPlayerId, initialSample.t)
+      ),
+    [cameraMode, initialSample, normalized, selectedPlayerId]
+  );
+  const initialCameraPosition = cameraMode === "free" ? SAFE_INITIAL_CAMERA_POSITION : initialCameraRig.position;
 
   return (
     <Canvas
@@ -87,52 +95,33 @@ export function SceneRoot({ timeline }: { timeline: ReplayTimeline }) {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 0.96;
       }}
-      camera={{ position: FREE_CAMERA_INITIAL_POSITION, fov: 58, near: 0.1, far: 30000 }}
+      camera={{ position: initialCameraPosition, fov: initialCameraRig.fov ?? 58, near: 0.1, far: 30000 }}
     >
       <RocketLeagueLighting />
       <StandardArena />
-      <FieldShadowCatcher />
       <BoostPads />
       <ReplayObjects timeline={normalized} initialSample={initialSample} selectedPlayerId={selectedPlayerId} cameraMode={cameraMode} />
-      <FreeCameraKeyboardControls enabled={cameraMode === "free"} controlsRef={orbitControlsRef} />
-      <OrbitControls
-        ref={orbitControlsRef}
-        makeDefault
-        enabled={cameraMode === "free"}
-        target={FREE_CAMERA_TARGET}
-        minDistance={FREE_CAMERA_MIN_DISTANCE}
-        maxDistance={FREE_CAMERA_MAX_DISTANCE}
-      />
+      <FirstPersonFreeCameraControls enabled={cameraMode === "free"} />
       <RocketLeaguePostprocess />
     </Canvas>
   );
 }
 
-function FieldShadowCatcher() {
-  return (
-    <mesh position={[0, FIELD_SHADOW_CATCHER_Y, 0]} rotation-x={-Math.PI / 2} receiveShadow renderOrder={1}>
-      <planeGeometry args={[9800, 12200]} />
-      <shadowMaterial color="#020508" transparent opacity={0.88} depthWrite={false} />
-    </mesh>
-  );
-}
-
-function FreeCameraKeyboardControls({
-  enabled,
-  controlsRef
-}: {
-  enabled: boolean;
-  controlsRef: RefObject<ElementRef<typeof OrbitControls> | null>;
-}) {
-  const { camera } = useThree();
+function FirstPersonFreeCameraControls({ enabled }: { enabled: boolean }) {
+  const { camera, gl } = useThree();
   const activeIntents = useRef(new Set<FreeCameraMoveIntent>());
+  const looking = useRef(false);
   const movement = useMemo(() => new Vector3(), []);
   const forward = useMemo(() => new Vector3(), []);
   const right = useMemo(() => new Vector3(), []);
+  const yawPitch = useMemo(() => new THREE.Euler(0, 0, 0, "YXZ"), []);
 
   useEffect(() => {
     activeIntents.current.clear();
     if (!enabled) return;
+    const canvas = gl.domElement;
+    yawPitch.setFromQuaternion(camera.quaternion, "YXZ");
+    canvas.style.cursor = "grab";
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isEditableEventTarget(event.target)) return;
@@ -149,15 +138,47 @@ function FreeCameraKeyboardControls({
       event.preventDefault();
     };
 
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return;
+      looking.current = true;
+      canvas.style.cursor = "grabbing";
+      canvas.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (!looking.current) return;
+      yawPitch.y -= event.movementX * FREE_CAMERA_LOOK_SENSITIVITY;
+      yawPitch.x = THREE.MathUtils.clamp(
+        yawPitch.x - event.movementY * FREE_CAMERA_LOOK_SENSITIVITY,
+        -FREE_CAMERA_PITCH_LIMIT,
+        FREE_CAMERA_PITCH_LIMIT
+      );
+      camera.quaternion.setFromEuler(yawPitch);
+    };
+
+    const handlePointerUp = () => {
+      looking.current = false;
+      canvas.style.cursor = "grab";
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    canvas.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
 
     return () => {
       activeIntents.current.clear();
+      looking.current = false;
+      canvas.style.cursor = "";
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      canvas.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [enabled]);
+  }, [camera, enabled, gl, yawPitch]);
 
   useFrame((_, delta) => {
     if (!enabled || activeIntents.current.size === 0) return;
@@ -165,8 +186,6 @@ function FreeCameraKeyboardControls({
     if (displacement.lengthSq() === 0) return;
 
     camera.position.add(displacement);
-    controlsRef.current?.target.add(displacement);
-    controlsRef.current?.update();
   });
 
   return null;
@@ -285,6 +304,9 @@ function ReplayObjects({
   const tmpTarget = useMemo(() => new Vector3(), []);
   const tmpDesired = useMemo(() => new Vector3(), []);
   const smoothedTarget = useRef(new Vector3());
+  const cameraInitialized = useRef(false);
+  const previousCameraMode = useRef(cameraMode);
+  const previousCameraPlayerId = useRef(selectedPlayerId);
 
   useEffect(() => {
     alphaBoostFlameWindowCache.current.clear();
@@ -328,13 +350,17 @@ function ReplayObjects({
       alphaBoostFlameWindowCache.current
     );
 
-    if (state.cameraMode === "free") return;
+    if (state.cameraMode === "free") {
+      previousCameraMode.current = "free";
+      previousCameraPlayerId.current = state.selectedPlayerId;
+      cameraInitialized.current = false;
+      return;
+    }
 
     const cameraPlayerId =
       state.cameraMode === "director" ? directorTargetPlayerId(sample, timeline.events) ?? state.selectedPlayerId : state.selectedPlayerId;
-    const cameraRigMode = state.cameraMode === "director" ? "player" : state.cameraMode;
     const rig = cameraRigForMode(
-      cameraRigMode,
+      state.cameraMode,
       sample,
       cameraPlayerId,
       timeline.events,
@@ -349,9 +375,20 @@ function ReplayObjects({
       camera.updateProjectionMatrix();
     }
 
-    camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, 7.7));
-    smoothedTarget.current.lerp(tmpTarget, cameraSmoothingAlpha(delta, 11.9));
+    const cameraChanged = previousCameraMode.current !== state.cameraMode || previousCameraPlayerId.current !== cameraPlayerId;
+    const shouldSnap = !cameraInitialized.current || externalSeek || cameraChanged || state.cameraMode !== "director";
+
+    if (shouldSnap) {
+      camera.position.copy(tmpDesired);
+      smoothedTarget.current.copy(tmpTarget);
+    } else {
+      camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, 10.5));
+      smoothedTarget.current.lerp(tmpTarget, cameraSmoothingAlpha(delta, 13.5));
+    }
     camera.lookAt(smoothedTarget.current);
+    cameraInitialized.current = true;
+    previousCameraMode.current = state.cameraMode;
+    previousCameraPlayerId.current = cameraPlayerId;
   });
 
   return (
@@ -383,7 +420,7 @@ function ReplayObjects({
 }
 
 function shouldShowNameplate(cameraMode: string, selected: boolean): boolean {
-  return selected || cameraMode !== "player";
+  return !(cameraMode === "player" && selected);
 }
 
 type ProjectedCarShadowProps = object;

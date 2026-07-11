@@ -42,15 +42,16 @@ export function App() {
           >
             Library
           </Button>
-          <Button
-            variant={page === "replay" ? "primary" : "ghost"}
-            icon={<MonitorPlay size={16} />}
-            tooltip="View the current replay"
-            aria-current={page === "replay" ? "page" : undefined}
-            onClick={() => setPage("replay")}
-          >
-            Viewer
-          </Button>
+          {page !== "replay" ? (
+            <Button
+              variant="ghost"
+              icon={<MonitorPlay size={16} />}
+              tooltip="View the current replay"
+              onClick={() => setPage("replay")}
+            >
+              Viewer
+            </Button>
+          ) : null}
           {showDebugTools ? (
             <Button
               variant={page === "debug" ? "primary" : "ghost"}

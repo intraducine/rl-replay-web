@@ -1,4 +1,4 @@
-import { Camera, Quaternion, Vector3 } from "three";
+import { Camera, MathUtils, Quaternion, Vector3 } from "three";
 import type { ReplayCameraSample, ReplayEvent, ReplayTimeline, SampledReplayState } from "../replay/types";
 
 export type CameraMode = "free" | "ball" | "player" | "top-down" | "director";
@@ -34,7 +34,10 @@ const DEFAULT_CAMERA_SETTINGS = {
   transition: 1.5
 };
 const PLAYER_CAMERA_LOOK_AHEAD = 80;
-const PLAYER_CAMERA_TARGET_HEIGHT = 90;
+const BALL_CAMERA_DISTANCE = 1320;
+const BALL_CAMERA_HEIGHT = 720;
+const BALL_CAMERA_LOOK_AHEAD_SECONDS = 0.08;
+const BALL_CAMERA_MIN_TRAVEL_SPEED_SQ = 10_000;
 export const FREE_CAMERA_KEYBOARD_MOVE_SPEED = 3200;
 const WORLD_UP = new Vector3(0, 1, 0);
 const FALLBACK_BALL = new Vector3(0, 120, 0);
@@ -45,10 +48,11 @@ const TMP_BALL_POSITION = new Vector3();
 const TMP_CAMERA_DIRECTION = new Vector3();
 const TMP_CAMERA_POSITION = new Vector3();
 const TMP_CAMERA_TARGET = new Vector3();
+const TMP_BALL_TRAVEL = new Vector3();
 const TMP_NEAREST_BALL_POSITION = new Vector3();
 const TMP_NEAREST_CAR_POSITION = new Vector3();
 const PLAYER_CAMERA_HEIGHT_OFFSET = new Vector3(0, DEFAULT_CAMERA_SETTINGS.height, 0);
-const PLAYER_CAMERA_TARGET_HEIGHT_OFFSET = new Vector3(0, PLAYER_CAMERA_TARGET_HEIGHT, 0);
+const PLAYER_CAMERA_TARGET_HEIGHT_OFFSET = new Vector3();
 const DIRECTOR_EVENT_LOOKBACK_SECONDS = 3.5;
 
 type DirectorEventEntry = { event: ReplayEvent; focusPlayerId: string; index: number };
@@ -72,7 +76,8 @@ export function cameraRigForMode(
     return {
       position: [0, 9300, 0],
       target: [0, 0, 0],
-      up: [0, 0, -1]
+      up: [0, 0, -1],
+      fov: 58
     };
   }
 
@@ -81,7 +86,7 @@ export function cameraRigForMode(
     const forward = forwardVectorFromCar(selectedCar.rotation);
     const settings = playerCameraState?.settings ?? DEFAULT_CAMERA_SETTINGS;
     const usingBehindView = playerCameraState?.usingBehindView === true;
-    const usingBallCam = !usingBehindView && (playerCameraState ? playerCameraState.usingSecondaryCamera === true : true) && !!sample.ball;
+    const usingBallCam = !usingBehindView && playerCameraState?.usingSecondaryCamera === true && !!sample.ball;
     const ballPosition = sample.ball ? TMP_BALL_POSITION.fromArray(ball) : FALLBACK_BALL;
     const lookDirection = playerCameraLookDirection(usingBallCam, carPosition, forward, ballPosition);
     const cameraDirection = usingBehindView ? TMP_CAMERA_DIRECTION.copy(forward).negate() : TMP_CAMERA_DIRECTION.copy(lookDirection);
@@ -94,7 +99,13 @@ export function cameraRigForMode(
       : TMP_CAMERA_TARGET
           .copy(carPosition)
           .addScaledVector(usingBehindView ? TMP_CAMERA_DIRECTION.copy(forward).negate() : forward, PLAYER_CAMERA_LOOK_AHEAD)
-          .add(PLAYER_CAMERA_TARGET_HEIGHT_OFFSET);
+          .add(
+            PLAYER_CAMERA_TARGET_HEIGHT_OFFSET.set(
+              0,
+              settings.height + Math.tan(MathUtils.degToRad(settings.angle)) * settings.distance,
+              0
+            )
+          );
 
     return {
       position: vectorToTuple(cameraPosition),
@@ -106,17 +117,40 @@ export function cameraRigForMode(
   }
 
   if (mode === "ball" || !selectedCar) {
-    return {
-      position: [ball[0] + 1100, ball[1] + 780, ball[2] + 1250],
-      target: ball,
-      up: [0, 1, 0]
-    };
+    return ballCameraRig(sample, selectedCar);
   }
 
   return {
     position: [selectedPosition[0] + 900, selectedPosition[1] + 1350, selectedPosition[2] + 900],
     target: selectedPosition,
     up: [0, 1, 0]
+  };
+}
+
+function ballCameraRig(sample: SampledReplayState, selectedCar?: SampledReplayState["cars"][string]): CameraRig {
+  const ballPosition = sample.ball ? TMP_BALL_POSITION.fromArray(sample.ball.position) : FALLBACK_BALL;
+  const velocity = sample.ball?.velocity;
+  const travel = TMP_BALL_TRAVEL.set(velocity?.[0] ?? 0, 0, velocity?.[2] ?? 0);
+
+  if (travel.lengthSq() < BALL_CAMERA_MIN_TRAVEL_SPEED_SQ && selectedCar) {
+    travel.copy(ballPosition).sub(TMP_CAR_POSITION.fromArray(selectedCar.position));
+    travel.y = 0;
+  }
+  if (travel.lengthSq() < 0.0001) travel.set(0, 0, -1);
+  travel.normalize();
+
+  const position = TMP_CAMERA_POSITION
+    .copy(ballPosition)
+    .addScaledVector(travel, -BALL_CAMERA_DISTANCE)
+    .add(PLAYER_CAMERA_HEIGHT_OFFSET.setY(BALL_CAMERA_HEIGHT));
+  const target = TMP_CAMERA_TARGET.copy(ballPosition);
+  if (velocity) target.add(TMP_BALL_TRAVEL.set(velocity[0], velocity[1], velocity[2]).multiplyScalar(BALL_CAMERA_LOOK_AHEAD_SECONDS));
+
+  return {
+    position: vectorToTuple(position),
+    target: vectorToTuple(target),
+    up: [0, 1, 0],
+    fov: 72
   };
 }
 
@@ -236,7 +270,7 @@ export function setCameraLookAt(
   camera: { position: Vector3; lookAt: (v: Vector3) => void },
   deltaSeconds = 1 / 60
 ) {
-  camera.position.lerp(cameraPosition, cameraSmoothingAlpha(deltaSeconds, 7.7));
+  camera.position.lerp(cameraPosition, cameraSmoothingAlpha(deltaSeconds, 30));
   camera.lookAt(target);
 }
 
@@ -273,7 +307,6 @@ export function freeCameraKeyboardDisplacement(
   right = new Vector3()
 ): Vector3 {
   camera.getWorldDirection(forward);
-  forward.y = 0;
   if (forward.lengthSq() < 0.0001) {
     forward.set(0, 0, -1);
   } else {

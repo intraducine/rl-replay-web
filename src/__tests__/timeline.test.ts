@@ -225,7 +225,8 @@ describe("sampleTimeline", () => {
     const mathSource = readFileSync(resolve(process.cwd(), "src/math/interpolation.ts"), "utf8");
 
     expect(source).toContain("hermiteVec3(a.position, b.position, a.velocity, b.velocity, alpha, spanSeconds)");
-    expect(source).toContain("interpolate(previous.frame, next.frame, (t - previous.t) / span, span)");
+    expect(source).toContain("frameWithEstimatedVelocity(track, low - 1, low - 2, low, maxSpeed)");
+    expect(source).toContain("interpolate(previousFrame, nextFrame, (t - previous.t) / span, span)");
     expect(mathSource).toContain("export function hermiteVec3");
     expect(mathSource).toContain("function limitedHermiteTangent");
   });
@@ -277,7 +278,8 @@ describe("sampleTimeline", () => {
     expect(samplePlayerBoostsAt(boostTimeline, ["p1", "p2"], 0.75)).toEqual({ p1: 62.5, p2: 40 });
     expect(boostSamplerSource).toContain("findFramePairIndices(timeline.frames, timeSeconds)");
     expect(boostSamplerSource).not.toContain("sampleTimeline(");
-    expect(boostSamplerSource).not.toContain("buildSamplingIndex");
+    expect(boostSamplerSource).toContain("buildSamplingIndex");
+    expect(boostSamplerSource).toContain("isPlayerHiddenByDemo");
     expect(boostSamplerSource).not.toContain("interpolateRigidBody");
   });
 
@@ -295,6 +297,46 @@ describe("sampleTimeline", () => {
     expect(sampleTimeline(demoTimeline, 2).cars.p1).toBeUndefined();
     expect(sampleTimeline(demoTimeline, 3).cars.p1?.position).toEqual([-2048, 2560, 18]);
     expect(sampleTimeline(demoTimeline, 3).cars.p1?.boost).toBe(33);
+  });
+
+  it("uses demo events to hide stale victim actors until the detected respawn teleport", () => {
+    const demoTimeline: ReplayTimeline = {
+      ...timeline,
+      events: [{ type: "demo", t: 1, attackerId: "p2", victimId: "p1", label: "Demo" }],
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1], boost: 50 } } },
+        { t: 1, cars: { p1: { position: [100, 0, 0], rotation: [0, 0, 0, 1], boost: 20 } } },
+        { t: 4, cars: { p1: { position: [100, 0, 0], rotation: [0, 0, 0, 1], boost: 20 } } },
+        { t: 4.1, cars: { p1: { position: [-2048, 2560, 18], rotation: [0, 0, 0, 1], boost: 33 } } }
+      ]
+    };
+
+    expect(sampleTimeline(demoTimeline, 0.99).cars.p1).toBeDefined();
+    expect(sampleTimeline(demoTimeline, 1).cars.p1).toBeUndefined();
+    expect(sampleTimeline(demoTimeline, 4).cars.p1).toBeUndefined();
+    expect(samplePlayerBoostsAt(demoTimeline, ["p1"], 2)).toEqual({ p1: 0 });
+    expect(sampleTimeline(demoTimeline, 4.1).cars.p1?.position).toEqual([-2048, 2560, 18]);
+  });
+
+  it("estimates missing endpoint velocities for continuous sparse-sample motion", () => {
+    const sparseTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        { t: 0, cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1] } } },
+        { t: 1, cars: { p1: { position: [10, 0, 0], rotation: [0, 0, 0, 1] } } },
+        { t: 2, cars: { p1: { position: [30, 0, 0], rotation: [0, 0, 0, 1] } } }
+      ]
+    };
+
+    const before = sampleTimeline(sparseTimeline, 0.99).cars.p1.position[0];
+    const at = sampleTimeline(sparseTimeline, 1).cars.p1.position[0];
+    const after = sampleTimeline(sparseTimeline, 1.01).cars.p1.position[0];
+    const leftVelocity = (at - before) / 0.01;
+    const rightVelocity = (after - at) / 0.01;
+
+    expect(leftVelocity).toBeCloseTo(rightVelocity, 0);
+    expect(leftVelocity).toBeGreaterThan(10);
+    expect(rightVelocity).toBeLessThan(20);
   });
 
   it("samples boost active as a nearest replicated boolean instead of interpolating it", () => {
@@ -418,7 +460,8 @@ describe("sampleTimeline", () => {
     };
 
     expect(sampleCarDistanceWindow(movingTimeline, "p1", 2, 2)).toBeCloseTo(8);
-    expect(sampleCarDistanceWindow(movingTimeline, "p1", 2, 1.5)).toBeCloseTo(5.5);
+    expect(sampleCarDistanceWindow(movingTimeline, "p1", 2, 1.5)).toBeGreaterThan(5);
+    expect(sampleCarDistanceWindow(movingTimeline, "p1", 2, 1.5)).toBeLessThan(5.6);
   });
 
   it("samples car windows without invoking the full replay sampler for each point", () => {

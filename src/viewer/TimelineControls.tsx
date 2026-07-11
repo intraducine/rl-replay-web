@@ -109,7 +109,7 @@ export function TimelineControls({ events = [], status }: { events?: Array<{ t: 
 
       <div className="sr-only" aria-label="Replay playback status">
         {status ? `${status.cameraLabel} camera. ${status.playerName ?? "No player selected"}. Boost rendering ${status.boostRenderingEnabled ? "on" : "off"}.` : null}
-        <kbd>Space</kbd> Play/Pause. <kbd>WASD</kbd> Move. <kbd>Q/E</kbd> Down/Up. <kbd>Mouse drag</kbd> Orbit.
+        <kbd>Space</kbd> Play/Pause. <kbd>WASD</kbd> Move. <kbd>Q/E</kbd> Down/Up. <kbd>Mouse drag</kbd> Look.
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ type TimelineSamplingIndex = {
   ball: MotionKeyframe<RigidBodyFrame>[];
   cars: Map<string, MotionKeyframe<CarFrame>[]>;
   camera: Map<string, ReplayCameraSample[]>;
+  demoWindows: Map<string, Array<{ start: number; end: number }>>;
 };
 
 type CarDistanceSample = {
@@ -25,11 +26,13 @@ type CarWindowSamples = {
 
 const MOTION_EPSILON_SQ = 0.01;
 const ROTATION_DOT_EPSILON = 0.99999;
-const MAX_SMOOTH_SPAN_SECONDS = 0.75;
+const MAX_SMOOTH_SPAN_SECONDS = 1.25;
 const CAR_RESET_DISTANCE = 1800;
 const CAR_MAX_SPEED = 9000;
 const BALL_RESET_DISTANCE = 2600;
 const BALL_MAX_SPEED = 18000;
+const DEMO_RESPAWN_FALLBACK_SECONDS = 3.05;
+const DEMO_RESPAWN_MIN_TELEPORT_DISTANCE = 900;
 const TIME_CURSOR_LINEAR_SCAN_LIMIT = 48;
 const samplingIndexCache = new WeakMap<ReplayTimeline, TimelineSamplingIndex>();
 const carDistanceTrackCache = new WeakMap<ReplayTimeline, Map<string, CarDistanceSample[]>>();
@@ -75,7 +78,8 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
   const index: TimelineSamplingIndex = {
     ball: [],
     cars: new Map(),
-    camera: new Map()
+    camera: new Map(),
+    demoWindows: new Map()
   };
 
   for (const frame of timeline.frames) {
@@ -111,6 +115,19 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
       cumulative.push({ ...previous, ...sample, settings: sample.settings ?? previous?.settings });
     }
     index.camera.set(playerId, cumulative);
+  }
+
+  for (const event of timeline.events) {
+    if (event.type !== "demo" || !event.victimId) continue;
+    let windows = index.demoWindows.get(event.victimId);
+    if (!windows) {
+      windows = [];
+      index.demoWindows.set(event.victimId, windows);
+    }
+    windows.push({
+      start: event.t,
+      end: detectedRespawnTime(index.cars.get(event.victimId), event.t) ?? event.t + DEMO_RESPAWN_FALLBACK_SECONDS
+    });
   }
 
   samplingIndexCache.set(timeline, index);
@@ -162,7 +179,32 @@ function sampleMotionTrack<T extends RigidBodyFrame>(
   }
   if (span > MAX_SMOOTH_SPAN_SECONDS) return undefined;
 
-  return interpolate(previous.frame, next.frame, (t - previous.t) / span, span);
+  const previousFrame = frameWithEstimatedVelocity(track, low - 1, low - 2, low, maxSpeed);
+  const nextFrame = frameWithEstimatedVelocity(track, low, low - 1, low + 1, maxSpeed);
+  return interpolate(previousFrame, nextFrame, (t - previous.t) / span, span);
+}
+
+function frameWithEstimatedVelocity<T extends RigidBodyFrame>(
+  track: MotionKeyframe<T>[],
+  frameIndex: number,
+  beforeIndex: number,
+  afterIndex: number,
+  maxSpeed: number
+): T {
+  const current = track[frameIndex].frame;
+  if (current.velocity) return current;
+  const before = track[beforeIndex] ?? track[frameIndex];
+  const after = track[afterIndex] ?? track[frameIndex];
+
+  const span = after.t - before.t;
+  if (!(span > 0)) return current;
+  const velocity: [number, number, number] = [
+    (after.frame.position[0] - before.frame.position[0]) / span,
+    (after.frame.position[1] - before.frame.position[1]) / span,
+    (after.frame.position[2] - before.frame.position[2]) / span
+  ];
+  if (Math.hypot(...velocity) > maxSpeed) return current;
+  return { ...current, velocity };
 }
 
 function findFramePairIndices(frames: TimelineFrame[], t: number): [number, number, number] {
@@ -232,9 +274,12 @@ export function samplePlayerBoostsAt(timeline: ReplayTimeline, playerIds: readon
   const previous = timeline.frames[previousIndex];
   const next = timeline.frames[nextIndex];
   const boostByPlayer: Record<string, number | undefined> = {};
+  const samplingIndex = buildSamplingIndex(timeline);
 
   for (const playerId of playerIds) {
-    boostByPlayer[playerId] = sampleBoostValue(previous.cars[playerId]?.boost, next.cars[playerId]?.boost, alpha);
+    boostByPlayer[playerId] = isPlayerHiddenByDemo(samplingIndex, playerId, timeSeconds)
+      ? 0
+      : sampleBoostValue(previous.cars[playerId]?.boost, next.cars[playerId]?.boost, alpha);
   }
 
   return boostByPlayer;
@@ -255,7 +300,36 @@ function appendSampledCar(
   alpha: number
 ) {
   const car = sampleCarFromFramePair(samplingIndex, previous, next, carId, sampledTime, alpha);
-  if (car && !car.demolished) cars[carId] = car;
+  if (car && !car.demolished && !isPlayerHiddenByDemo(samplingIndex, carId, sampledTime)) cars[carId] = car;
+}
+
+function detectedRespawnTime(track: MotionKeyframe<CarFrame>[] | undefined, demoTime: number): number | undefined {
+  if (!track?.length) return undefined;
+  const firstAfterDemo = firstTimeIndexAtOrAfter(track, demoTime);
+  const anchor = track[Math.max(0, firstAfterDemo - 1)]?.frame;
+  if (!anchor) return undefined;
+
+  let sawDemolishedState = false;
+  for (let index = firstAfterDemo; index < track.length; index++) {
+    const keyframe = track[index];
+    if (keyframe.frame.demolished) {
+      sawDemolishedState = true;
+      continue;
+    }
+    if (keyframe.t <= demoTime) continue;
+    const teleported = Math.sqrt(positionDistanceSq(anchor, keyframe.frame)) >= DEMO_RESPAWN_MIN_TELEPORT_DISTANCE;
+    if ((sawDemolishedState || teleported) && keyframe.t >= demoTime + 0.5) return keyframe.t;
+  }
+  return undefined;
+}
+
+function isPlayerHiddenByDemo(index: TimelineSamplingIndex, playerId: string, timeSeconds: number) {
+  const windows = index.demoWindows.get(playerId);
+  if (!windows) return false;
+  for (const window of windows) {
+    if (timeSeconds >= window.start && timeSeconds < window.end) return true;
+  }
+  return false;
 }
 
 function sampleCarFromFramePair(
@@ -284,8 +358,9 @@ function sampleCarForWindow(timeline: ReplayTimeline, carId: string, timeSeconds
   const previous = timeline.frames[previousIndex];
   const next = timeline.frames[nextIndex];
   const sampledTime = previous.t + (next.t - previous.t) * alpha;
-  const car = sampleCarFromFramePair(buildSamplingIndex(timeline), previous, next, carId, sampledTime, alpha);
-  return car && !car.demolished ? car : undefined;
+  const samplingIndex = buildSamplingIndex(timeline);
+  const car = sampleCarFromFramePair(samplingIndex, previous, next, carId, sampledTime, alpha);
+  return car && !car.demolished && !isPlayerHiddenByDemo(samplingIndex, carId, sampledTime) ? car : undefined;
 }
 
 export function samplePlayerCameraState(timeline: ReplayTimeline, playerId: string | undefined, timeSeconds: number): ReplayCameraSample | undefined {
