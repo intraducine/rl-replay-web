@@ -80,6 +80,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const selectedStats = selectedPlayerId ? statsByPlayer[selectedPlayerId] : undefined;
   const selectedBoost = selectedPlayerId ? boostByPlayer[selectedPlayerId] : undefined;
   const selectedBoostValue = Math.max(0, Math.min(100, selectedBoost ?? 0));
+  const ballCamActive = cameraMode === "player" && Boolean(playerCameraState?.usingSecondaryCamera);
 
   useEffect(() => {
     setDuration(timelineDuration(timeline));
@@ -195,11 +196,10 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         </section>
       ) : null}
 
-      {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? (
-        <div className="ball-cam-warning" role="status" aria-live="polite">
-          <strong>Ball cam</strong>
-        </div>
-      ) : null}
+      <div className="ball-cam-warning" data-active={ballCamActive} role="status" aria-live="polite" aria-hidden={!ballCamActive}>
+        <span className="ball-cam-dot" aria-hidden="true" />
+        <strong>Ball cam</strong>
+      </div>
 
       {showDebugControls ? (
         <div className="viewer-overlay debug">

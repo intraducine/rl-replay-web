@@ -107,9 +107,17 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("stroke-dashoffset 100ms linear");
     expect(css).toContain(".ball-cam-warning");
     expect(css).toContain("color: #ff6a53");
-    expect(css).toContain("top: calc(var(--viewer-edge) + 68px)");
+    expect(css).toContain("top: calc(var(--viewer-edge) + 84px)");
+    expect(css).toContain("right: var(--viewer-edge)");
+    expect(css).toContain("text-align: right");
+    expect(css).toContain(".ball-cam-warning[data-active=\"true\"]");
+    expect(css).toContain("translateX(18px)");
+    expect(css).toContain("@keyframes ball-cam-dot-blink");
+    expect(css).toContain("animation: ball-cam-dot-blink 1s steps(1, end) infinite");
+    expect(source).toContain('data-active={ballCamActive}');
+    expect(source).toContain('className="ball-cam-dot"');
     expect(css).toContain(".ball-cam-warning { position: absolute;");
-    expect(css).toContain("display: block; color: #ff6a53;");
+    expect(css).toContain("display: inline-flex; align-items: center;");
     expect(source).toContain("<strong>Ball cam</strong>");
   });
 
@@ -135,11 +143,11 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("height: 100vh;");
   });
 
-  it("uses the selected reference's director-first replay state and centered scoreboard", () => {
+  it("opens replay in player cam with a centered scoreboard", () => {
     const store = readFileSync(resolve(process.cwd(), "src/state/viewerStore.ts"), "utf8");
     const scoreboard = readFileSync(resolve(process.cwd(), "src/viewer/Scoreboard.tsx"), "utf8");
 
-    expect(store).toContain('cameraMode: "director"');
+    expect(store).toContain('cameraMode: "player"');
     expect(scoreboard).not.toContain('className="clock-score-pips"');
     expect(scoreboard).toContain('<div className="clock">');
     expect(scoreboard).toContain('className="team blue"');
