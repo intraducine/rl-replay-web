@@ -276,6 +276,7 @@ describe("sampleTimeline", () => {
 
     expect(samplePlayerBoostsAt(boostTimeline, ["p1", "p2"], 0.25)).toEqual({ p1: 87.5, p2: 40 });
     expect(samplePlayerBoostsAt(boostTimeline, ["p1", "p2"], 0.75)).toEqual({ p1: 62.5, p2: 40 });
+    expect(samplePlayerBoostsAt(boostTimeline, ["missing"], 0.25)).toEqual({ missing: 0 });
     expect(boostSamplerSource).toContain("findFramePairIndices(timeline.frames, timeSeconds)");
     expect(boostSamplerSource).not.toContain("sampleTimeline(");
     expect(boostSamplerSource).toContain("buildSamplingIndex");

@@ -62,12 +62,12 @@ describe("replay insights UI", () => {
     expect(container.textContent).toContain("4:30 played");
   });
 
-  it("explains compact match metadata pills with hover tooltips", () => {
+  it("labels compact match metadata pills with plain-language hover help", () => {
     const { container } = render(<MatchMetadataBar timeline={timeline} />);
 
-    const tooltipTexts = [...container.querySelectorAll(".match-metadata-bar .tooltip-bubble")].map((node) => node.textContent);
+    const metadataTitles = [...container.querySelectorAll(".match-metadata-bar > .metadata-pill")].map((node) => node.getAttribute("title"));
 
-    expect(tooltipTexts).toEqual([
+    expect(metadataTitles).toEqual([
       "Replay name",
       "Match type",
       "Team size",
@@ -77,6 +77,8 @@ describe("replay insights UI", () => {
       "In-game time played",
       "Replay save date"
     ]);
+    expect(container.querySelectorAll(".metadata-pill .tooltip-bubble")).toHaveLength(8);
+    expect(container.textContent).toContain("the match file you are reviewing");
   });
 
   it("renders live player stats without misleading score, paint, or static ping", () => {
@@ -91,8 +93,10 @@ describe("replay insights UI", () => {
     expect(container.textContent).not.toContain("Paint");
     expect(container.textContent).not.toContain("ping");
     expect(container.textContent).not.toContain("Rank not saved");
+    expect(container.textContent).toContain("0.0 boost");
+    expect(container.textContent).not.toContain("--");
     expect(container.querySelector('[aria-label="0 goals"]')).not.toBeNull();
-    expect(container.querySelector(".tooltip-bubble")).not.toBeNull();
+    expect(container.querySelector(".tooltip-bubble")).toBeNull();
   });
 
   it("formats saved rank and Elo when replay data includes them", () => {
@@ -229,20 +233,22 @@ describe("replay insights UI", () => {
   });
 
   it("renders typed event markers for goals, saves, and demos", () => {
-    const { container } = render(<TimelineControls events={timeline.events} />);
+    const playerNameById = new Map(timeline.metadata.players.map((player) => [player.id, player.name]));
+    const { container } = render(<TimelineControls events={timeline.events} playerNameById={playerNameById} />);
 
     expect(container.querySelector('.event-track[aria-label="Replay event markers"]')).not.toBeNull();
     expect(container.querySelector(".event-goal")).not.toBeNull();
     expect(container.querySelector(".event-save")).not.toBeNull();
     expect(container.querySelector(".event-demo")).not.toBeNull();
-    expect(container.querySelector(".event-track .event-goal .tooltip-bubble")?.textContent).toBe("goal · 1:57");
-    expect(container.querySelector(".event-track .event-goal")?.getAttribute("aria-label")).toContain("Jump to goal at 1:57");
+    expect(container.querySelector(".event-track .event-goal .event-marker-tooltip")?.textContent).toBe("Goal");
+    expect(container.querySelector(".event-hover-card")).toBeNull();
+    expect(container.querySelector(".event-track .event-goal")?.getAttribute("aria-label")).toContain("Jump to Goal — Kehvn at 1:57");
   });
 
   it("memoizes timeline event markers so playback progress updates less marker work", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/TimelineControls.tsx"), "utf8");
 
-    expect(source).toContain("const eventMarkers = useMemo(() => replayEventMarkers(events, duration), [events, duration])");
+    expect(source).toContain("const eventMarkers = useMemo(() => replayEventMarkers(events, duration, playerNameById), [events, duration, playerNameById])");
     expect(source).toContain("function replayEventMarkers");
     expect(source).toContain("eventMarkers.map((event)");
     expect(source).not.toContain("{events.map((event, index) => (");
@@ -260,12 +266,13 @@ describe("replay insights UI", () => {
     expect(source).not.toContain("useViewerStore();");
   });
 
-  it("explains the primary desktop play button with a hover tooltip", () => {
+  it("labels the primary desktop play button without an overflow-only popup", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 
-    const tooltip = container.querySelector(".transport-controls .button-primary .tooltip-bubble");
+    const playButton = container.querySelector('.transport-controls .button-primary[aria-label="Play replay"]');
 
-    expect(tooltip?.textContent).toBe("Play or pause replay");
+    expect(playButton).not.toBeNull();
+    expect(playButton?.querySelector(".tooltip-bubble")).toBeNull();
   });
 
   it("supports keyboard scrubbing from the timeline controls", () => {
@@ -288,7 +295,7 @@ describe("replay insights UI", () => {
     expect(source).toContain("<kbd>WASD</kbd> Move");
     expect(source).toContain("<kbd>Q/E</kbd> Down/Up");
     expect(source).toContain("<kbd>Mouse drag</kbd> Look");
-    expect(source).toContain("TooltipBubble");
+    expect(source).not.toContain("TooltipBubble");
   });
 
   it("uses a bounded speed menu that matches the broadcast replay rail", () => {
@@ -301,19 +308,21 @@ describe("replay insights UI", () => {
     expect(source).toContain("SPEED_STOPS.map");
   });
 
-  it("explains the playback speed menu with a hover tooltip", () => {
+  it("keeps the playback speed menu compact and directly labeled", () => {
     const { container } = render(<TimelineControls events={timeline.events} />);
 
-    expect(container.querySelector(".speed-select .tooltip-bubble")?.textContent).toBe("Playback speed");
+    expect(container.querySelector('.speed-select select[aria-label="Playback speed"]')).not.toBeNull();
+    expect(container.querySelector(".speed-select .tooltip-bubble")).toBeNull();
     expect(container.querySelectorAll('.speed-select option')).toHaveLength(5);
   });
 
-  it("explains the viewer selector controls with hover tooltips", () => {
+  it("labels viewer selector controls without clipped popup content", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
-    expect(source).toContain("Choose how the replay camera follows the match");
-    expect(source).toContain("Choose which player the player camera and controls follow");
-    expect(source).toContain("Show or hide rendered boost trails");
+    expect(source).toContain('aria-label="Camera mode"');
+    expect(source).toContain('aria-label="Follow player"');
+    expect(source).toContain('aria-label="Toggle boost rendering"');
+    expect(source).not.toContain("Choose how the replay camera follows the match");
   });
 
   it("explains development coordinate toggles with hover tooltips", () => {

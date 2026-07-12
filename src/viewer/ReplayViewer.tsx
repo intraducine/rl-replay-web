@@ -102,7 +102,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       </div>
 
       <div className="camera-dock" aria-label="Camera and rendering controls">
-        <label className="camera-segment tooltip-target">
+        <label className="camera-segment current">
           <span className="sr-only">Camera mode</span>
           <span className="camera-value" aria-hidden="true">{cameraLabel}</span>
           <select
@@ -112,9 +112,8 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
           >
             {cameraModeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-          <TooltipBubble>Choose how the replay camera follows the match</TooltipBubble>
         </label>
-        <label className="camera-segment player tooltip-target">
+        <label className="camera-segment player current">
           <span className="sr-only">Follow player</span>
           <span className="camera-value" aria-hidden="true">{selectedPlayerName ?? "Player"}</span>
           <select
@@ -127,9 +126,8 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
           >
             {playerOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-          <TooltipBubble>Choose which player the player camera and controls follow</TooltipBubble>
         </label>
-        <label className="camera-segment boost tooltip-target">
+        <label className="camera-segment boost" data-active={boostRenderingEnabled ? "true" : "false"}>
           <input
             type="checkbox"
             aria-label="Toggle boost rendering"
@@ -137,19 +135,17 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
             onChange={(event) => setBoostRenderingEnabled(event.currentTarget.checked)}
           />
           <span>Boost</span>
-          <TooltipBubble>Show or hide rendered boost trails</TooltipBubble>
         </label>
       </div>
 
       <button
         type="button"
-        className="roster-tab tooltip-target"
+        className="roster-tab"
         aria-label={rosterOpen ? "Close player roster" : "Open player roster"}
         aria-expanded={rosterOpen}
         onClick={() => setRosterOpen((open) => !open)}
       >
         {rosterOpen ? <ChevronLeft size={22} /> : <ChevronRight size={22} />}
-        <TooltipBubble>{rosterOpen ? "Close player roster" : "Open player roster"}</TooltipBubble>
       </button>
 
       <aside className={`roster-drawer ${rosterOpen ? "open" : ""}`} aria-label="Replay roster" aria-hidden={!rosterOpen} inert={!rosterOpen}>
@@ -164,7 +160,18 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} statsByPlayer={statsByPlayer} />
       </aside>
 
-      {selectedPlayer ? (
+      {cameraMode === "free" ? (
+        <aside className="free-cam-help" aria-label="Free camera controls">
+          <strong>Free camera</strong>
+          <div>
+            <span><kbd>WASD</kbd> Move</span>
+            <span><kbd>Mouse</kbd> Look</span>
+            <span><kbd>Q / E</kbd> Down / up</span>
+          </div>
+        </aside>
+      ) : null}
+
+      {selectedPlayer && cameraMode !== "free" ? (
         <section className={`selected-player-hud ${teamClassName(selectedPlayer.team)}`} aria-label={`Following ${selectedPlayer.name}`}>
           <div className="selected-player-copy">
             <strong>{selectedPlayer.name}</strong>
@@ -191,7 +198,6 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       {cameraMode === "player" && playerCameraState?.usingSecondaryCamera ? (
         <div className="ball-cam-warning" role="status" aria-live="polite">
           <strong>Ball cam</strong>
-          <span>Camera locked to ball</span>
         </div>
       ) : null}
 
@@ -218,7 +224,11 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       ) : null}
 
       <div className="viewer-overlay bottom">
-        <TimelineControls events={timeline.events} status={{ cameraLabel, playerName: selectedPlayerName, boostRenderingEnabled }} />
+        <TimelineControls
+          events={timeline.events}
+          playerNameById={playerNameById}
+          status={{ cameraLabel, playerName: selectedPlayerName, boostRenderingEnabled }}
+        />
       </div>
     </main>
   );

@@ -1,9 +1,9 @@
 import { FastForward, Pause, Play, Rewind, SkipBack, SkipForward } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { ReplayEvent } from "../replay/types";
 import { useShallow } from "zustand/shallow";
 import { useViewerStore } from "../state/viewerStore";
 import { Button } from "../ui/Button";
-import { TooltipBubble } from "../ui/Tooltip";
 import { stepFrame } from "./PlaybackController";
 
 const MIN_SPEED = 0.25;
@@ -16,7 +16,15 @@ export type TimelineStatus = {
   boostRenderingEnabled: boolean;
 };
 
-export function TimelineControls({ events = [], status }: { events?: Array<{ t: number; type: string }>; status?: TimelineStatus }) {
+export function TimelineControls({
+  events = [],
+  playerNameById = new Map(),
+  status
+}: {
+  events?: ReplayEvent[];
+  playerNameById?: ReadonlyMap<string, string>;
+  status?: TimelineStatus;
+}) {
   const { playing, currentTime, duration, speed, setPlaying, setCurrentTime, setSpeed, seekBy } = useViewerStore(
     useShallow((state) => ({
       playing: state.playing,
@@ -31,7 +39,9 @@ export function TimelineControls({ events = [], status }: { events?: Array<{ t: 
   );
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const remainingTime = Math.max(0, duration - currentTime);
-  const eventMarkers = useMemo(() => replayEventMarkers(events, duration), [events, duration]);
+  const eventMarkers = useMemo(() => replayEventMarkers(events, duration, playerNameById), [events, duration, playerNameById]);
+  const [hoveredEventKey, setHoveredEventKey] = useState<string>();
+  const hoveredEvent = eventMarkers.find((event) => event.key === hoveredEventKey);
   useTimelineKeyboardShortcuts();
 
   return (
@@ -54,20 +64,43 @@ export function TimelineControls({ events = [], status }: { events?: Array<{ t: 
               onChange={(event) => setCurrentTime(Number(event.currentTarget.value))}
             />
           </label>
-          <div className="event-track" aria-label="Replay event markers">
+          <div
+            className={`event-track${hoveredEvent ? " has-hover" : ""}`}
+            aria-label="Replay event markers"
+            onMouseLeave={() => setHoveredEventKey(undefined)}
+          >
             <span className="event-track-progress" style={{ width: `${percent}%` }} />
             {eventMarkers.map((event) => (
               <button
                 type="button"
                 key={event.key}
-                className={`event-${event.type} tooltip-target`}
+                className={`event-marker event-${event.type} event-edge-${event.edge}`}
                 style={{ left: event.left }}
-                aria-label={`Jump to ${event.label} at ${formatTime(event.t)}`}
+                aria-label={`Jump to ${event.details} at ${formatTime(event.t)}`}
+                onMouseEnter={() => setHoveredEventKey(event.key)}
+                onFocus={() => setHoveredEventKey(event.key)}
+                onBlur={(focusEvent) => {
+                  if (!focusEvent.currentTarget.parentElement?.contains(focusEvent.relatedTarget as Node | null)) {
+                    setHoveredEventKey(undefined);
+                  }
+                }}
                 onClick={() => setCurrentTime(event.t)}
               >
-                <TooltipBubble>{event.label} · {formatTime(event.t)}</TooltipBubble>
+                <span className="event-marker-tooltip" aria-hidden="true">
+                  <strong>{event.typeLabel}</strong>
+                </span>
               </button>
             ))}
+            {hoveredEvent ? (
+              <span
+                className={`event-hover-card event-edge-${hoveredEvent.edge}`}
+                style={{ left: hoveredEvent.left }}
+                role="tooltip"
+                aria-hidden="true"
+              >
+                <strong>{hoveredEvent.typeLabel}</strong>
+              </span>
+            ) : null}
           </div>
         </div>
         <span className="timeline-remaining"><b>{formatTime(remainingTime)}</b> left</span>
@@ -76,37 +109,35 @@ export function TimelineControls({ events = [], status }: { events?: Array<{ t: 
       <div className="control-row">
         <span className="playback-state" aria-live="polite">{playing ? "Playing" : "Paused"}</span>
         <div className="transport-controls">
-          <Button className="transport-skip" icon={<SkipBack size={19} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" tooltip="Go to replay start" />
-          <Button className="transport-seek" onClick={() => seekBy(-5)} aria-label="Jump backward 5 seconds" tooltip="Jump backward 5 seconds">−5s</Button>
-          <Button className="transport-frame" icon={<Rewind size={21} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" tooltip="Previous frame" />
+          <Button className="transport-skip" icon={<SkipBack size={20} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" />
+          <Button className="transport-seek" onClick={() => seekBy(-5)} aria-label="Jump backward 5 seconds"><span className="seek-value">−5s</span></Button>
+          <Button className="transport-frame" icon={<Rewind size={20} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" />
           <Button
             variant="primary"
             className="transport-play"
-            icon={playing ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
+            icon={playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
             onClick={() => setPlaying(!playing)}
             aria-label={playing ? "Pause replay" : "Play replay"}
-            tooltip="Play or pause replay"
           />
-          <Button className="transport-frame" icon={<FastForward size={21} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" tooltip="Next frame" />
-          <Button className="transport-seek" onClick={() => seekBy(5)} aria-label="Jump forward 5 seconds" tooltip="Jump forward 5 seconds">+5s</Button>
-          <Button className="transport-skip" icon={<SkipForward size={17} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" tooltip="Go to replay end" />
+          <Button className="transport-frame" icon={<FastForward size={20} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" />
+          <Button className="transport-seek" onClick={() => seekBy(5)} aria-label="Jump forward 5 seconds"><span className="seek-value">+5s</span></Button>
+          <Button className="transport-skip" icon={<SkipForward size={20} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" />
         </div>
-        <label className="speed-select tooltip-target">
+        <label className="speed-select">
           <span className="sr-only">Speed</span>
           <span className="speed-value" aria-hidden="true">{formatSpeed(speed)}×</span>
           <select value={speed} aria-label="Playback speed" onChange={(event) => setSpeed(clampSpeed(Number(event.currentTarget.value)))}>
             {SPEED_STOPS.map((value) => <option key={value} value={value}>{formatSpeed(value)}×</option>)}
           </select>
-          <TooltipBubble>Playback speed</TooltipBubble>
         </label>
       </div>
 
       <div className="mobile-transport-controls" aria-label="Mobile playback controls">
-        <Button icon={<SkipBack size={16} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" tooltip="Go to replay start" />
+        <Button icon={<SkipBack size={16} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" />
         <Button onClick={() => seekBy(-5)}>−5s</Button>
         <Button variant="primary" icon={playing ? <Pause size={18} /> : <Play size={18} />} onClick={() => setPlaying(!playing)} aria-label={playing ? "Pause replay" : "Play replay"} />
         <Button onClick={() => seekBy(5)}>+5s</Button>
-        <Button icon={<SkipForward size={16} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" tooltip="Go to replay end" />
+        <Button icon={<SkipForward size={16} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" />
       </div>
 
       <div className="sr-only" aria-label="Replay playback status">
@@ -147,19 +178,37 @@ function isEditableEventTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
 }
 
-function eventLabel(event: { t: number; type: string; label?: string }) {
-  return event.label ? `${event.type}: ${event.label}` : event.type;
+function eventTypeLabel(event: ReplayEvent): string {
+  return event.type === "demo" ? "Demo" : `${event.type[0].toUpperCase()}${event.type.slice(1)}`;
 }
 
-function replayEventMarkers(events: Array<{ t: number; type: string; label?: string }>, duration: number) {
+function eventPlayerLabel(event: ReplayEvent, playerNameById: ReadonlyMap<string, string>): string {
+  const playerName = (id?: string) => (id ? playerNameById.get(id) ?? "Unknown player" : "Unknown player");
+  if (event.type === "goal") return playerName(event.scorerId);
+  if (event.type === "shot" || event.type === "save") return playerName(event.playerId);
+  if (event.attackerId && event.victimId) return `${playerName(event.attackerId)} demolished ${playerName(event.victimId)}`;
+  if (event.attackerId) return playerName(event.attackerId);
+  if (event.victimId) return `${playerName(event.victimId)} was demolished`;
+  return "Players unknown";
+}
+
+function replayEventMarkers(events: ReplayEvent[], duration: number, playerNameById: ReadonlyMap<string, string>) {
   const safeDuration = Math.max(duration, 1);
-  return events.map((event, index) => ({
-    key: `${event.type}-${event.t}-${index}`,
-    type: event.type,
-    label: eventLabel(event),
-    t: event.t,
-    left: `${(event.t / safeDuration) * 100}%`
-  }));
+  return events.map((event, index) => {
+    const position = (event.t / safeDuration) * 100;
+    const typeLabel = eventTypeLabel(event);
+    const playerLabel = eventPlayerLabel(event, playerNameById);
+    return {
+      key: `${event.type}-${event.t}-${index}`,
+      type: event.type,
+      typeLabel,
+      playerLabel,
+      details: `${typeLabel} — ${playerLabel}`,
+      edge: position <= 5 ? "start" : position >= 95 ? "end" : "center",
+      t: event.t,
+      left: `${position}%`
+    };
+  });
 }
 
 export function clampSpeed(value: number): number {

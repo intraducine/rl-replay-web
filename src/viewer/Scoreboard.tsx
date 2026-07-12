@@ -8,16 +8,11 @@ export function Scoreboard({ timeline }: { timeline: ReplayTimeline }) {
 
   return (
     <div className="scoreboard" aria-label={`Score: Blue ${state.blueScore}, ${state.clockText}, Orange ${state.orangeScore}`}>
-      <div className="team blue">{state.blueScore}</div>
+      <div className="team blue"><span>{state.blueScore}</span></div>
       <div className="clock">
         <span>{state.clockText}</span>
-        <span className="clock-score-pips" aria-hidden="true">
-          <i className="blue" />
-          <i />
-          <i className="orange" />
-        </span>
       </div>
-      <div className="team orange">{state.orangeScore}</div>
+      <div className="team orange"><span>{state.orangeScore}</span></div>
     </div>
   );
 }

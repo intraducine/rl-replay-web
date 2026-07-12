@@ -286,6 +286,7 @@ export function samplePlayerBoostsAt(timeline: ReplayTimeline, playerIds: readon
 }
 
 function sampleBoostValue(previous: number | undefined, next: number | undefined, alpha: number) {
+  if (previous === undefined && next === undefined) return 0;
   if (previous !== undefined && next !== undefined) return lerp(previous, next, alpha);
   return alpha < 0.5 ? previous ?? next : next ?? previous;
 }
