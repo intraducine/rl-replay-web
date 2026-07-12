@@ -9,14 +9,18 @@ describe("viewer chrome layout", () => {
     const css = styles();
     const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
-    expect(css).toContain("--bottom-rail: 190px");
+    expect(css).toContain("--bottom-rail: 198px");
     expect(css).toContain(".broadcast-scoreboard");
     expect(css).toContain("left: 50%");
     expect(css).toContain(".camera-dock");
-    expect(css).toContain("grid-template-columns: repeat(3, auto)");
+    expect(css).toContain("grid-template-columns: 120px 78px 116px");
+    expect(css).toContain(".camera-value");
+    expect(css).toContain(".camera-segment select { position: absolute; inset: 0;");
     expect(source).toContain('className="broadcast-scoreboard"');
     expect(source).toContain('className="camera-dock" aria-label="Camera and rendering controls"');
+    expect(source).toContain('className="camera-value" aria-hidden="true"');
     expect(source).toContain('className={`selected-player-hud ${teamClassName(selectedPlayer.team)}`}');
+    expect(source).not.toContain("<span>Following</span>");
   });
 
   it("puts the full roster in an accessible slide-out drawer", () => {
@@ -41,9 +45,13 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".transport-controls");
     expect(css).toContain("grid-column: 2");
     expect(css).toContain(".speed-select");
+    expect(css).toContain(".speed-value");
     expect(source).toContain('aria-label="Replay event markers"');
     expect(source).toContain('aria-label="Playback speed"');
+    expect(source).toContain('className="speed-value" aria-hidden="true"');
     expect(source).toContain('tooltip="Play or pause replay"');
+    expect(source).toContain("Rewind");
+    expect(source).toContain("FastForward");
   });
 
   it("keeps the viewer usable on narrow and touch viewports", () => {
@@ -66,6 +74,7 @@ describe("viewer chrome layout", () => {
 
     expect(source).toContain("CircularProgressbar");
     expect(source).toContain("value={selectedBoostValue}");
+    expect(source).toContain("circleRatio={0.76}");
     expect(source).toContain('className="ball-cam-warning"');
     expect(source).not.toContain("ball-cam-indicator");
     expect(css).toContain(".CircularProgressbar-path");
@@ -80,8 +89,18 @@ describe("viewer chrome layout", () => {
 
     expect(css).toContain(".app:has(.viewer) .app-header");
     expect(css).toContain("backdrop-filter: blur(14px)");
-    expect(css).toContain("border-radius: 12px");
+    expect(css).toContain("border-radius: 14px");
     expect(app).toContain('page !== "replay"');
+  });
+
+  it("uses the selected reference's director-first replay state and segmented scoreboard", () => {
+    const store = readFileSync(resolve(process.cwd(), "src/state/viewerStore.ts"), "utf8");
+    const scoreboard = readFileSync(resolve(process.cwd(), "src/viewer/Scoreboard.tsx"), "utf8");
+
+    expect(store).toContain('cameraMode: "director"');
+    expect(scoreboard).toContain('className="clock-score-pips"');
+    expect(scoreboard).toContain('className="blue"');
+    expect(scoreboard).toContain('className="orange"');
   });
 
   it("provides visible keyboard focus and reduced-motion behavior", () => {

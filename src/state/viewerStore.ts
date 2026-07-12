@@ -30,7 +30,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   currentTime: 0,
   duration: 0,
   speed: 1,
-  cameraMode: "player",
+  cameraMode: "director",
   boostRenderingEnabled: false,
   coordinateOptions: {},
   setPlaying: (playing) => set({ playing }),

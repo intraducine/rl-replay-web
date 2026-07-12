@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Users, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { useEffect, useMemo, useState } from "react";
@@ -104,6 +104,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       <div className="camera-dock" aria-label="Camera and rendering controls">
         <label className="camera-segment tooltip-target">
           <span className="sr-only">Camera mode</span>
+          <span className="camera-value" aria-hidden="true">{cameraLabel}</span>
           <select
             value={cameraMode}
             aria-label="Camera mode"
@@ -115,6 +116,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         </label>
         <label className="camera-segment player tooltip-target">
           <span className="sr-only">Follow player</span>
+          <span className="camera-value" aria-hidden="true">{selectedPlayerName ?? "Player"}</span>
           <select
             value={selectedPlayerId ?? ""}
             aria-label="Follow player"
@@ -146,8 +148,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         aria-expanded={rosterOpen}
         onClick={() => setRosterOpen((open) => !open)}
       >
-        <Users size={18} />
-        {rosterOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+        {rosterOpen ? <ChevronLeft size={22} /> : <ChevronRight size={22} />}
         <TooltipBubble>{rosterOpen ? "Close player roster" : "Open player roster"}</TooltipBubble>
       </button>
 
@@ -166,7 +167,6 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
       {selectedPlayer ? (
         <section className={`selected-player-hud ${teamClassName(selectedPlayer.team)}`} aria-label={`Following ${selectedPlayer.name}`}>
           <div className="selected-player-copy">
-            <span>Following</span>
             <strong>{selectedPlayer.name}</strong>
             <div className="selected-player-stats" aria-label="Player statistics">
               <span>G <b>{selectedStats?.goals ?? 0}</b></span>
@@ -176,7 +176,13 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
             </div>
           </div>
           <div className="selected-player-boost" aria-label={`${Math.round(selectedBoost ?? 0)} percent boost`}>
-            <CircularProgressbar value={selectedBoostValue} text={`${Math.round(selectedBoostValue)}`} strokeWidth={10} />
+            <CircularProgressbar
+              value={selectedBoostValue}
+              text={`${Math.round(selectedBoostValue)}`}
+              strokeWidth={10}
+              circleRatio={0.76}
+              styles={{ root: { transform: "rotate(0.62turn)" }, text: { transform: "rotate(-0.62turn)", transformOrigin: "center" } }}
+            />
             <span>Boost</span>
           </div>
         </section>

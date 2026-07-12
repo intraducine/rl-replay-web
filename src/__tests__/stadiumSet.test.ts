@@ -27,17 +27,19 @@ describe("Rocket League Champions Field arena contract", () => {
     expect(script).not.toContain('"City_OOB_A"');
   });
 
-  it("loads only playable and boundary assets at runtime", () => {
+  it("loads the compact playable arena plus broadcast backdrop assets at runtime", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
 
     expect(source).toContain("CHAMPIONS_FIELD_PLAYABLE_SCENE");
     expect(source).toContain("CHAMPIONS_FIELD_BOUNDARY_SCENE");
     expect(source).toContain("CHAMPIONS_FIELD_ARENA_SCENES");
+    expect(source).toContain("CHAMPIONS_FIELD_BROADCAST_BACKDROP_SCENES");
+    expect(source).toContain("CS_OOB2_combined.gltf");
+    expect(source).toContain("CS_Lights_combined.gltf");
     expect(source).not.toContain("CS_OOB_combined.gltf");
-    expect(source).not.toContain("CS_OOB2_combined.gltf");
-    expect(source).not.toContain("CS_Lights_combined.gltf");
     expect(source).not.toContain("CS_Grounds_combined.gltf");
-    expect(source).not.toMatch(/Stands|Crowd|City_OOB|Tent|Tifo|SkyDome/);
+    expect(source).not.toMatch(/Crowd|City_OOB|SkyDome/);
+    expect(source).toContain("materialForBackdropMesh");
   });
 
   it("uses one textured turf surface and no overlapping shadow catcher", () => {

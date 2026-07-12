@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCcw, SkipBack, SkipForward, StepBack, StepForward } from "lucide-react";
+import { FastForward, Pause, Play, Rewind, SkipBack, SkipForward } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { useShallow } from "zustand/shallow";
 import { useViewerStore } from "../state/viewerStore";
@@ -76,22 +76,24 @@ export function TimelineControls({ events = [], status }: { events?: Array<{ t: 
       <div className="control-row">
         <span className="playback-state" aria-live="polite">{playing ? "Playing" : "Paused"}</span>
         <div className="transport-controls">
-          <Button icon={<RotateCcw size={17} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" tooltip="Go to replay start" />
-          <Button onClick={() => seekBy(-5)} aria-label="Jump backward 5 seconds" tooltip="Jump backward 5 seconds">−5s</Button>
-          <Button icon={<StepBack size={18} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" tooltip="Previous frame" />
+          <Button className="transport-skip" icon={<SkipBack size={19} />} onClick={() => setCurrentTime(0)} aria-label="Go to replay start" tooltip="Go to replay start" />
+          <Button className="transport-seek" onClick={() => seekBy(-5)} aria-label="Jump backward 5 seconds" tooltip="Jump backward 5 seconds">−5s</Button>
+          <Button className="transport-frame" icon={<Rewind size={21} />} onClick={() => setCurrentTime(stepFrame(currentTime, -1, duration))} aria-label="Previous frame" tooltip="Previous frame" />
           <Button
             variant="primary"
+            className="transport-play"
             icon={playing ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
             onClick={() => setPlaying(!playing)}
             aria-label={playing ? "Pause replay" : "Play replay"}
             tooltip="Play or pause replay"
           />
-          <Button icon={<StepForward size={18} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" tooltip="Next frame" />
-          <Button onClick={() => seekBy(5)} aria-label="Jump forward 5 seconds" tooltip="Jump forward 5 seconds">+5s</Button>
-          <Button icon={<SkipForward size={17} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" tooltip="Go to replay end" />
+          <Button className="transport-frame" icon={<FastForward size={21} />} onClick={() => setCurrentTime(stepFrame(currentTime, 1, duration))} aria-label="Next frame" tooltip="Next frame" />
+          <Button className="transport-seek" onClick={() => seekBy(5)} aria-label="Jump forward 5 seconds" tooltip="Jump forward 5 seconds">+5s</Button>
+          <Button className="transport-skip" icon={<SkipForward size={17} />} onClick={() => setCurrentTime(duration)} aria-label="Go to replay end" tooltip="Go to replay end" />
         </div>
         <label className="speed-select tooltip-target">
-          <span>Speed</span>
+          <span className="sr-only">Speed</span>
+          <span className="speed-value" aria-hidden="true">{formatSpeed(speed)}×</span>
           <select value={speed} aria-label="Playback speed" onChange={(event) => setSpeed(clampSpeed(Number(event.currentTarget.value)))}>
             {SPEED_STOPS.map((value) => <option key={value} value={value}>{formatSpeed(value)}×</option>)}
           </select>

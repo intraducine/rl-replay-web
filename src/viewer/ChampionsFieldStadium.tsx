@@ -9,14 +9,25 @@ const FIELD_SURFACE_WIDTH = 76.45;
 const FIELD_SURFACE_LENGTH = 117.75;
 const FIELD_SURFACE_Y = 0.006;
 const ARENA_ASSET_ROOT = publicAsset("/rl-assets/champions-field-arena");
+const PLACED_ASSET_ROOT = publicAsset("/rl-assets/champions-field-placed");
 
 export const CHAMPIONS_FIELD_PLAYABLE_SCENE = `${ARENA_ASSET_ROOT}/champions-field-playable.glb`;
 export const CHAMPIONS_FIELD_BOUNDARY_SCENE = `${ARENA_ASSET_ROOT}/champions-field-boundary.glb`;
 export const CHAMPIONS_FIELD_ARENA_SCENES = [CHAMPIONS_FIELD_PLAYABLE_SCENE, CHAMPIONS_FIELD_BOUNDARY_SCENE] as const;
+export const CHAMPIONS_FIELD_BROADCAST_BACKDROP_SCENES = [
+  `${PLACED_ASSET_ROOT}/CS_OOB2_combined.gltf`,
+  `${PLACED_ASSET_ROOT}/CS_Lights_combined.gltf`
+] as const;
 
 const FIELD_GRASS_TEXTURE = publicAsset(championsFieldTextureManifest.textures.fieldGrass.browserPath);
 const FIELD_TRIM_TEXTURE = publicAsset(championsFieldTextureManifest.textures.stadiumTrim.browserPath);
 const FIELD_WALL_TEXTURE = publicAsset(championsFieldTextureManifest.textures.stadiumWallMetal.browserPath);
+const BANNER_TEXTURE = publicAsset(championsFieldTextureManifest.textures.bannerPack.browserPath);
+const FLAGS_TEXTURE = publicAsset(championsFieldTextureManifest.textures.countryFlags.browserPath);
+const TENT_TEXTURE = publicAsset(championsFieldTextureManifest.textures.tentFabric.browserPath);
+const ADVERT_TEXTURE = publicAsset(championsFieldTextureManifest.textures.advertStrip.browserPath);
+const STAIRS_TEXTURE = publicAsset(championsFieldTextureManifest.textures.stairsPack.browserPath);
+const HANDRAIL_TEXTURE = publicAsset(championsFieldTextureManifest.textures.handrail.browserPath);
 
 const TEAM_COLORS = {
   blue: { base: "#2778e8", emissive: "#0c5fe7" },
@@ -30,6 +41,12 @@ type ArenaTextures = {
   grass: THREE.Texture;
   trim: THREE.Texture;
   wall: THREE.Texture;
+  banner: THREE.Texture;
+  flags: THREE.Texture;
+  tent: THREE.Texture;
+  advert: THREE.Texture;
+  stairs: THREE.Texture;
+  handrail: THREE.Texture;
 };
 
 type ArenaMaterials = ReturnType<typeof createArenaMaterials>;
@@ -49,6 +66,9 @@ export function ChampionsFieldStadium() {
       {CHAMPIONS_FIELD_ARENA_SCENES.map((url) => (
         <ChampionsFieldArenaPart key={url} url={url} materials={materials} />
       ))}
+      {CHAMPIONS_FIELD_BROADCAST_BACKDROP_SCENES.map((url) => (
+        <ChampionsFieldArenaPart key={url} url={url} materials={materials} backdrop />
+      ))}
     </group>
   );
 }
@@ -63,15 +83,31 @@ function FieldSurface({ material }: { material: THREE.Material }) {
 }
 
 function useArenaTextures(): ArenaTextures {
-  const [grass, trim, wall] = useTexture([FIELD_GRASS_TEXTURE, FIELD_TRIM_TEXTURE, FIELD_WALL_TEXTURE]);
+  const [grass, trim, wall, banner, flags, tent, advert, stairs, handrail] = useTexture([
+    FIELD_GRASS_TEXTURE,
+    FIELD_TRIM_TEXTURE,
+    FIELD_WALL_TEXTURE,
+    BANNER_TEXTURE,
+    FLAGS_TEXTURE,
+    TENT_TEXTURE,
+    ADVERT_TEXTURE,
+    STAIRS_TEXTURE,
+    HANDRAIL_TEXTURE
+  ]);
 
   return useMemo(
     () => ({
       grass: configureTexture(grass, true),
       trim: configureTexture(trim),
-      wall: configureTexture(wall)
+      wall: configureTexture(wall),
+      banner: configureTexture(banner),
+      flags: configureTexture(flags),
+      tent: configureTexture(tent),
+      advert: configureTexture(advert),
+      stairs: configureTexture(stairs),
+      handrail: configureTexture(handrail)
     }),
-    [grass, trim, wall]
+    [advert, banner, flags, grass, handrail, stairs, tent, trim, wall]
   );
 }
 
@@ -142,6 +178,69 @@ function createArenaMaterials(textures: ArenaTextures) {
     wall,
     trim,
     glass,
+    backdropDark: new THREE.MeshStandardMaterial({
+      name: "champions-field-broadcast-backdrop",
+      map: textures.wall,
+      color: "#6d7880",
+      roughness: 0.56,
+      metalness: 0.28,
+      envMapIntensity: 0.82
+    }),
+    stands: new THREE.MeshStandardMaterial({
+      name: "champions-field-broadcast-stands",
+      map: textures.stairs,
+      color: "#56616a",
+      roughness: 0.72,
+      metalness: 0.1,
+      envMapIntensity: 0.64
+    }),
+    handrail: new THREE.MeshStandardMaterial({
+      name: "champions-field-broadcast-handrail",
+      map: textures.handrail,
+      color: "#c2ccd0",
+      roughness: 0.45,
+      metalness: 0.34,
+      envMapIntensity: 0.95
+    }),
+    advert: new THREE.MeshBasicMaterial({
+      name: "champions-field-broadcast-adverts",
+      map: textures.advert,
+      color: "#ffffff",
+      toneMapped: false
+    }),
+    banners: new THREE.MeshStandardMaterial({
+      name: "champions-field-broadcast-banners",
+      map: textures.banner,
+      color: "#d8e2e7",
+      roughness: 0.5,
+      metalness: 0.05,
+      envMapIntensity: 0.75
+    }),
+    flags: new THREE.MeshStandardMaterial({
+      name: "champions-field-broadcast-flags",
+      map: textures.flags,
+      color: "#ffffff",
+      roughness: 0.48,
+      metalness: 0.05,
+      envMapIntensity: 0.7
+    }),
+    tent: new THREE.MeshStandardMaterial({
+      name: "champions-field-broadcast-tent",
+      map: textures.tent,
+      color: "#d9e2e7",
+      roughness: 0.72,
+      metalness: 0,
+      envMapIntensity: 0.58
+    }),
+    lightCone: new THREE.MeshBasicMaterial({
+      name: "champions-field-broadcast-light-cone",
+      color: "#d7e8ff",
+      transparent: true,
+      opacity: 0.16,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      toneMapped: false
+    }),
     blueGoal: createTeamMaterial("blue", textures.wall),
     orangeGoal: createTeamMaterial("orange", textures.wall),
     blueLight: createTeamLightMaterial("blue", textures.trim),
@@ -174,7 +273,7 @@ function createTeamLightMaterial(team: keyof typeof TEAM_COLORS, texture: THREE.
     map: texture,
     color: colors.base,
     transparent: true,
-    opacity: 0.82,
+    opacity: 0.58,
     depthWrite: false,
     toneMapped: false,
     polygonOffset: true,
@@ -183,24 +282,37 @@ function createTeamLightMaterial(team: keyof typeof TEAM_COLORS, texture: THREE.
   });
 }
 
-function ChampionsFieldArenaPart({ url, materials }: { url: string; materials: ArenaMaterials }) {
+function ChampionsFieldArenaPart({ url, materials, backdrop = false }: { url: string; materials: ArenaMaterials; backdrop?: boolean }) {
   const { scene } = useGLTF(url);
   const model = useMemo(() => {
     const clone = scene.clone(true);
 
     clone.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
-      object.material = materialForArenaMesh(object, materials);
+      object.material = backdrop ? materialForBackdropMesh(object, materials) : materialForArenaMesh(object, materials);
       object.castShadow = false;
       object.receiveShadow = false;
       object.frustumCulled = true;
-      object.renderOrder = renderOrderForArenaMesh(object.name);
+      object.renderOrder = backdrop ? 0 : renderOrderForArenaMesh(object.name);
     });
 
     return clone;
-  }, [materials, scene]);
+  }, [backdrop, materials, scene]);
 
   return <primitive object={model} />;
+}
+
+function materialForBackdropMesh(mesh: THREE.Mesh, materials: ArenaMaterials) {
+  const name = mesh.name;
+  if (/Stands/i.test(name)) return materials.stands;
+  if (/HandRail/i.test(name)) return materials.handrail;
+  if (/SeparatedAds|Adverts|SC_TV|CS_TV/i.test(name)) return materials.advert;
+  if (/TunnelBanners|WavyFlag|Tifo|Banner/i.test(name)) return materials.banners;
+  if (/CountryFlags/i.test(name)) return materials.flags;
+  if (/Tent/i.test(name)) return materials.tent;
+  if (/LightCone|SpotLightBeam|SimpleLightBeam/i.test(name)) return materials.lightCone;
+  if (/OOB_Lights|SearchLights|Emblem|Blimp/i.test(name)) return materials.trim;
+  return materials.backdropDark;
 }
 
 function materialForArenaMesh(mesh: THREE.Mesh, materials: ArenaMaterials) {
@@ -229,6 +341,17 @@ function renderOrderForArenaMesh(name: string) {
 }
 
 for (const sceneUrl of CHAMPIONS_FIELD_ARENA_SCENES) useGLTF.preload(sceneUrl);
-useTexture.preload(FIELD_GRASS_TEXTURE);
-useTexture.preload(FIELD_TRIM_TEXTURE);
-useTexture.preload(FIELD_WALL_TEXTURE);
+for (const sceneUrl of CHAMPIONS_FIELD_BROADCAST_BACKDROP_SCENES) useGLTF.preload(sceneUrl);
+for (const textureUrl of [
+  FIELD_GRASS_TEXTURE,
+  FIELD_TRIM_TEXTURE,
+  FIELD_WALL_TEXTURE,
+  BANNER_TEXTURE,
+  FLAGS_TEXTURE,
+  TENT_TEXTURE,
+  ADVERT_TEXTURE,
+  STAIRS_TEXTURE,
+  HANDRAIL_TEXTURE
+]) {
+  useTexture.preload(textureUrl);
+}

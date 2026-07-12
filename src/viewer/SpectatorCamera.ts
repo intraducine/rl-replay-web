@@ -38,6 +38,12 @@ const BALL_CAMERA_DISTANCE = 1320;
 const BALL_CAMERA_HEIGHT = 720;
 const BALL_CAMERA_LOOK_AHEAD_SECONDS = 0.08;
 const BALL_CAMERA_MIN_TRAVEL_SPEED_SQ = 10_000;
+const DIRECTOR_ESTABLISHING_RIG: CameraRig = {
+  position: [0, 660, 4700],
+  target: [0, 610, -5150],
+  up: [0, 1, 0],
+  fov: 52
+};
 export const FREE_CAMERA_KEYBOARD_MOVE_SPEED = 3200;
 const WORLD_UP = new Vector3(0, 1, 0);
 const FALLBACK_BALL = new Vector3(0, 120, 0);
@@ -67,9 +73,9 @@ export function cameraRigForMode(
   playerCameraState?: ReplayCameraSample
 ): CameraRig {
   const ball = sample.ball?.position ?? [0, 120, 0];
-  const directorPlayerId = mode === "director" ? directorTargetPlayerId(sample, events) ?? selectedPlayerId : undefined;
-  const targetPlayerId = directorPlayerId ?? selectedPlayerId;
-  const selectedCar = targetPlayerId ? sample.cars[targetPlayerId] : undefined;
+  if (mode === "director") return DIRECTOR_ESTABLISHING_RIG;
+
+  const selectedCar = selectedPlayerId ? sample.cars[selectedPlayerId] : undefined;
   const selectedPosition = selectedCar?.position ?? ball;
 
   if (mode === "top-down") {
@@ -81,7 +87,7 @@ export function cameraRigForMode(
     };
   }
 
-  if ((mode === "player" || mode === "director") && selectedCar) {
+  if (mode === "player" && selectedCar) {
     const carPosition = TMP_CAR_POSITION.fromArray(selectedCar.position);
     const forward = forwardVectorFromCar(selectedCar.rotation);
     const settings = playerCameraState?.settings ?? DEFAULT_CAMERA_SETTINGS;

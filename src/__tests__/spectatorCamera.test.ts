@@ -111,6 +111,24 @@ describe("cameraRigForMode", () => {
     expect(rig.fov).toBe(72);
   });
 
+  it("uses the selected reference's establishing camera for director mode", () => {
+    const rig = cameraRigForMode(
+      "director",
+      {
+        t: 0,
+        ball: { position: [0, 100, 0], rotation: [0, 0, 0, 1] },
+        cars: {
+          p1: { position: [0, 30, 3000], rotation: [0, 0, 0, 1] }
+        }
+      },
+      "p1"
+    );
+
+    expect(rig.position).toEqual([0, 660, 4700]);
+    expect(rig.target).toEqual([0, 610, -5150]);
+    expect(rig.fov).toBe(52);
+  });
+
   it("chooses the car nearest the ball for director focus", () => {
     const target = directorTargetPlayerId({
       t: 12,
