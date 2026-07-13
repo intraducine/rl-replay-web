@@ -55,7 +55,7 @@ export function BoostDebugScene() {
       <Canvas
         dpr={1}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [35, 115, 460], fov: 34, near: 1, far: 5000 }}
+        camera={{ position: [-205, 82, 260], fov: 30, near: 1, far: 5000 }}
         onCreated={({ gl, scene }) => {
           gl.outputColorSpace = THREE.SRGBColorSpace;
           gl.toneMapping = THREE.ACESFilmicToneMapping;

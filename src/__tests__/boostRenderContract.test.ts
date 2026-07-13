@@ -16,6 +16,17 @@ describe("generic boost render contract", () => {
     expect(source).not.toContain("pointLight");
   });
 
+  it("anchors both plumes to the Octane rear grille clusters", () => {
+    const source = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
+
+    expect(source).toContain("export const OCTANE_REAR_GRILLE_ANCHORS");
+    expect(source).toContain("[-62, 24.25, -14]");
+    expect(source).toContain("[-62, 24.25, 14]");
+    expect(source).toContain("position={BOOST_GRILLE_CENTER}");
+    expect(source).toContain("OCTANE_REAR_GRILLE_ANCHORS.map");
+    expect(source).not.toContain("BOOST_NOZZLE_POSITION");
+  });
+
   it("uses geometry and the shared glow shader instead of source textures", () => {
     const carSource = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
     const visualSource = readFileSync(resolve(process.cwd(), "src/viewer/boostVisuals.ts"), "utf8");

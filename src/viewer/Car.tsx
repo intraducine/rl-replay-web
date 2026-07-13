@@ -17,11 +17,21 @@ const OCTANE_CHASSIS_TEXTURE = publicAsset("/rl-assets/octane/Chasis_Pepe_D.png"
 const OCTANE_SCALE = 100;
 const CAR_BOOST_OBJECT_NAME = "carBoost";
 const SUPERSONIC_TRAIL_OBJECT_NAME = "supersonicTrail";
-const BOOST_NOZZLE_POSITION: [number, number, number] = [-50, 10, 0];
-const BOOST_OUTER_LENGTH = 150;
-const BOOST_CORE_LENGTH = 112;
-const BOOST_OUTER_GEOMETRY = createTwinPlumeGeometry(BOOST_OUTER_LENGTH, 31);
-const BOOST_CORE_GEOMETRY = createTwinPlumeGeometry(BOOST_CORE_LENGTH, 15);
+// Measured from the two dense rear-facing OctaneChassis_MIC grille clusters in
+// Body_OctaneWheels_SM (the source mesh is scaled by 100 in this viewer).
+export const OCTANE_REAR_GRILLE_ANCHORS = [
+  [-62, 24.25, -14],
+  [-62, 24.25, 14]
+] as const;
+const BOOST_GRILLE_CENTER: [number, number, number] = [
+  (OCTANE_REAR_GRILLE_ANCHORS[0][0] + OCTANE_REAR_GRILLE_ANCHORS[1][0]) / 2,
+  (OCTANE_REAR_GRILLE_ANCHORS[0][1] + OCTANE_REAR_GRILLE_ANCHORS[1][1]) / 2,
+  (OCTANE_REAR_GRILLE_ANCHORS[0][2] + OCTANE_REAR_GRILLE_ANCHORS[1][2]) / 2
+];
+const BOOST_OUTER_LENGTH = 138;
+const BOOST_CORE_LENGTH = 104;
+const BOOST_OUTER_GEOMETRY = createTwinPlumeGeometry(BOOST_OUTER_LENGTH, 10);
+const BOOST_CORE_GEOMETRY = createTwinPlumeGeometry(BOOST_CORE_LENGTH, 5.5);
 
 /** Two combined meshes are the full draw budget for each active car boost. */
 export const GENERIC_CAR_BOOST_DRAW_CALLS = 2;
@@ -91,7 +101,7 @@ function GenericBoost() {
 
   return (
     <group ref={rootRef} name={CAR_BOOST_OBJECT_NAME} visible={false}>
-      <group ref={plumeRef} position={BOOST_NOZZLE_POSITION}>
+      <group ref={plumeRef} position={BOOST_GRILLE_CENTER}>
         <mesh geometry={BOOST_OUTER_GEOMETRY} material={outerMaterial} renderOrder={8} onUpdate={enableBloomLayer} />
         <mesh geometry={BOOST_CORE_GEOMETRY} material={coreMaterial} renderOrder={9} onUpdate={enableBloomLayer} />
       </group>
@@ -100,10 +110,10 @@ function GenericBoost() {
 }
 
 function createTwinPlumeGeometry(length: number, radius: number) {
-  const geometries = [-9, 9].map((z) => {
+  const geometries = OCTANE_REAR_GRILLE_ANCHORS.map(([, y, z]) => {
     const geometry = new THREE.ConeGeometry(radius, length, 10, 1, true);
     geometry.rotateZ(Math.PI / 2);
-    geometry.translate(-length / 2, 0, z);
+    geometry.translate(-length / 2, y - BOOST_GRILLE_CENTER[1], z - BOOST_GRILLE_CENTER[2]);
     return geometry;
   });
   const merged = mergeGeometries(geometries, false);

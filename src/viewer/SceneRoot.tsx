@@ -211,10 +211,7 @@ function isEditableEventTarget(target: EventTarget | null): boolean {
 function RocketLeaguePostprocess() {
   const { camera, gl, scene, size } = useThree();
   const { bloomComposer, finalComposer, smaaPass } = useMemo(() => {
-    const antialiasSamples = Math.min(4, gl.capabilities.maxSamples);
     const nextBloomComposer = new EffectComposer(gl);
-    nextBloomComposer.renderTarget1.samples = antialiasSamples;
-    nextBloomComposer.renderTarget2.samples = antialiasSamples;
     nextBloomComposer.renderToScreen = false;
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(size.width, size.height), 0.62, 0.24, 0.52);
     bloomPass.threshold = 0.38;
@@ -237,8 +234,6 @@ function RocketLeaguePostprocess() {
     finalPass.needsSwap = true;
 
     const nextFinalComposer = new EffectComposer(gl);
-    nextFinalComposer.renderTarget1.samples = antialiasSamples;
-    nextFinalComposer.renderTarget2.samples = antialiasSamples;
     const nextSmaaPass = new SMAAPass();
     nextFinalComposer.addPass(new RenderPass(scene, camera));
     nextFinalComposer.addPass(finalPass);
