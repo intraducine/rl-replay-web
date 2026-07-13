@@ -19,8 +19,6 @@ import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 const BOOST_PAD_ASSET_ROOT = publicAsset("/rl-assets/champions-field-full/Pickup_Boost/StaticMesh3");
 const SMALL_PAD_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Small_02_SM.gltf`;
 const LARGE_PAD_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Large.gltf`;
-const LARGE_GLOW_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Large_Glow.gltf`;
-const LARGE_SCROLL_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Scroll_SM.gltf`;
 const BOOST_PAD_TEXTURE_ROOT = publicAsset("/rl-assets/champions-field-full/Pickup_Boost_Textures/Texture2D");
 const SMALL_PAD_TEXTURE = `${BOOST_PAD_TEXTURE_ROOT}/BoostPad_Small_D.dds`;
 const LARGE_PAD_TEXTURE = `${BOOST_PAD_TEXTURE_ROOT}/BoostPad_Large_D.dds`;
@@ -30,18 +28,16 @@ type BoostPadGeometries = {
   smallBase: THREE.BufferGeometry;
   smallEnergy: THREE.BufferGeometry;
   largeBase: THREE.BufferGeometry;
-  largeDisc: THREE.BufferGeometry;
-  largeColumn: THREE.BufferGeometry;
-  largeScroll: THREE.BufferGeometry;
+  largeOrb: THREE.SphereGeometry;
+  largeOrbHalo: THREE.SphereGeometry;
 };
 
 type BoostPadMaterials = {
   smallBase: THREE.MeshStandardMaterial;
   smallActive: THREE.MeshStandardMaterial;
   largeBase: THREE.MeshStandardMaterial;
-  inset: THREE.MeshStandardMaterial;
-  energy: THREE.MeshBasicMaterial;
-  energyCore: THREE.MeshBasicMaterial;
+  orb: THREE.MeshBasicMaterial;
+  orbHalo: THREE.MeshBasicMaterial;
 };
 
 export function BoostPads({ timeline }: { timeline: ReplayTimeline }) {
@@ -101,8 +97,7 @@ function BoostPadActor({
     group.scale.setScalar(Math.max(energy, 0.001));
 
     if (floatingEnergy.current) {
-      floatingEnergy.current.rotation.y = clock.elapsedTime * (pad.type === "large" ? 1.45 : 0.8);
-      floatingEnergy.current.position.y = pad.type === "large" ? 0.05 + Math.sin(clock.elapsedTime * 3.2 + pad.id) * 0.035 : 0;
+      floatingEnergy.current.position.y = 0.58 + Math.sin(clock.elapsedTime * 3.2 + pad.id) * 0.025;
     }
     if (light.current) light.current.intensity = 54 * energy;
   });
@@ -121,10 +116,9 @@ function BoostPadActor({
         <>
           <mesh geometry={geometries.largeBase} material={materials.largeBase} receiveShadow />
           <group ref={energyGroup}>
-            <mesh geometry={geometries.largeScroll} material={materials.inset} renderOrder={2} />
-            <mesh geometry={geometries.largeDisc} material={materials.energy} renderOrder={3} />
-            <group ref={floatingEnergy}>
-              <mesh geometry={geometries.largeColumn} material={materials.energyCore} renderOrder={4} />
+            <group ref={floatingEnergy} position={[0, 0.58, 0]}>
+              <mesh geometry={geometries.largeOrb} material={materials.orb} renderOrder={3} />
+              <mesh geometry={geometries.largeOrbHalo} material={materials.orbHalo} renderOrder={4} />
             </group>
             <pointLight ref={light} color="#ffb12f" intensity={54} distance={4.2} decay={2} position={[0, 0.48, 0]} />
           </group>
@@ -137,21 +131,17 @@ function BoostPadActor({
 function useBoostPadGeometries(): BoostPadGeometries {
   const smallPad = useGLTF(SMALL_PAD_ASSET);
   const largePad = useGLTF(LARGE_PAD_ASSET);
-  const largeGlow = useGLTF(LARGE_GLOW_ASSET);
-  const largeScroll = useGLTF(LARGE_SCROLL_ASSET);
 
   return useMemo(() => {
     const small = geometriesByHeight(smallPad.scene);
-    const largeGlowParts = geometriesByHeight(largeGlow.scene);
     return {
       smallBase: requiredGeometry(small[0], SMALL_PAD_ASSET),
       smallEnergy: requiredGeometry(small[small.length - 1], SMALL_PAD_ASSET),
       largeBase: requiredGeometry(geometriesByHeight(largePad.scene)[0], LARGE_PAD_ASSET),
-      largeDisc: requiredGeometry(largeGlowParts[0], LARGE_GLOW_ASSET),
-      largeColumn: requiredGeometry(largeGlowParts[largeGlowParts.length - 1], LARGE_GLOW_ASSET),
-      largeScroll: requiredGeometry(geometriesByHeight(largeScroll.scene)[0], LARGE_SCROLL_ASSET)
+      largeOrb: new THREE.SphereGeometry(0.31, 32, 24),
+      largeOrbHalo: new THREE.SphereGeometry(0.4, 32, 24)
     };
-  }, [largeGlow.scene, largePad.scene, largeScroll.scene, smallPad.scene]);
+  }, [largePad.scene, smallPad.scene]);
 }
 
 function useBoostPadMaterials(): BoostPadMaterials {
@@ -192,31 +182,18 @@ function useBoostPadMaterials(): BoostPadMaterials {
         roughness: 0.5,
         metalness: 0.3
       }),
-      inset: new THREE.MeshStandardMaterial({
-        name: "boost-pad-energy-inset",
-        color: "#ffb12f",
-        emissive: "#ff8a00",
-        emissiveIntensity: 4.2,
-        roughness: 0.34,
-        metalness: 0.18,
+      orb: new THREE.MeshBasicMaterial({
+        name: "boost-pad-full-orb",
+        color: "#ffc342",
         toneMapped: false
       }),
-      energy: new THREE.MeshBasicMaterial({
-        name: "boost-pad-amber-energy",
-        color: "#ffad2f",
+      orbHalo: new THREE.MeshBasicMaterial({
+        name: "boost-pad-full-orb-halo",
+        color: "#ff9f1c",
         transparent: true,
-        opacity: 0.86,
+        opacity: 0.28,
         depthWrite: false,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending,
-        toneMapped: false
-      }),
-      energyCore: new THREE.MeshBasicMaterial({
-        name: "boost-pad-white-hot-core",
-        color: "#ffe9a0",
-        transparent: true,
-        opacity: 0.9,
-        depthWrite: false,
+        depthTest: true,
         side: THREE.DoubleSide,
         blending: THREE.AdditiveBlending,
         toneMapped: false
@@ -263,5 +240,3 @@ function requiredGeometry(geometry: THREE.BufferGeometry | undefined, asset: str
 
 useGLTF.preload(SMALL_PAD_ASSET);
 useGLTF.preload(LARGE_PAD_ASSET);
-useGLTF.preload(LARGE_GLOW_ASSET);
-useGLTF.preload(LARGE_SCROLL_ASSET);

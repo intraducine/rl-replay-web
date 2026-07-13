@@ -26,8 +26,10 @@ describe("standard arena boost pads", () => {
 
     expect(source).toContain("BoostPad_Small_02_SM.gltf");
     expect(source).toContain("BoostPad_Large.gltf");
-    expect(source).toContain("BoostPad_Large_Glow.gltf");
-    expect(source).toContain("BoostPad_Scroll_SM.gltf");
+    expect(source).toContain("new THREE.SphereGeometry(0.31, 32, 24)");
+    expect(source).toContain('name: "boost-pad-full-orb"');
+    expect(source).not.toContain("BoostPad_Large_Glow.gltf");
+    expect(source).not.toContain("BoostPad_Scroll_SM.gltf");
     expect(source).toContain("BoostPad_Small_D.dds");
     expect(source).toContain("BoostPad_Large_D.dds");
     expect(source).toContain("DDSLoader");
