@@ -20,7 +20,7 @@ describe("alpha boost debug scene", () => {
     const replayViewerSource = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
     expect(debugPageSource).toContain("AlphaBoostDebugScene");
-    expect(debugPageSource).toContain("Alpha Boost QA");
+    expect(debugPageSource).toContain("Boost Visual QA");
     expect(replayViewerSource).not.toContain("AlphaBoostDebugScene");
   });
 });

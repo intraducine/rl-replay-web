@@ -44,7 +44,12 @@ const ALPHA_LENS_FLARE_REFLECTION_COLOR = new THREE.Color();
 const ALPHA_BOOST_ATTACHMENT_POSITIONS = ALPHA_BOOST_CASCADE.boostMesh.sourceAttachmentOverrides.map(sourceAttachmentViewerPosition);
 const ALPHA_LENS_FLARE_POSITION = sourceAveragePosition(ALPHA_BOOST_ATTACHMENT_POSITIONS);
 const ALPHA_BOOST_MAIN_BODY_POSITION = ALPHA_LENS_FLARE_POSITION;
-const ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST = ALPHA_BOOST_CASCADE.flame.peakActiveParticles;
+// Runtime SpawnPerUnit overrides can yield 144 particles/exhaust at max speed; cap only the web draw budget.
+const ALPHA_MAX_RENDERED_FLAME_PARTICLES_PER_EXHAUST = 24;
+const ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST = Math.min(
+  ALPHA_BOOST_CASCADE.flame.particlesPerExhaustAtReferenceSpeed,
+  ALPHA_MAX_RENDERED_FLAME_PARTICLES_PER_EXHAUST
+);
 const ALPHA_LENS_FLARE_OCCLUSION_STEP_SECONDS = ALPHA_BOOST_CASCADE.updateStepSeconds * 2;
 const ALPHA_LENS_FLARE_OCCLUSION_CAMERA_EPSILON_SQ = 128 * 128;
 const ALPHA_LENS_FLARE_OCCLUSION_SOURCE_EPSILON_SQ = 96 * 96;
@@ -61,6 +66,8 @@ const ALPHA_RENDERED_MAIN_PARTICLES = sourceCascadeSpawnAccumulatorActiveParticl
   ALPHA_BOOST_CASCADE.main.peakActiveParticles
 );
 const ALPHA_FLAME_DENSITY_OPACITY = 1;
+// Native Cascade sprite expansion is larger than a unit Three.js plane after the axis transpose.
+const ALPHA_MAIN_WEB_VERTEX_FACTORY_SCALE: readonly [number, number] = [2.85, 1.45];
 const ALPHA_BOOST_MESH_FADE_IN_DURATION = sourceTimeRangeDuration(ALPHA_BOOST_CASCADE.boostMesh.fadeInTime);
 const ALPHA_BOOST_MESH_FADE_OUT_DURATION = sourceTimeRangeDuration(ALPHA_BOOST_CASCADE.boostMesh.fadeOutTime);
 const ALPHA_FLAME_VELOCITY_OVER_LIFE_INTEGRAL = sourceIntegratedFlameVelocityOverLifeSamples();
@@ -222,10 +229,12 @@ function AlphaBoost() {
     };
 
     return {
-      flame: Array.from({ length: ALPHA_BOOST_ATTACHMENT_POSITIONS.length * ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST }, () =>
-        createLiquidGoldParticleMaterial(sharedTextures)
+      flame: Array.from({ length: ALPHA_BOOST_ATTACHMENT_POSITIONS.length * ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST }, (_, index) =>
+        createLiquidGoldParticleMaterial(sharedTextures, (index + 0.5) / (ALPHA_BOOST_ATTACHMENT_POSITIONS.length * ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST))
       ),
-      main: Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }, () => createLiquidGoldParticleMaterial(sharedTextures))
+      main: Array.from({ length: ALPHA_RENDERED_MAIN_PARTICLES }, (_, index) =>
+        createLiquidGoldParticleMaterial(sharedTextures, (index + 0.5) / ALPHA_RENDERED_MAIN_PARTICLES)
+      )
     };
   }, [textures]);
 
@@ -299,7 +308,14 @@ function AlphaBoost() {
       particle.visible = flameComponentEnabled && emitterIndex < activeFlameParticlesPerExhaust && particleVisibility > 0;
       if (!particle.visible) continue;
 
-      const particleClock = sourceSpawnPerUnitParticleAge(emitterIndex, flameSpawnAges, flameSpawnRate, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds);
+      const particleClock = sourceSpawnPerUnitParticleAge(
+        emitterIndex,
+        activeFlameParticlesPerExhaust,
+        flameSpawnAges,
+        flameSpawnRate,
+        ALPHA_BOOST_CASCADE.flame.lifetimeSeconds,
+        ALPHA_BOOST_CASCADE.updateStepSeconds
+      );
       const phase = particleClock / ALPHA_BOOST_CASCADE.flame.lifetimeSeconds;
       const origin = ALPHA_BOOST_ATTACHMENT_POSITIONS[exhaustIndex % ALPHA_BOOST_ATTACHMENT_POSITIONS.length];
       const age = particleClock;
@@ -397,7 +413,13 @@ function AlphaBoost() {
         origin[2] + velocity[2] * age
       );
       particle.quaternion.copy(billboardQuaternion);
-      particle.scale.set(particleSize[0], particleSize[1], 1);
+      // The native sprite lies along the boost axis with its Z dimension as the visible
+      // cross-section. Using source X here collapses Gold Rush into a thin spear.
+      particle.scale.set(
+        particleSize[1] * ALPHA_MAIN_WEB_VERTEX_FACTORY_SCALE[0],
+        particleSize[2] * ALPHA_MAIN_WEB_VERTEX_FACTORY_SCALE[1],
+        1
+      );
       if (particle.material instanceof THREE.ShaderMaterial) {
         ALPHA_MAIN_PARTICLE_UPDATE.opacity = alpha * particleVisibility;
         ALPHA_MAIN_PARTICLE_UPDATE.colorScale = colorLife[0];
@@ -530,13 +552,17 @@ function sourceCascadeSpawnBirthOffsetFromParameters(particleIndex: number, spaw
 
 function sourceSpawnPerUnitParticleAge(
   particleIndex: number,
+  renderedParticleCount: number,
   sourceAges: unknown,
   spawnRate: number,
   lifetimeSeconds: number,
   updateStepSeconds: number
 ) {
-  if (Array.isArray(sourceAges) && typeof sourceAges[particleIndex] === "number") {
-    return THREE.MathUtils.clamp(sourceAges[particleIndex], 0, lifetimeSeconds);
+  if (Array.isArray(sourceAges) && sourceAges.length > 0) {
+    const denominator = Math.max(1, renderedParticleCount - 1);
+    const sourceIndex = Math.round((particleIndex / denominator) * Math.max(0, sourceAges.length - 1));
+    const age = sourceAges[sourceIndex];
+    if (typeof age === "number") return THREE.MathUtils.clamp(age, 0, lifetimeSeconds);
   }
 
   return sourceParticleAge(

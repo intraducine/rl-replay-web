@@ -459,6 +459,12 @@ progress { width: 100%; height: 8px; accent-color: var(--cyan); }
 .debug-page > .panel:first-child { grid-row: 1 / span 2; }
 .alpha-boost-debug-scene { height: min(58vh, 520px); min-height: 360px; overflow: hidden; border: 1px solid var(--line); background: var(--ink); }
 @supports (height: 100dvh) { .alpha-boost-debug-scene { height: min(58dvh, 520px); } }
+.debug-visual-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.debug-visual-tabs button { min-height: 36px; padding: 0 14px; border: 1px solid transparent; color: var(--muted); background: transparent; font-weight: 850; cursor: pointer; }
+.debug-visual-tabs button:hover { border-color: var(--line); color: var(--text); }
+.debug-visual-tabs button.selected { border-color: var(--cyan); color: var(--ink); background: var(--cyan); }
+.boost-pad-debug-scene { height: min(58vh, 520px); min-height: 360px; overflow: hidden; border: 1px solid var(--line); background: var(--ink); }
+@supports (height: 100dvh) { .boost-pad-debug-scene { height: min(58dvh, 520px); } }
 pre { overflow: auto; max-height: 360px; margin: 8px 0 0; padding: 12px; background: #071018; color: #dce5e9; }
 .nameplate { padding: 4px 8px; border-bottom: 2px solid var(--blue); color: white; background: rgba(7, 16, 24, .82); font-size: 12px; font-weight: 850; white-space: nowrap; text-shadow: 0 1px 2px black; }
 .nameplate.orange { border-bottom-color: var(--orange); }

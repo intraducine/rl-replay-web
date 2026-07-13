@@ -28,11 +28,12 @@ export type LiquidGoldParticleUpdate = {
   time: number;
 };
 
-export function createLiquidGoldParticleMaterial(textures: LiquidGoldTextureSet) {
+export function createLiquidGoldParticleMaterial(textures: LiquidGoldTextureSet, particleSeed = 0) {
   const material = new THREE.ShaderMaterial({
     name: "LiquidGold_02_MAT_particle",
     transparent: true,
     depthWrite: false,
+    // Boost_AlphaReward_SF exports LiquidGold_02_MAT as BLEND_Translucent.
     blending: THREE.NormalBlending,
     toneMapped: true,
     uniforms: {
@@ -50,6 +51,7 @@ export function createLiquidGoldParticleMaterial(textures: LiquidGoldTextureSet)
       uOpacity: { value: 1 },
       uColorScale: { value: 1 },
       uPhase: { value: 0 },
+      uParticleSeed: { value: particleSeed },
       uTime: { value: 0 }
     },
     vertexShader: LIQUID_GOLD_VERTEX_SHADER,
@@ -221,12 +223,15 @@ const ALPHA_REWARD_BOOST_MESH_FRAGMENT_SHADER = /* glsl */ `
     float bodyMask = edgeFalloff * fresnel * gradient * sparkMask;
     float shapedFresnel = fresnel * gradient;
     if (abs(edgeCoord) < 0.000001 || abs(viewFacingRaw) < 0.000001) shapedFresnel = 0.0;
-    float alphaCore = bodyMask * 64.0 + shapedFresnel;
-    float alpha = alphaCore;
+    // The native HDR alpha fields are energy metadata. Literal multiplication clips to white in ACES.
+    float sheetEnvelope = clamp(max(sheetA.r, sheetB.r) * 1.35, 0.0, 1.0);
+    float alphaCore = bodyMask * 18.0 + shapedFresnel * sheetEnvelope * 0.22;
+    float alpha = clamp(alphaCore, 0.0, 0.88);
 
-    vec3 inner = uInnerColor.rgb * uInnerColor.a * uIntensityParams.x;
-    vec3 outer = uOuterColor.rgb * uOuterColor.a * uIntensityParams.y;
-    vec3 sourceColor = inner + selector * (outer - inner);
+    vec3 inner = uInnerColor.rgb * uIntensityParams.x;
+    vec3 outer = uOuterColor.rgb * uIntensityParams.y;
+    float sourceEnergy = mix(uInnerColor.a, uOuterColor.a, selector);
+    vec3 sourceColor = (inner + selector * (outer - inner)) * mix(1.25, 1.75, sourceEnergy / 6.0);
     vec3 color = sourceColor * uSourceBasePassFog.a + uSourceBasePassFog.rgb;
     gl_FragColor = vec4(color, alpha * uOpacity * uBoostMeshFade);
   }
@@ -247,16 +252,24 @@ const LIQUID_GOLD_FRAGMENT_SHADER = /* glsl */ `
   uniform float uOpacity;
   uniform float uColorScale;
   uniform float uPhase;
+  uniform float uParticleSeed;
   uniform float uTime;
 
   varying vec2 vUv;
 
   void main() {
-    // LiquidGold_02_MAT particle shader hash 6d9e0e75 from FParticleSubUVDynamicParameterVertexFactory.
-    vec2 centeredUv = vUv * 0.5 - vec2(0.5);
+    // LiquidGold_02_MAT shader hash 6d9e0e75, adapted from its native particle vertex-factory UVs
+    // to a web plane's 0..1 UVs before preserving the decoded smoke/dust/cone operations below.
+    // ParticleModuleRequired allows image flipping. Keep each particle's flip stable so
+    // the overlapping Cloud_T sprites read as turbulent volume instead of one repeated wedge.
+    float verticalFlip = mod(floor(uParticleSeed * 8.0), 2.0) < 1.0 ? 1.0 : -1.0;
+    vec2 webUv = vec2(vUv.x, (vUv.y - 0.5) * verticalFlip + 0.5);
+    vec2 sourceUv = webUv;
+    vec2 centeredUv = sourceUv - vec2(0.5);
     vec2 smokeUv = vec2(dot(uSmokeRowX, centeredUv), dot(uSmokeRowY, centeredUv)) + vec2(0.5);
     vec4 smokeNoise = texture2D(uSmokeNoiseMap, smokeUv);
-    vec2 distortedUv = vUv + smokeNoise.xy * 0.08;
+    vec2 distortion = (smokeNoise.xy * 2.0 - 1.0) * (0.035 + uDynamicParams.x * 0.003);
+    vec2 distortedUv = clamp(sourceUv + distortion, vec2(0.001), vec2(0.999));
 
     vec4 cone = texture2D(uConeMap, distortedUv);
     vec3 coneEnergy = pow(max(abs(cone.rgb), vec3(0.000001)), vec3(15.0)) * 50.0;
@@ -268,12 +281,16 @@ const LIQUID_GOLD_FRAGMENT_SHADER = /* glsl */ `
     vec3 dustNoise = ((dust.a - 0.2) * 0.5 + dustWxy) * dustWxy + uDynamicParams.w;
     dustNoise = clamp(dustNoise * cloud.r, 0.0, 1.0) * 3.0;
 
-    vec3 liquid = cloud.r * coneEnergy + dustNoise;
-    float alphaSeed = uOpacity * dustNoise.x - 0.01;
-    float alpha = clamp(alphaSeed + alphaSeed, 0.0, 1.0);
+    float radialEnvelope = 1.0 - smoothstep(0.46, 0.72, length(centeredUv));
+    float coneSpark = dot(coneEnergy, vec3(0.333333));
+    float cloudEnvelope = clamp(cloud.r * (0.68 + dustNoise.x * 0.26) + coneSpark * 0.16, 0.0, 1.0);
+    float alpha = clamp(uOpacity * (cloudEnvelope * 3.2 + dustNoise.x * 0.22) * radialEnvelope, 0.0, 0.94);
 
-    vec3 color = liquid * uCoreColor * uColorScale;
-    color = color * uDynamicParams.y + uSourceAdditiveColor;
+    vec3 emberGold = vec3(1.45, 0.34, 0.025);
+    vec3 texturedGold = mix(emberGold, uCoreColor, smoothstep(0.18, 0.86, cloudEnvelope));
+    vec3 liquid = texturedGold * (0.3 + cloudEnvelope * 1.06) + coneEnergy * uCoreColor * 0.48;
+    vec3 color = liquid * uColorScale * (0.55 + uDynamicParams.y * 0.9);
+    color += uSourceAdditiveColor;
     color = color * uSourceBasePassFog.a + uSourceBasePassFog.rgb;
 
     gl_FragColor = vec4(color, alpha);

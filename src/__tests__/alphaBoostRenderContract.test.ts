@@ -101,12 +101,14 @@ describe("Alpha boost render contract", () => {
 
     expect(carSource).toContain("setSourceFlameWorldOffset");
     expect(carSource).toContain("sourceRuntimeFlameParticleSize");
-    expect(carSource).toContain("const ALPHA_RENDERED_FLAME_PARTICLES_PER_EXHAUST = ALPHA_BOOST_CASCADE.flame.peakActiveParticles");
+    expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.particlesPerExhaustAtReferenceSpeed");
+    expect(carSource).toContain("ALPHA_MAX_RENDERED_FLAME_PARTICLES_PER_EXHAUST");
     expect(carSource).toContain("activeFlameParticlesPerExhaust");
     expect(carSource).toContain("root.userData.alphaBoostFlameDistanceWindow");
     expect(carSource).toContain("root.userData.alphaBoostFlameSpawnAges");
     expect(carSource).toContain("sourceSpawnPerUnitRateFromDistance(flameDistanceWindow, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, ALPHA_BOOST_CASCADE.flame.spawnPerUnit, ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar)");
-    expect(carSource).toContain("sourceSpawnPerUnitParticleAge(emitterIndex, flameSpawnAges, flameSpawnRate, ALPHA_BOOST_CASCADE.flame.lifetimeSeconds, ALPHA_BOOST_CASCADE.updateStepSeconds)");
+    expect(carSource).toContain("sourceSpawnPerUnitParticleAge(");
+    expect(carSource).toContain("activeFlameParticlesPerExhaust,");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.runtimeParameters.particleSize");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar");
     expect(carSource).toContain("ALPHA_BOOST_CASCADE.flame.velocityOverLife.samples.length - 1");

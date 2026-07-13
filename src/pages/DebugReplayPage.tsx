@@ -5,12 +5,16 @@ import type { ReplayInspection } from "../replay/types";
 import { FileDropzone } from "../ui/FileDropzone";
 import { Panel } from "../ui/Panel";
 import { AlphaBoostDebugScene } from "../viewer/AlphaBoostDebugScene";
+import { BoostPadDebugScene } from "../viewer/BoostPadDebugScene";
 
 export function DebugReplayPage() {
   const loader = useMemo(() => new ReplayLoader(), []);
   const [inspection, setInspection] = useState<ReplayInspection>();
   const [error, setError] = useState<string>();
   const [progress, setProgress] = useState("Idle");
+  const [visualQa, setVisualQa] = useState<"alpha" | "pads">(() =>
+    new URLSearchParams(window.location.search).get("qa") === "pads" ? "pads" : "alpha"
+  );
 
   const inspect = async (file: File) => {
     setError(undefined);
@@ -24,8 +28,28 @@ export function DebugReplayPage() {
 
   return (
     <main className="page debug-page">
-      <Panel title="Alpha Boost QA">
-        <AlphaBoostDebugScene />
+      <Panel title="Boost Visual QA">
+        <div className="debug-visual-tabs" role="tablist" aria-label="Boost visual QA scene">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visualQa === "alpha"}
+            className={visualQa === "alpha" ? "selected" : undefined}
+            onClick={() => setVisualQa("alpha")}
+          >
+            Alpha Boost
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={visualQa === "pads"}
+            className={visualQa === "pads" ? "selected" : undefined}
+            onClick={() => setVisualQa("pads")}
+          >
+            Boost Pads
+          </button>
+        </div>
+        {visualQa === "alpha" ? <AlphaBoostDebugScene /> : <BoostPadDebugScene />}
       </Panel>
       <FileDropzone onFile={inspect} />
       <Panel title="Inspector">

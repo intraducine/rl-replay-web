@@ -19,6 +19,7 @@ const DEBUG_FRAME: CarFrame = {
   velocity: [2300, 0, 0],
   boost: 100
 };
+const DEBUG_FLAME_AGES = Array.from({ length: 144 }, (_, index) => ((index + 0.5) / 144));
 
 type DebugRuntimeWindow = Window & {
   advanceTime?: (ms: number) => void;
@@ -55,7 +56,7 @@ export function AlphaBoostDebugScene() {
       <Canvas
         dpr={1}
         gl={{ antialias: true, powerPreference: "high-performance" }}
-        camera={{ position: [-360, 150, 210], fov: 34, near: 1, far: 5000 }}
+        camera={{ position: [35, 115, 460], fov: 34, near: 1, far: 5000 }}
         onCreated={({ gl, scene }) => {
           gl.outputColorSpace = THREE.SRGBColorSpace;
           gl.toneMapping = THREE.ACESFilmicToneMapping;
@@ -66,7 +67,7 @@ export function AlphaBoostDebugScene() {
         <ambientLight intensity={0.72} />
         <directionalLight position={[-400, 700, 500]} intensity={2.2} />
         <DebugOctaneBoost />
-        <OrbitControls makeDefault target={[-70, 24, 0]} enablePan={false} minDistance={160} maxDistance={1500} />
+        <OrbitControls makeDefault target={[-45, 24, 0]} enablePan={false} minDistance={160} maxDistance={1500} />
       </Canvas>
     </div>
   );
@@ -75,9 +76,18 @@ export function AlphaBoostDebugScene() {
 function DebugOctaneBoost() {
   const carRef = useRef<Group | null>(null);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (!carRef.current) return;
-    setCarAlphaBoostActive(carRef.current, true, DEBUG_FRAME, true);
+    setCarAlphaBoostActive(
+      carRef.current,
+      true,
+      DEBUG_FRAME,
+      true,
+      clock.elapsedTime,
+      2300,
+      DEBUG_FLAME_AGES,
+      clock.elapsedTime
+    );
   });
 
   return <Car ref={carRef} frame={DEBUG_FRAME} player={DEBUG_PLAYER} selected={false} showNameplate={false} />;
