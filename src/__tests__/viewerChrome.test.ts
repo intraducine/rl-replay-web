@@ -5,11 +5,14 @@ import { describe, expect, it } from "vitest";
 describe("viewer chrome layout", () => {
   const styles = () => readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
-  it("keeps the field dominant with independent broadcast overlays", () => {
+  it("keeps the field in a dedicated viewport above the independent timeline component", () => {
     const css = styles();
     const source = readFileSync(resolve(process.cwd(), "src/viewer/ReplayViewer.tsx"), "utf8");
 
     expect(css).toContain("--bottom-rail: 198px");
+    expect(css).toContain("grid-template-rows: minmax(0, 1fr) var(--bottom-rail)");
+    expect(css).toContain(".viewer-stage { position: relative;");
+    expect(css).toContain(".viewer-timeline { position: relative;");
     expect(css).toContain(".broadcast-scoreboard");
     expect(css).toContain("left: 50%");
     expect(css).toContain(".camera-dock");
@@ -23,6 +26,9 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".scoreboard .blue > span { transform: translateX(6px); }");
     expect(css).toContain(".scoreboard .orange > span { transform: translateX(-6px); }");
     expect(source).toContain('className="broadcast-scoreboard"');
+    expect(source).toContain('className="viewer-stage" aria-label="3D replay viewport"');
+    expect(source).toContain('className="viewer-timeline" aria-label="Replay timeline and playback controls"');
+    expect(source).not.toContain('className="viewer-overlay bottom"');
     expect(source).toContain('className="camera-dock" aria-label="Camera and rendering controls"');
     expect(source).toContain('className="camera-value" aria-hidden="true"');
     expect(source).toContain('data-active={boostRenderingEnabled ? "true" : "false"}');
@@ -40,7 +46,7 @@ describe("viewer chrome layout", () => {
     expect(css).toContain("transform: translateX(-102%)");
     expect(css).toContain(".roster-drawer.open");
     expect(css).toContain("overflow-y: auto");
-    expect(css).toContain("top: calc((100% - var(--bottom-rail)) / 2)");
+    expect(css).toContain(".roster-tab { position: absolute; z-index: 8; top: 50%");
     expect(css).toContain("transform: translateY(-50%)");
     expect(css).toContain(".roster-heading button { display: grid; align-self: center;");
     expect(css).toContain(".player-list button.selected.blue");

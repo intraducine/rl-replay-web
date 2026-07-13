@@ -3,12 +3,14 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PerspectiveCamera, Vector3 } from "three";
 import {
+  ballCamTransitionDuration,
   cameraModeOptions,
   cameraRigForMode,
   cameraSmoothingAlpha,
   directorTargetPlayerId,
   freeCameraKeyboardDisplacement,
   freeCameraMoveIntentForCode,
+  replayCameraResponseRates,
   setCameraLookAt
 } from "../viewer/SpectatorCamera";
 
@@ -343,13 +345,32 @@ describe("cameraRigForMode", () => {
     expect(sceneRootSource).not.toContain("OrbitControls");
   });
 
-  it("attaches replay cameras directly to interpolated state while easing director cuts", () => {
+  it("smoothly follows every replay camera while reserving snaps for seeks and initialization", () => {
     const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
 
-    expect(sceneRootSource).toContain('state.cameraMode !== "director"');
+    expect(sceneRootSource).not.toContain('state.cameraMode !== "director"');
     expect(sceneRootSource).toContain("camera.position.copy(tmpDesired)");
     expect(sceneRootSource).toContain("smoothedTarget.current.copy(tmpTarget)");
-    expect(sceneRootSource).toContain("camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, 10.5))");
-    expect(sceneRootSource).toContain("externalSeek || cameraChanged");
+    expect(sceneRootSource).toContain("camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, responseRates.position))");
+    expect(sceneRootSource).toContain("const shouldSnap = !cameraInitialized.current || externalSeek");
+    expect(sceneRootSource).not.toContain("externalSeek || cameraChanged");
+  });
+
+  it("uses replay swivel and transition settings for a finite ball-cam easing window", () => {
+    const slow = replayCameraResponseRates(
+      "player",
+      { fov: 110, height: 100, angle: -3, distance: 270, stiffness: 0.35, swivel: 3, transition: 0.8 },
+      true
+    );
+    const fast = replayCameraResponseRates(
+      "player",
+      { fov: 110, height: 100, angle: -3, distance: 270, stiffness: 0.35, swivel: 9, transition: 2 },
+      true
+    );
+
+    expect(fast.position).toBeGreaterThan(slow.position);
+    expect(fast.target).toBeGreaterThan(slow.target);
+    expect(ballCamTransitionDuration({ fov: 110, height: 100, angle: -3, distance: 270, stiffness: 0.35, swivel: 9, transition: 2 }))
+      .toBeLessThan(ballCamTransitionDuration({ fov: 110, height: 100, angle: -3, distance: 270, stiffness: 0.35, swivel: 3, transition: 0.8 }));
   });
 });

@@ -19,7 +19,9 @@ import { Car } from "./Car";
 import { DemoExplosions } from "./DemoExplosions";
 import { RocketLeagueLighting } from "./RocketLeagueLighting";
 import {
+  ballCamTransitionDuration,
   cameraRigForMode,
+  replayCameraResponseRates,
   cameraSmoothingAlpha,
   directorTargetPlayerId,
   freeCameraKeyboardDisplacement,
@@ -303,10 +305,12 @@ function ReplayObjects({
   const players = useMemo(() => completePlayers(timeline.metadata.players, initialSample), [timeline.metadata.players, initialSample]);
   const tmpTarget = useMemo(() => new Vector3(), []);
   const tmpDesired = useMemo(() => new Vector3(), []);
+  const tmpUp = useMemo(() => new Vector3(), []);
   const smoothedTarget = useRef(new Vector3());
+  const smoothedUp = useRef(new Vector3(0, 1, 0));
   const cameraInitialized = useRef(false);
-  const previousCameraMode = useRef(cameraMode);
-  const previousCameraPlayerId = useRef(selectedPlayerId);
+  const previousBallCam = useRef<boolean | undefined>(undefined);
+  const ballCamTransitionRemaining = useRef(0);
 
   useEffect(() => {
     alphaBoostFlameWindowCache.current.clear();
@@ -351,44 +355,63 @@ function ReplayObjects({
     );
 
     if (state.cameraMode === "free") {
-      previousCameraMode.current = "free";
-      previousCameraPlayerId.current = state.selectedPlayerId;
+      previousBallCam.current = undefined;
+      ballCamTransitionRemaining.current = 0;
       cameraInitialized.current = false;
       return;
     }
 
     const cameraPlayerId =
       state.cameraMode === "director" ? directorTargetPlayerId(sample, timeline.events) ?? state.selectedPlayerId : state.selectedPlayerId;
+    const playerCameraState = samplePlayerCameraState(timeline, cameraPlayerId, sample.t);
     const rig = cameraRigForMode(
       state.cameraMode,
       sample,
       cameraPlayerId,
       timeline.events,
-      samplePlayerCameraState(timeline, cameraPlayerId, sample.t)
+      playerCameraState
     );
-    camera.up.fromArray(rig.up);
     tmpDesired.fromArray(rig.position);
     tmpTarget.fromArray(rig.target);
+    tmpUp.fromArray(rig.up);
 
-    if ("fov" in camera && typeof rig.fov === "number" && camera.fov !== rig.fov) {
-      camera.fov = rig.fov;
-      camera.updateProjectionMatrix();
+    const currentBallCam = rig.ballCam === true;
+    if (
+      state.cameraMode === "player"
+      && previousBallCam.current !== undefined
+      && previousBallCam.current !== currentBallCam
+    ) {
+      ballCamTransitionRemaining.current = ballCamTransitionDuration(playerCameraState?.settings);
     }
-
-    const cameraChanged = previousCameraMode.current !== state.cameraMode || previousCameraPlayerId.current !== cameraPlayerId;
-    const shouldSnap = !cameraInitialized.current || externalSeek || cameraChanged || state.cameraMode !== "director";
+    if (externalSeek) ballCamTransitionRemaining.current = 0;
+    const ballCamTransitioning = ballCamTransitionRemaining.current > 0;
+    const responseRates = replayCameraResponseRates(state.cameraMode, playerCameraState?.settings, ballCamTransitioning);
+    const shouldSnap = !cameraInitialized.current || externalSeek;
 
     if (shouldSnap) {
       camera.position.copy(tmpDesired);
       smoothedTarget.current.copy(tmpTarget);
+      smoothedUp.current.copy(tmpUp);
     } else {
-      camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, 10.5));
-      smoothedTarget.current.lerp(tmpTarget, cameraSmoothingAlpha(delta, 13.5));
+      camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, responseRates.position));
+      smoothedTarget.current.lerp(tmpTarget, cameraSmoothingAlpha(delta, responseRates.target));
+      smoothedUp.current.lerp(tmpUp, cameraSmoothingAlpha(delta, responseRates.up)).normalize();
+    }
+    camera.up.copy(smoothedUp.current);
+
+    if ("fov" in camera && typeof rig.fov === "number") {
+      const nextFov = shouldSnap
+        ? rig.fov
+        : THREE.MathUtils.lerp(camera.fov, rig.fov, cameraSmoothingAlpha(delta, responseRates.fov));
+      if (Math.abs(camera.fov - nextFov) > 0.001) {
+        camera.fov = nextFov;
+        camera.updateProjectionMatrix();
+      }
     }
     camera.lookAt(smoothedTarget.current);
+    ballCamTransitionRemaining.current = Math.max(0, ballCamTransitionRemaining.current - delta);
     cameraInitialized.current = true;
-    previousCameraMode.current = state.cameraMode;
-    previousCameraPlayerId.current = cameraPlayerId;
+    previousBallCam.current = currentBallCam;
   });
 
   return (

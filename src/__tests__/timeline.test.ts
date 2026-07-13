@@ -171,6 +171,38 @@ describe("sampleTimeline", () => {
     expect(sample.cars.p1.boost).toBeCloseTo(70);
   });
 
+  it.each([0.25, 1])("produces continuous render-rate car and ball samples at %sx playback", (playbackSpeed) => {
+    const frameDuration = 1 / 30;
+    const renderDuration = 1 / 60;
+    const movingTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [0, 1, 2, 3].map((frame) => ({
+        t: frame * frameDuration,
+        ball: {
+          position: [frame * 30, 0, 0],
+          rotation: [0, 0, 0, 1],
+          velocity: [900, 0, 0]
+        },
+        cars: {
+          p1: {
+            position: [frame * 30, 0, 0],
+            rotation: [0, 0, 0, 1],
+            velocity: [900, 0, 0]
+          }
+        }
+      }))
+    };
+
+    let previous = sampleTimeline(movingTimeline, 0);
+    for (let renderFrame = 1; renderFrame <= 6 / playbackSpeed; renderFrame++) {
+      const current = sampleTimeline(movingTimeline, renderFrame * renderDuration * playbackSpeed);
+      const expectedStep = 900 * renderDuration * playbackSpeed;
+      expect(current.ball!.position[0] - previous.ball!.position[0]).toBeCloseTo(expectedStep, 4);
+      expect(current.cars.p1.position[0] - previous.cars.p1.position[0]).toBeCloseTo(expectedStep, 4);
+      previous = current;
+    }
+  });
+
   it("uses endpoint velocities to smooth position interpolation when available", () => {
     const velocityTimeline: ReplayTimeline = {
       ...timeline,

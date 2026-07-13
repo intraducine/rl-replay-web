@@ -96,7 +96,8 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
 
   return (
     <main className="viewer" aria-label={`Replay viewer: ${timeline.metadata.replayName ?? timeline.metadata.fileName}`}>
-      <SceneRoot timeline={timeline} />
+      <section className="viewer-stage" aria-label="3D replay viewport">
+        <SceneRoot timeline={timeline} />
 
       <div className="broadcast-scoreboard">
         <Scoreboard timeline={timeline} />
@@ -223,13 +224,15 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         </div>
       ) : null}
 
-      <div className="viewer-overlay bottom">
+      </section>
+
+      <section className="viewer-timeline" aria-label="Replay timeline and playback controls">
         <TimelineControls
           events={timeline.events}
           playerNameById={playerNameById}
           status={{ cameraLabel, playerName: selectedPlayerName, boostRenderingEnabled }}
         />
-      </div>
+      </section>
     </main>
   );
 }

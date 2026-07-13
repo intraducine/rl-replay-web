@@ -1,5 +1,5 @@
 import { Camera, MathUtils, Quaternion, Vector3 } from "three";
-import type { ReplayCameraSample, ReplayEvent, ReplayTimeline, SampledReplayState } from "../replay/types";
+import type { ReplayCameraSample, ReplayCameraSettings, ReplayEvent, ReplayTimeline, SampledReplayState } from "../replay/types";
 
 export type CameraMode = "free" | "ball" | "player" | "top-down" | "director";
 export type FreeCameraMoveIntent = "forward" | "backward" | "left" | "right" | "up" | "down";
@@ -22,6 +22,13 @@ export type CameraRig = {
   up: [number, number, number];
   fov?: number;
   ballCam?: boolean;
+};
+
+export type CameraResponseRates = {
+  position: number;
+  target: number;
+  up: number;
+  fov: number;
 };
 
 const DEFAULT_CAMERA_SETTINGS = {
@@ -282,6 +289,36 @@ export function setCameraLookAt(
 
 export function cameraSmoothingAlpha(deltaSeconds: number, responseRate: number): number {
   return 1 - Math.exp(-Math.max(0, deltaSeconds) * responseRate);
+}
+
+export function ballCamTransitionDuration(settings?: ReplayCameraSettings): number {
+  const transitionSpeed = Math.max(0.5, settings?.transition ?? DEFAULT_CAMERA_SETTINGS.transition);
+  return MathUtils.clamp(0.6 / transitionSpeed, 0.22, 0.55);
+}
+
+export function replayCameraResponseRates(
+  mode: CameraMode,
+  settings?: ReplayCameraSettings,
+  ballCamTransitioning = false
+): CameraResponseRates {
+  if (mode === "director") return { position: 10.5, target: 13.5, up: 12, fov: 10 };
+  if (mode === "top-down" || mode === "ball") return { position: 14, target: 17, up: 14, fov: 12 };
+  if (mode !== "player") return { position: 18, target: 20, up: 18, fov: 14 };
+
+  if (ballCamTransitioning) {
+    const transitionSpeed = settings?.transition ?? DEFAULT_CAMERA_SETTINGS.transition;
+    const swivelSpeed = settings?.swivel ?? DEFAULT_CAMERA_SETTINGS.swivel;
+    return {
+      position: MathUtils.clamp(transitionSpeed * 7, 7, 20),
+      target: MathUtils.clamp(swivelSpeed * 1.6, 8, 24),
+      up: 16,
+      fov: 12
+    };
+  }
+
+  const stiffness = settings?.stiffness ?? DEFAULT_CAMERA_SETTINGS.stiffness;
+  const followRate = MathUtils.clamp(20 + stiffness * 20, 20, 32);
+  return { position: followRate, target: followRate + 4, up: 24, fov: 18 };
 }
 
 export function freeCameraMoveIntentForCode(code: string): FreeCameraMoveIntent | undefined {
