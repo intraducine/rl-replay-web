@@ -6,9 +6,15 @@ type MotionKeyframe<T extends RigidBodyFrame> = {
   frame: T;
 };
 
+type MotionTrack<T extends RigidBodyFrame> = {
+  positions: MotionKeyframe<T>[];
+  rotations: MotionKeyframe<T>[];
+  states: MotionKeyframe<T>[];
+};
+
 type TimelineSamplingIndex = {
-  ball: MotionKeyframe<RigidBodyFrame>[];
-  cars: Map<string, MotionKeyframe<CarFrame>[]>;
+  ball: MotionTrack<RigidBodyFrame>;
+  cars: Map<string, MotionTrack<CarFrame>>;
   camera: Map<string, ReplayCameraSample[]>;
   demoWindows: Map<string, Array<{ start: number; end: number }>>;
 };
@@ -76,7 +82,7 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
   if (cached) return cached;
 
   const index: TimelineSamplingIndex = {
-    ball: [],
+    ball: createMotionTrack(),
     cars: new Map(),
     camera: new Map(),
     demoWindows: new Map()
@@ -90,7 +96,7 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
       const car = frame.cars[id];
       let track = index.cars.get(id);
       if (!track) {
-        track = [];
+        track = createMotionTrack();
         index.cars.set(id, track);
       }
       appendMotionKeyframe(track, frame.t, car);
@@ -126,7 +132,7 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
     }
     windows.push({
       start: event.t,
-      end: detectedRespawnTime(index.cars.get(event.victimId), event.t) ?? event.t + DEMO_RESPAWN_FALLBACK_SECONDS
+      end: detectedRespawnTime(index.cars.get(event.victimId)?.states, event.t) ?? event.t + DEMO_RESPAWN_FALLBACK_SECONDS
     });
   }
 
@@ -134,14 +140,21 @@ function buildSamplingIndex(timeline: ReplayTimeline): TimelineSamplingIndex {
   return index;
 }
 
-function appendMotionKeyframe<T extends RigidBodyFrame>(track: MotionKeyframe<T>[], t: number, frame: T) {
-  if (track.length === 0 || !sameRigidBodyPose(track[track.length - 1].frame, frame)) {
-    track.push({ t, frame });
-  }
+function createMotionTrack<T extends RigidBodyFrame>(): MotionTrack<T> {
+  return { positions: [], rotations: [], states: [] };
 }
 
-function sameRigidBodyPose(a: RigidBodyFrame, b: RigidBodyFrame): boolean {
-  return positionDistanceSq(a, b) <= MOTION_EPSILON_SQ && Math.abs(quatDot(a.rotation, b.rotation)) >= ROTATION_DOT_EPSILON;
+function appendMotionKeyframe<T extends RigidBodyFrame>(track: MotionTrack<T>, t: number, frame: T) {
+  track.states.push({ t, frame });
+  if (track.positions.length === 0 || positionDistanceSq(track.positions[track.positions.length - 1].frame, frame) > MOTION_EPSILON_SQ) {
+    track.positions.push({ t, frame });
+  }
+  if (
+    track.rotations.length === 0 ||
+    Math.abs(quatDot(track.rotations[track.rotations.length - 1].frame.rotation, frame.rotation)) < ROTATION_DOT_EPSILON
+  ) {
+    track.rotations.push({ t, frame });
+  }
 }
 
 function positionDistanceSq(a: RigidBodyFrame, b: RigidBodyFrame): number {
@@ -156,32 +169,74 @@ function quatDot(a: RigidBodyFrame["rotation"], b: RigidBodyFrame["rotation"]): 
 }
 
 function sampleMotionTrack<T extends RigidBodyFrame>(
-  track: MotionKeyframe<T>[] | undefined,
+  track: MotionTrack<T> | undefined,
   t: number,
   interpolate: (a: T, b: T, alpha: number, spanSeconds?: number) => T,
   maxDistance: number,
   maxSpeed: number
 ): T | undefined {
+  if (!track) return undefined;
+  const positionSample = samplePositionTrack(track.positions, t, interpolate, maxDistance, maxSpeed);
+  if (!positionSample) return undefined;
+  if (positionSample.discontinuous) return positionSample.frame;
+
+  const rotationSample = sampleRotationTrack(track.rotations, t);
+  if (!rotationSample) return positionSample.frame;
+  return {
+    ...positionSample.frame,
+    rotation: rotationSample.rotation,
+    angularVelocity: rotationSample.angularVelocity ?? positionSample.frame.angularVelocity
+  };
+}
+
+function samplePositionTrack<T extends RigidBodyFrame>(
+  track: MotionKeyframe<T>[],
+  t: number,
+  interpolate: (a: T, b: T, alpha: number, spanSeconds?: number) => T,
+  maxDistance: number,
+  maxSpeed: number
+): { frame: T; discontinuous: boolean } | undefined {
   if (!track?.length) return undefined;
-  if (track.length === 1 || t <= track[0].t) return track[0].frame;
-  if (t >= track[track.length - 1].t) return track[track.length - 1].frame;
+  if (track.length === 1 || t <= track[0].t) return { frame: track[0].frame, discontinuous: false };
+  if (t >= track[track.length - 1].t) return { frame: track[track.length - 1].frame, discontinuous: false };
 
   const low = firstTimeIndexAtOrAfter(track, t);
 
   const next = track[low];
   const previous = track[low - 1];
   const span = next.t - previous.t;
-  if (span <= 0) return previous.frame;
+  if (span <= 0) return { frame: previous.frame, discontinuous: false };
 
   const distance = Math.sqrt(positionDistanceSq(previous.frame, next.frame));
   if (distance > maxDistance || distance / span > maxSpeed) {
-    return t < next.t ? previous.frame : next.frame;
+    return { frame: t < next.t ? previous.frame : next.frame, discontinuous: true };
   }
   if (span > MAX_SMOOTH_SPAN_SECONDS) return undefined;
 
   const previousFrame = frameWithEstimatedVelocity(track, low - 1, low - 2, low, maxSpeed);
   const nextFrame = frameWithEstimatedVelocity(track, low, low - 1, low + 1, maxSpeed);
-  return interpolate(previousFrame, nextFrame, (t - previous.t) / span, span);
+  return { frame: interpolate(previousFrame, nextFrame, (t - previous.t) / span, span), discontinuous: false };
+}
+
+function sampleRotationTrack<T extends RigidBodyFrame>(track: MotionKeyframe<T>[], t: number): T | undefined {
+  if (!track.length) return undefined;
+  if (track.length === 1 || t <= track[0].t) return track[0].frame;
+  if (t >= track[track.length - 1].t) return track[track.length - 1].frame;
+
+  const low = firstTimeIndexAtOrAfter(track, t);
+  const next = track[low];
+  const previous = track[low - 1];
+  const span = next.t - previous.t;
+  if (!(span > 0)) return previous.frame;
+  const alpha = (t - previous.t) / span;
+  return {
+    ...previous.frame,
+    rotation: slerpQuat(previous.frame.rotation, next.frame.rotation, alpha),
+    angularVelocity:
+      previous.frame.angularVelocity && next.frame.angularVelocity
+        ? lerpVec3(previous.frame.angularVelocity, next.frame.angularVelocity, alpha)
+        : previous.frame.angularVelocity ?? next.frame.angularVelocity
+  };
 }
 
 function frameWithEstimatedVelocity<T extends RigidBodyFrame>(

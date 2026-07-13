@@ -241,6 +241,68 @@ describe("sampleTimeline", () => {
     expect(ballSteps.every((step) => step > 1)).toBe(true);
   });
 
+  it("keeps position interpolation continuous across rotation-only network updates", () => {
+    const rotatingTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        {
+          t: 0,
+          ball: { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
+          cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1] } }
+        },
+        {
+          t: 1 / 30,
+          ball: { position: [0, 0, 0], rotation: [0, 0, 0.382683, 0.92388] },
+          cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0.382683, 0.92388] } }
+        },
+        {
+          t: 2 / 30,
+          ball: { position: [20, 0, 0], rotation: [0, 0, 0.707107, 0.707107] },
+          cars: { p1: { position: [20, 0, 0], rotation: [0, 0, 0.707107, 0.707107] } }
+        }
+      ]
+    };
+
+    const sample = sampleTimeline(rotatingTimeline, 1 / 30);
+
+    expect(sample.cars.p1.position[0]).toBeCloseTo(10);
+    expect(sample.cars.p1.rotation[2]).toBeCloseTo(0.382683, 5);
+    expect(sample.cars.p1.rotation[3]).toBeCloseTo(0.92388, 5);
+    expect(sample.ball?.position[0]).toBeCloseTo(10);
+    expect(sample.ball?.rotation[2]).toBeCloseTo(0.382683, 5);
+  });
+
+  it("keeps rotation interpolation continuous across position-only network updates", () => {
+    const movingTimeline: ReplayTimeline = {
+      ...timeline,
+      frames: [
+        {
+          t: 0,
+          ball: { position: [0, 0, 0], rotation: [0, 0, 0, 1] },
+          cars: { p1: { position: [0, 0, 0], rotation: [0, 0, 0, 1] } }
+        },
+        {
+          t: 1 / 30,
+          ball: { position: [10, 0, 0], rotation: [0, 0, 0, 1] },
+          cars: { p1: { position: [10, 0, 0], rotation: [0, 0, 0, 1] } }
+        },
+        {
+          t: 2 / 30,
+          ball: { position: [20, 0, 0], rotation: [0, 0, 0.707107, 0.707107] },
+          cars: { p1: { position: [20, 0, 0], rotation: [0, 0, 0.707107, 0.707107] } }
+        }
+      ]
+    };
+
+    const sample = sampleTimeline(movingTimeline, 1 / 30);
+
+    expect(sample.cars.p1.position[0]).toBeCloseTo(10);
+    expect(sample.cars.p1.rotation[2]).toBeCloseTo(0.382683, 5);
+    expect(sample.cars.p1.rotation[3]).toBeCloseTo(0.92388, 5);
+    expect(sample.ball?.position[0]).toBeCloseTo(10);
+    expect(sample.ball?.rotation[2]).toBeCloseTo(0.382683, 5);
+  });
+
   it("uses endpoint velocities to smooth position interpolation when available", () => {
     const velocityTimeline: ReplayTimeline = {
       ...timeline,
@@ -498,7 +560,7 @@ describe("sampleTimeline", () => {
   it("uses cursor-backed time lookups across replay timeline hot paths", () => {
     const source = readFileSync(resolve(process.cwd(), "src/replay/ReplayTimeline.ts"), "utf8");
     const framePairSource = source.match(/function findFramePairIndices[\s\S]*?\n}\n\nfunction nearestCarState/)?.[0] ?? "";
-    const motionTrackSource = source.match(/function sampleMotionTrack[\s\S]*?\n}\n\nfunction findFramePairIndices/)?.[0] ?? "";
+    const motionTrackSource = source.match(/function samplePositionTrack[\s\S]*?\n}\n\nfunction sampleRotationTrack/)?.[0] ?? "";
     const cameraSource = source.match(/export function samplePlayerCameraState[\s\S]*?\n}\n\nfunction interpolateCameraSettings/)?.[0] ?? "";
     const distanceSource = source.match(/function carCumulativeDistanceAt[\s\S]*?\n}\n\nfunction carDistanceTrackForCar/)?.[0] ?? "";
 
