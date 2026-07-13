@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { ReplayTimeline } from "../replay/types";
 import { MatchMetadataBar } from "../viewer/MatchMetadataBar";
@@ -146,6 +146,7 @@ describe("replay insights UI", () => {
       events: [
         { type: "save", t: 135.1, playerId: "player-0-Kehvn" },
         { type: "goal", t: 117.6, team: 0, scorerId: "player-0-Kehvn" },
+        { type: "shot", t: 130.2, playerId: "player-0-Kehvn" },
         { type: "demo", t: 155.2, attackerId: "player-0-Kehvn", victimId: "player-1" }
       ]
     };
@@ -154,6 +155,13 @@ describe("replay insights UI", () => {
     expect(livePlayerStatsByPlayerAt(unsortedTimeline, 120)["player-0-Kehvn"]).toMatchObject({
       goals: 1,
       saves: 0,
+      shots: 0,
+      demos: 0
+    });
+    expect(livePlayerStatsByPlayerAt(unsortedTimeline, 140)["player-0-Kehvn"]).toMatchObject({
+      goals: 1,
+      saves: 1,
+      shots: 1,
       demos: 0
     });
     expect(source).toContain("statIndexCache");
@@ -243,6 +251,10 @@ describe("replay insights UI", () => {
     expect(container.querySelector(".event-track .event-goal .event-marker-tooltip")?.textContent).toBe("Goal");
     expect(container.querySelector(".event-hover-card")).toBeNull();
     expect(container.querySelector(".event-track .event-goal")?.getAttribute("aria-label")).toContain("Jump to Goal — Kehvn at 1:57");
+    expect(container.querySelector(".event-track .event-save")?.getAttribute("aria-label")).toContain("Jump to Save — Kehvn at 2:15");
+
+    fireEvent.mouseEnter(container.querySelector(".event-track .event-save") as Element);
+    expect(container.querySelector(".event-hover-card")?.textContent).toBe("SaveKehvn");
   });
 
   it("memoizes timeline event markers so playback progress updates less marker work", () => {

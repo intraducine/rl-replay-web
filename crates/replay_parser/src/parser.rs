@@ -4,7 +4,9 @@ use boxcars::{Attribute, CamSettings, ParserBuilder, Replay};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use wasm_bindgen::prelude::*;
 
-const PARSER_VERSION: &str = "boxcars-0.11.1";
+const PARSER_VERSION: &str = "rl-replay-parser-0.3.0+boxcars-0.11.1";
+const STAT_EVENT_MATCH_WINDOW_SECONDS: f32 = 1.0;
+const DUPLICATE_DEMO_WINDOW_SECONDS: f32 = 2.0;
 
 pub fn parse_replay_metadata(
     bytes: &[u8],
@@ -34,6 +36,7 @@ pub fn parse_replay_timeline(
         players: network_players,
         events: network_events,
         camera,
+        actor_name_to_player,
     } = extract_network_insights(&replay, &metadata);
     merge_network_metadata(&mut metadata, network_metadata);
     merge_player_insights(&mut metadata.players, network_players);
@@ -41,8 +44,10 @@ pub fn parse_replay_timeline(
     let clock = extract_clock_samples(&replay);
     metadata.match_length_seconds = match_length_seconds_from_clock(&clock);
     let mut events = goal_events(&replay);
-    events.extend(highlight_events(&replay));
+    events.extend(highlight_events(&replay, &actor_name_to_player));
     events.extend(network_events);
+    events = deduplicate_highlight_saves(events);
+    events = clean_demo_events(events);
     events.sort_by(|a, b| event_time(a).total_cmp(&event_time(b)));
 
     Ok(ReplayTimeline {
@@ -122,17 +127,13 @@ fn extract_timeline_frames(replay: &Replay, metadata: &ReplayMetadata) -> Vec<Ti
     let Some(network) = &replay.network_frames else {
         return Vec::new();
     };
-
-    let properties = property_map(replay);
-    let fps = float_prop(&properties, "RecordFPS")
-        .unwrap_or(30.0)
-        .max(1.0);
     let mut actors: HashMap<i32, ActorState> = HashMap::new();
     let mut player_car: HashMap<i32, String> = HashMap::new();
     let mut pri_to_player: HashMap<i32, String> = HashMap::new();
     let mut boost_component_vehicle: HashMap<i32, i32> = HashMap::new();
     let mut frames = Vec::with_capacity(network.frames.len().min(6000));
-    for (frame_index, frame) in network.frames.iter().enumerate() {
+    let mut t = 0.0;
+    for frame in &network.frames {
         for actor in &frame.new_actors {
             let object_name = object_name(replay, actor.object_id.0).unwrap_or_default();
             let state = ActorState {
@@ -304,11 +305,12 @@ fn extract_timeline_frames(replay: &Replay, metadata: &ReplayMetadata) -> Vec<Ti
 
         if ball.is_some() || !cars.is_empty() {
             frames.push(TimelineFrame {
-                t: frame_index as f32 / fps,
+                t,
                 ball,
                 cars,
             });
         }
+        t += frame.delta;
     }
 
     frames
@@ -395,7 +397,7 @@ fn goal_events(replay: &Replay) -> Vec<ReplayEvent> {
             let t = object
                 .and_then(|obj| obj.get("frame").or_else(|| obj.get("Frame")))
                 .and_then(|value| value.as_f64())
-                .map(|frame| frame as f32 / fps)
+                .map(|frame| replay_frame_time(replay, frame as usize, fps))
                 .unwrap_or(index as f32);
             let team = object
                 .and_then(|obj| obj.get("PlayerTeam"))
@@ -415,7 +417,10 @@ fn goal_events(replay: &Replay) -> Vec<ReplayEvent> {
         .collect()
 }
 
-fn highlight_events(replay: &Replay) -> Vec<ReplayEvent> {
+fn highlight_events(
+    replay: &Replay,
+    actor_name_to_player: &HashMap<String, String>,
+) -> Vec<ReplayEvent> {
     let properties = property_map(replay);
     let fps = float_prop(&properties, "RecordFPS")
         .unwrap_or(30.0)
@@ -439,31 +444,46 @@ fn highlight_events(replay: &Replay) -> Vec<ReplayEvent> {
                 .get("frame")
                 .or_else(|| object.get("Frame"))
                 .and_then(|value| value.as_f64())
-                .map(|frame| frame as f32 / fps)?;
-            Some(ReplayEvent::Shot {
+                .map(|frame| replay_frame_time(replay, frame as usize, fps))?;
+            let player_id = object
+                .get("CarName")
+                .and_then(|value| value.as_str())
+                .and_then(|name| actor_name_to_player.get(name))
+                .cloned();
+            Some(ReplayEvent::Save {
                 t,
-                player_id: None,
-                label: Some("Highlight".into()),
+                player_id,
+                label: Some("Save highlight".into()),
             })
         })
         .collect()
+}
+
+fn replay_frame_time(replay: &Replay, frame_index: usize, fps: f32) -> f32 {
+    replay
+        .network_frames
+        .as_ref()
+        .map(|network| {
+            network
+                .frames
+                .iter()
+                .take(frame_index)
+                .map(|frame| frame.delta)
+                .sum()
+        })
+        .unwrap_or(frame_index as f32 / fps)
 }
 
 fn extract_clock_samples(replay: &Replay) -> Vec<ReplayClockSample> {
     let Some(network) = &replay.network_frames else {
         return Vec::new();
     };
-
-    let properties = property_map(replay);
-    let fps = float_prop(&properties, "RecordFPS")
-        .unwrap_or(30.0)
-        .max(1.0);
     let mut current = ReplayClockSample::default();
     let mut samples = Vec::new();
+    let mut t = 0.0;
 
-    for (frame_index, frame) in network.frames.iter().enumerate() {
+    for frame in &network.frames {
         let mut changed = false;
-        let t = frame_index as f32 / fps;
 
         for updated in &frame.updated_actors {
             let attribute = object_name(replay, updated.object_id.0).unwrap_or_default();
@@ -510,6 +530,7 @@ fn extract_clock_samples(replay: &Replay) -> Vec<ReplayClockSample> {
             }
             samples.push(sample);
         }
+        t += frame.delta;
     }
 
     samples
@@ -521,6 +542,20 @@ struct NetworkInsights {
     players: HashMap<String, ReplayPlayer>,
     events: Vec<ReplayEvent>,
     camera: Vec<ReplayCameraSample>,
+    actor_name_to_player: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum StatKind {
+    Shot,
+    Save,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct CounterEvent {
+    t: f32,
+    pri_actor_id: i32,
+    kind: StatKind,
 }
 
 #[derive(Default)]
@@ -534,26 +569,30 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
     let Some(network) = &replay.network_frames else {
         return NetworkInsights::default();
     };
-
-    let properties = property_map(replay);
-    let fps = float_prop(&properties, "RecordFPS")
-        .unwrap_or(30.0)
-        .max(1.0);
     let mut actors: HashMap<i32, String> = HashMap::new();
+    let mut actor_names: HashMap<i32, String> = HashMap::new();
     let mut pri_to_player: HashMap<i32, String> = HashMap::new();
     let mut player_car: HashMap<i32, String> = HashMap::new();
     let mut camera_actor_pri: HashMap<i32, i32> = HashMap::new();
     let mut car_team_paint: HashMap<i32, ReplayTeamPaint> = HashMap::new();
+    let mut stat_counter_values: HashMap<(i32, StatKind), i32> = HashMap::new();
+    let mut counter_events = Vec::new();
     let mut insights = NetworkInsights::default();
+    let mut t = 0.0;
 
-    for (frame_index, frame) in network.frames.iter().enumerate() {
-        let t = frame_index as f32 / fps;
-
+    for frame in &network.frames {
         for actor in &frame.new_actors {
             actors.insert(
                 actor.actor_id.0,
                 object_name(replay, actor.object_id.0).unwrap_or_default(),
             );
+            if let Some(name) = actor
+                .name_id
+                .and_then(|name_id| usize::try_from(name_id).ok())
+                .and_then(|name_id| replay.names.get(name_id))
+            {
+                actor_names.insert(actor.actor_id.0, name.clone());
+            }
         }
 
         for updated in &frame.updated_actors {
@@ -618,6 +657,14 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                     );
                 }
                 ("TAGame.PRI_TA:MatchSaves", Attribute::Int(value)) => {
+                    observe_stat_counter(
+                        &mut stat_counter_values,
+                        &mut counter_events,
+                        updated.actor_id.0,
+                        StatKind::Save,
+                        *value,
+                        t,
+                    );
                     update_player_stats(
                         &mut insights.players,
                         &pri_to_player,
@@ -626,6 +673,14 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                     );
                 }
                 ("TAGame.PRI_TA:MatchShots", Attribute::Int(value)) => {
+                    observe_stat_counter(
+                        &mut stat_counter_values,
+                        &mut counter_events,
+                        updated.actor_id.0,
+                        StatKind::Shot,
+                        *value,
+                        t,
+                    );
                     update_player_stats(
                         &mut insights.players,
                         &pri_to_player,
@@ -688,7 +743,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         &pri_to_player,
                     ) {
                         insights.camera.push(ReplayCameraSample {
-                            t: frame.time,
+                            t,
                             player_id,
                             settings: Some(camera_settings_from_boxcars(settings)),
                             ..ReplayCameraSample::default()
@@ -707,7 +762,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         &pri_to_player,
                     ) {
                         insights.camera.push(ReplayCameraSample {
-                            t: frame.time,
+                            t,
                             player_id,
                             using_secondary_camera: Some(*value),
                             ..ReplayCameraSample::default()
@@ -726,7 +781,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         &pri_to_player,
                     ) {
                         insights.camera.push(ReplayCameraSample {
-                            t: frame.time,
+                            t,
                             player_id,
                             using_behind_view: Some(*value),
                             ..ReplayCameraSample::default()
@@ -741,7 +796,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         &pri_to_player,
                     ) {
                         insights.camera.push(ReplayCameraSample {
-                            t: frame.time,
+                            t,
                             player_id,
                             using_freecam: Some(*value),
                             ..ReplayCameraSample::default()
@@ -756,7 +811,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         &pri_to_player,
                     ) {
                         insights.camera.push(ReplayCameraSample {
-                            t: frame.time,
+                            t,
                             player_id,
                             using_swivel: Some(*value),
                             ..ReplayCameraSample::default()
@@ -774,7 +829,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         &pri_to_player,
                     ) {
                         insights.camera.push(ReplayCameraSample {
-                            t: frame.time,
+                            t,
                             player_id,
                             camera_yaw: Some(*value),
                             ..ReplayCameraSample::default()
@@ -792,7 +847,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                         &pri_to_player,
                     ) {
                         insights.camera.push(ReplayCameraSample {
-                            t: frame.time,
+                            t,
                             player_id,
                             camera_pitch: Some(*value),
                             ..ReplayCameraSample::default()
@@ -869,13 +924,194 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                 _ => {}
             }
         }
+        t += frame.delta;
     }
+
+    attribute_stat_events(&mut insights.events, &counter_events, &pri_to_player);
+    insights.actor_name_to_player = player_car
+        .iter()
+        .filter_map(|(actor_id, player_id)| {
+            actor_names
+                .get(actor_id)
+                .cloned()
+                .map(|actor_name| (actor_name, player_id.clone()))
+        })
+        .collect();
 
     insights.camera.sort_by(|a, b| {
         a.t.total_cmp(&b.t)
             .then_with(|| a.player_id.cmp(&b.player_id))
     });
     insights
+}
+
+fn observe_stat_counter(
+    previous_values: &mut HashMap<(i32, StatKind), i32>,
+    counter_events: &mut Vec<CounterEvent>,
+    pri_actor_id: i32,
+    kind: StatKind,
+    value: i32,
+    t: f32,
+) {
+    let key = (pri_actor_id, kind);
+    let previous = previous_values.insert(key, value).unwrap_or(0);
+
+    if value > previous {
+        for _ in 0..(value - previous) {
+            counter_events.push(CounterEvent {
+                t,
+                pri_actor_id,
+                kind,
+            });
+        }
+    }
+}
+
+fn attribute_stat_events(
+    events: &mut Vec<ReplayEvent>,
+    counter_events: &[CounterEvent],
+    pri_to_player: &HashMap<i32, String>,
+) {
+    let mut matched = vec![false; events.len()];
+    let mut attributed_counters = counter_events
+        .iter()
+        .filter_map(|counter| {
+            pri_to_player
+                .get(&counter.pri_actor_id)
+                .cloned()
+                .map(|player_id| (*counter, player_id))
+        })
+        .collect::<Vec<_>>();
+    attributed_counters.sort_by(|(left, _), (right, _)| {
+        left.t
+            .total_cmp(&right.t)
+            .then_with(|| left.pri_actor_id.cmp(&right.pri_actor_id))
+    });
+
+    for (counter, player_id) in attributed_counters {
+        let best_match = events
+            .iter()
+            .enumerate()
+            .filter_map(|(index, event)| {
+                if matched[index] || stat_kind(event) != Some(counter.kind) {
+                    return None;
+                }
+                let distance = (event_time(event) - counter.t).abs();
+                (distance <= STAT_EVENT_MATCH_WINDOW_SECONDS).then_some((
+                    index,
+                    distance,
+                    event_time(event),
+                ))
+            })
+            .min_by(|left, right| {
+                left.1
+                    .total_cmp(&right.1)
+                    .then_with(|| left.2.total_cmp(&right.2))
+                    .then_with(|| left.0.cmp(&right.0))
+            });
+
+        if let Some((index, _, _)) = best_match {
+            if assign_stat_event(&mut events[index], counter.t, player_id.clone()) {
+                matched[index] = true;
+                continue;
+            }
+        }
+
+        events.push(stat_event_for_kind(counter.kind, counter.t, Some(player_id)));
+        matched.push(true);
+    }
+}
+
+fn stat_kind(event: &ReplayEvent) -> Option<StatKind> {
+    match event {
+        ReplayEvent::Shot { .. } => Some(StatKind::Shot),
+        ReplayEvent::Save { .. } => Some(StatKind::Save),
+        _ => None,
+    }
+}
+
+fn assign_stat_event(event: &mut ReplayEvent, event_t: f32, event_player_id: String) -> bool {
+    match event {
+        ReplayEvent::Shot { t, player_id, .. } | ReplayEvent::Save { t, player_id, .. } => {
+            *t = event_t;
+            *player_id = Some(event_player_id);
+            true
+        }
+        _ => false,
+    }
+}
+
+fn stat_event_for_kind(kind: StatKind, t: f32, player_id: Option<String>) -> ReplayEvent {
+    match kind {
+        StatKind::Shot => ReplayEvent::Shot {
+            t,
+            player_id,
+            label: Some("Shot".into()),
+        },
+        StatKind::Save => ReplayEvent::Save {
+            t,
+            player_id,
+            label: Some("Save".into()),
+        },
+    }
+}
+
+fn deduplicate_highlight_saves(events: Vec<ReplayEvent>) -> Vec<ReplayEvent> {
+    let network_save_times = events
+        .iter()
+        .filter_map(|event| match event {
+            ReplayEvent::Save { t, label, .. } if label.as_deref() != Some("Save highlight") => {
+                Some(*t)
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    events
+        .into_iter()
+        .filter(|event| match event {
+            ReplayEvent::Save {
+                t,
+                label: Some(label),
+                ..
+            } if label == "Save highlight" => !network_save_times
+                .iter()
+                .any(|network_t| (*network_t - *t).abs() <= STAT_EVENT_MATCH_WINDOW_SECONDS),
+            _ => true,
+        })
+        .collect()
+}
+
+fn clean_demo_events(events: Vec<ReplayEvent>) -> Vec<ReplayEvent> {
+    let mut kept_demo_pairs: Vec<(f32, String, String)> = Vec::new();
+
+    events
+        .into_iter()
+        .filter(|event| {
+            let ReplayEvent::Demo {
+                t,
+                attacker_id: Some(attacker_id),
+                victim_id: Some(victim_id),
+                ..
+            } = event
+            else {
+                return !matches!(event, ReplayEvent::Demo { .. });
+            };
+
+            if attacker_id == victim_id {
+                return false;
+            }
+            if kept_demo_pairs.iter().any(|(kept_t, kept_attacker, kept_victim)| {
+                kept_attacker == attacker_id
+                    && kept_victim == victim_id
+                    && (*kept_t - *t).abs() <= DUPLICATE_DEMO_WINDOW_SECONDS
+            }) {
+                return false;
+            }
+            kept_demo_pairs.push((*t, attacker_id.clone(), victim_id.clone()));
+            true
+        })
+        .collect()
 }
 
 fn camera_player_id(
@@ -1299,6 +1535,152 @@ mod tests {
     }
 
     #[test]
+    fn attributes_stat_events_to_nearest_player_counter_updates() {
+        let mut events = vec![
+            ReplayEvent::Shot {
+                t: 10.1,
+                player_id: None,
+                label: Some("StatEvent_Shot".into()),
+            },
+            ReplayEvent::Save {
+                t: 20.2,
+                player_id: None,
+                label: Some("StatEvent_Save".into()),
+            },
+        ];
+        let counter_events = [
+            CounterEvent {
+                t: 10.0,
+                pri_actor_id: 3,
+                kind: StatKind::Shot,
+            },
+            CounterEvent {
+                t: 20.9,
+                pri_actor_id: 4,
+                kind: StatKind::Save,
+            },
+        ];
+        let pri_to_player = HashMap::from([
+            (3, "player-shot".to_string()),
+            (4, "player-save".to_string()),
+        ]);
+
+        attribute_stat_events(&mut events, &counter_events, &pri_to_player);
+
+        assert!(matches!(
+            &events[0],
+            ReplayEvent::Shot {
+                player_id: Some(player_id),
+                ..
+            } if player_id == "player-shot"
+        ));
+        assert!(matches!(
+            &events[1],
+            ReplayEvent::Save {
+                player_id: Some(player_id),
+                ..
+            } if player_id == "player-save"
+        ));
+    }
+
+    #[test]
+    fn counter_deltas_include_initial_positive_values_and_each_increment() {
+        let mut previous_values = HashMap::new();
+        let mut counter_events = Vec::new();
+
+        observe_stat_counter(
+            &mut previous_values,
+            &mut counter_events,
+            7,
+            StatKind::Shot,
+            2,
+            1.0,
+        );
+        observe_stat_counter(
+            &mut previous_values,
+            &mut counter_events,
+            7,
+            StatKind::Shot,
+            4,
+            2.0,
+        );
+        observe_stat_counter(
+            &mut previous_values,
+            &mut counter_events,
+            7,
+            StatKind::Shot,
+            1,
+            3.0,
+        );
+
+        assert_eq!(counter_events.len(), 4);
+        assert_eq!(counter_events.iter().filter(|event| event.t == 1.0).count(), 2);
+        assert_eq!(counter_events.iter().filter(|event| event.t == 2.0).count(), 2);
+    }
+
+    #[test]
+    fn save_highlights_are_deduplicated_against_network_saves() {
+        let events = vec![
+            ReplayEvent::Save {
+                t: 5.0,
+                player_id: Some("player-9".into()),
+                label: Some("Save highlight".into()),
+            },
+            ReplayEvent::Save {
+                t: 5.1,
+                player_id: Some("player-9".into()),
+                label: Some("Save".into()),
+            },
+        ];
+
+        let events = deduplicate_highlight_saves(events);
+
+        assert_eq!(events.len(), 1);
+        assert!(matches!(
+            &events[0],
+            ReplayEvent::Save {
+                player_id: Some(player_id),
+                ..
+            } if player_id == "player-9"
+        ));
+    }
+
+    #[test]
+    fn demo_cleanup_keeps_only_distinct_attributed_demolitions() {
+        let events = vec![
+            ReplayEvent::Demo {
+                t: 10.0,
+                attacker_id: Some("attacker".into()),
+                victim_id: Some("victim".into()),
+                label: Some("Demo".into()),
+            },
+            ReplayEvent::Demo {
+                t: 11.5,
+                attacker_id: Some("attacker".into()),
+                victim_id: Some("victim".into()),
+                label: Some("Demo".into()),
+            },
+            ReplayEvent::Demo {
+                t: 20.0,
+                attacker_id: None,
+                victim_id: Some("victim".into()),
+                label: Some("Demo".into()),
+            },
+            ReplayEvent::Shot {
+                t: 20.0,
+                player_id: Some("attacker".into()),
+                label: Some("Shot".into()),
+            },
+        ];
+
+        let events = clean_demo_events(events);
+
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[0], ReplayEvent::Demo { .. }));
+        assert!(matches!(events[1], ReplayEvent::Shot { .. }));
+    }
+
+    #[test]
     fn sample_replay_extracts_car_frames() {
         let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../cd2c5d33-422a-4d11-b6ca-9d827c5d26fe.replay");
@@ -1356,6 +1738,32 @@ mod tests {
                 .any(|event| matches!(event, ReplayEvent::Save { .. })),
             "expected stat events to include saves"
         );
+        let player_ids = timeline
+            .metadata
+            .players
+            .iter()
+            .map(|player| player.id.as_str())
+            .collect::<BTreeSet<_>>();
+        let attributed_stat_events = timeline
+            .events
+            .iter()
+            .filter_map(|event| match event {
+                ReplayEvent::Shot { player_id, .. } | ReplayEvent::Save { player_id, .. } => {
+                    player_id.as_deref()
+                }
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            !attributed_stat_events.is_empty(),
+            "expected shot/save events to include player IDs"
+        );
+        assert!(
+            attributed_stat_events
+                .iter()
+                .all(|player_id| player_ids.contains(player_id)),
+            "expected all attributed shot/save IDs to belong to replay players"
+        );
         assert!(
             timeline
                 .clock
@@ -1398,5 +1806,75 @@ mod tests {
                 .any(|sample| sample.using_secondary_camera.is_some()),
             "expected ball cam toggle samples from replay camera actors"
         );
+        assert_sample_events_match_ballchasing(&timeline);
+    }
+
+    fn assert_sample_events_match_ballchasing(timeline: &ReplayTimeline) {
+        // Public timeline source:
+        // https://ballchasing.com/replay/cd2c5d33-422a-4d11-b6ca-9d827c5d26fe
+        let expected: [(&str, &str, &[f32]); 18] = [
+            ("Kehvn", "shot", &[134.0408, 139.1211, 283.6341, 338.60126]),
+            ("Kehvn", "save", &[26.456776]),
+            ("Kehvn", "goal", &[139.3227, 338.83652]),
+            ("tnt.", "shot", &[110.45724, 136.01532, 272.86038, 300.8526]),
+            ("tnt.", "save", &[195.97919, 225.47202]),
+            ("tnt.", "goal", &[273.5614, 301.11984]),
+            ("tnt.", "demo", &[323.00537]),
+            ("Zax", "shot", &[39.807022, 73.321815, 153.48836, 231.61151]),
+            ("Zax", "goal", &[232.34814]),
+            ("Zax", "demo", &[100.239685]),
+            ("millon", "shot", &[26.022633, 100.13946, 195.97919, 224.43866]),
+            ("millon", "save", &[72.78831, 111.32887, 133.97415, 154.48929, 284.6341]),
+            ("millon", "demo", &[68.41289]),
+            ("alejandrodls", "shot", &[117.80393, 198.02072]),
+            ("alejandrodls", "goal", &[117.80393, 198.08887]),
+            ("El Games Lolo", "shot", &[174.69296]),
+            ("El Games Lolo", "save", &[136.01532]),
+            ("El Games Lolo", "goal", &[174.69296]),
+        ];
+        let player_names = timeline
+            .metadata
+            .players
+            .iter()
+            .map(|player| (player.id.as_str(), player.name.as_str()))
+            .collect::<HashMap<_, _>>();
+        let mut actual: HashMap<(String, &'static str), Vec<f32>> = HashMap::new();
+
+        for event in &timeline.events {
+            let (player_id, event_type, t) = match event {
+                ReplayEvent::Goal { scorer_id, t, .. } => (scorer_id.as_deref(), "goal", *t),
+                ReplayEvent::Shot { player_id, t, .. } => (player_id.as_deref(), "shot", *t),
+                ReplayEvent::Save { player_id, t, .. } => (player_id.as_deref(), "save", *t),
+                ReplayEvent::Demo { attacker_id, t, .. } => (attacker_id.as_deref(), "demo", *t),
+            };
+            let player_name = player_id.and_then(|player_id| player_names.get(player_id)).copied();
+            assert!(player_name.is_some(), "expected every scored event to have a known player");
+            actual
+                .entry((player_name.unwrap().to_string(), event_type))
+                .or_default()
+                .push(t);
+        }
+
+        for times in actual.values_mut() {
+            times.sort_by(f32::total_cmp);
+        }
+
+        for (player_name, event_type, expected_times) in expected {
+            let actual_times = actual
+                .remove(&(player_name.to_string(), event_type))
+                .unwrap_or_default();
+            assert_eq!(
+                actual_times.len(),
+                expected_times.len(),
+                "Ballchasing {event_type} count differed for {player_name}"
+            );
+            for (actual_time, expected_time) in actual_times.iter().zip(expected_times) {
+                assert!(
+                    (actual_time - expected_time).abs() < 0.15,
+                    "Ballchasing {event_type} time differed for {player_name}: parser={actual_time}, expected={expected_time}"
+                );
+            }
+        }
+        assert!(actual.is_empty(), "parser emitted extra attributed sample events: {actual:?}");
     }
 }

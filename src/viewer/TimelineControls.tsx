@@ -93,12 +93,13 @@ export function TimelineControls({
             ))}
             {hoveredEvent ? (
               <span
-                className={`event-hover-card event-edge-${hoveredEvent.edge}`}
+                className={`event-hover-card event-hover-${hoveredEvent.type} event-edge-${hoveredEvent.edge}`}
                 style={{ left: hoveredEvent.left }}
                 role="tooltip"
                 aria-hidden="true"
               >
                 <strong>{hoveredEvent.typeLabel}</strong>
+                <span>{hoveredEvent.playerLabel}</span>
               </span>
             ) : null}
           </div>

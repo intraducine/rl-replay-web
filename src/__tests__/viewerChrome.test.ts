@@ -62,7 +62,7 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".speed-select");
     expect(css).toContain(".speed-value");
     expect(css).toContain(".transport-controls .button { min-width: 56px; width: 56px; height: 56px;");
-    expect(css).toContain(".speed-select { position: relative; grid-column: 3; justify-self: end; display: grid; place-items: center; width: max-content; min-width: 72px;");
+    expect(css).toContain(".speed-select { position: relative; grid-column: 3; justify-self: end; display: grid; place-items: center; width: max-content; min-width: 72px; height: 56px;");
     expect(css).toContain(".seek-value { display: inline-block; width: auto; height: auto;");
     expect(css).toContain(".event-marker-tooltip");
     expect(source).toContain('aria-label="Replay event markers"');
