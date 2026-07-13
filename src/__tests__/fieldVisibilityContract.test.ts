@@ -29,7 +29,7 @@ describe("field visibility contract", () => {
     const car = readFileSync(resolve(process.cwd(), "src/viewer/Car.tsx"), "utf8");
     const scene = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
     const placement = readFileSync(resolve(process.cwd(), "src/viewer/carPlacement.ts"), "utf8");
-    expect(placement).toContain("CAR_VISUAL_GROUND_OFFSET_Y = -34");
+    expect(placement).toContain("CAR_VISUAL_GROUND_OFFSET_Y = -17.6");
     expect(car).toContain("carRenderPosition(frame.position)");
     expect(scene).toContain("setCarRenderPosition(PRESENTATION_TARGET_POSITION, frame.position)");
     expect(scene).toContain("object.position.lerp(targetPosition");

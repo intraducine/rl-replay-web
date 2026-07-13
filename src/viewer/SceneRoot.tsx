@@ -21,6 +21,7 @@ import { RocketLeagueLighting } from "./RocketLeagueLighting";
 import {
   ballCamTransitionDuration,
   cameraRigForMode,
+  cameraVerticalFov,
   constrainPlayerCameraTarget,
   replayCameraResponseRates,
   cameraSmoothingAlpha,
@@ -108,7 +109,7 @@ function SceneRootComponent({ timeline }: { timeline: ReplayTimeline }) {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 0.96;
       }}
-      camera={{ position: initialCameraPosition, fov: initialCameraRig.fov ?? 58, near: 0.1, far: 30000 }}
+      camera={{ position: initialCameraPosition, fov: cameraVerticalFov(initialCameraRig, 16 / 9) ?? 58, near: 0.1, far: 30000 }}
     >
       <RocketLeagueLighting />
       <StandardArena />
@@ -463,9 +464,10 @@ function ReplayObjects({
     camera.up.copy(smoothedUp.current);
 
     if ("fov" in camera && typeof rig.fov === "number") {
+      const targetFov = cameraVerticalFov(rig, camera.aspect) ?? camera.fov;
       const nextFov = shouldSnap
-        ? rig.fov
-        : THREE.MathUtils.lerp(camera.fov, rig.fov, cameraSmoothingAlpha(delta, responseRates.fov));
+        ? targetFov
+        : THREE.MathUtils.lerp(camera.fov, targetFov, cameraSmoothingAlpha(delta, responseRates.fov));
       if (Math.abs(camera.fov - nextFov) > 0.001) {
         camera.fov = nextFov;
         camera.updateProjectionMatrix();

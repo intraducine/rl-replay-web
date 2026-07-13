@@ -21,6 +21,7 @@ export type CameraRig = {
   target: [number, number, number];
   up: [number, number, number];
   fov?: number;
+  fovAxis?: "horizontal";
   ballCam?: boolean;
 };
 
@@ -136,6 +137,9 @@ export function cameraRigForMode(
       target: vectorToTuple(target),
       up: [0, 1, 0],
       fov: settings.fov,
+      // Rocket League stores this setting as a horizontal FOV, while Three.js
+      // PerspectiveCamera.fov is vertical.
+      fovAxis: "horizontal",
       ballCam: usingBallCam
     };
   }
@@ -149,6 +153,14 @@ export function cameraRigForMode(
     target: selectedPosition,
     up: [0, 1, 0]
   };
+}
+
+export function cameraVerticalFov(rig: CameraRig, aspect: number): number | undefined {
+  if (rig.fov === undefined) return undefined;
+  if (rig.fovAxis !== "horizontal") return rig.fov;
+
+  const horizontalHalfFov = MathUtils.degToRad(rig.fov * 0.5);
+  return MathUtils.radToDeg(2 * Math.atan(Math.tan(horizontalHalfFov) / Math.max(0.1, aspect)));
 }
 
 function ballCameraRig(sample: SampledReplayState, selectedCar?: SampledReplayState["cars"][string]): CameraRig {

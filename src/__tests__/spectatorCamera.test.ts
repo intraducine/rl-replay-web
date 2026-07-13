@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MathUtils, PerspectiveCamera, Vector3 } from "three";
 import {
+  cameraVerticalFov,
   ballCamTransitionDuration,
   cameraModeOptions,
   cameraRigForMode,
@@ -68,6 +69,14 @@ describe("cameraRigForMode", () => {
     expect(rig.target[2]).toBeCloseTo(2000);
     expect(rig.up).toEqual([0, 1, 0]);
     expect(rig.fov).toBe(110);
+    expect(rig.fovAxis).toBe("horizontal");
+  });
+
+  it("converts Rocket League's horizontal player FOV to Three.js vertical FOV", () => {
+    const rig = { position: [0, 0, 0], target: [0, 0, -1], up: [0, 1, 0], fov: 110, fovAxis: "horizontal" } as const;
+
+    expect(cameraVerticalFov(rig, 16 / 9)).toBeCloseTo(77.55, 2);
+    expect(cameraVerticalFov({ ...rig, fovAxis: undefined }, 16 / 9)).toBe(110);
   });
 
   it("treats replay camera settings without a secondary-camera flag as car cam until a toggle arrives", () => {
