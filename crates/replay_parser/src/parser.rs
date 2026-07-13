@@ -4,9 +4,10 @@ use boxcars::{Attribute, CamSettings, ParserBuilder, Replay};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use wasm_bindgen::prelude::*;
 
-const PARSER_VERSION: &str = "rl-replay-parser-0.3.0+boxcars-0.11.1";
+const PARSER_VERSION: &str = "rl-replay-parser-0.5.0+boxcars-0.11.5";
 const STAT_EVENT_MATCH_WINDOW_SECONDS: f32 = 1.0;
-const DUPLICATE_DEMO_WINDOW_SECONDS: f32 = 2.0;
+const DEMO_EVENT_MATCH_WINDOW_SECONDS: f32 = 2.5;
+const DUPLICATE_DEMO_WINDOW_SECONDS: f32 = 5.0;
 
 pub fn parse_replay_metadata(
     bytes: &[u8],
@@ -549,6 +550,7 @@ struct NetworkInsights {
 enum StatKind {
     Shot,
     Save,
+    Demo,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -689,6 +691,14 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                     );
                 }
                 ("TAGame.PRI_TA:MatchDemolishes", Attribute::Int(value)) => {
+                    observe_stat_counter(
+                        &mut stat_counter_values,
+                        &mut counter_events,
+                        updated.actor_id.0,
+                        StatKind::Demo,
+                        *value,
+                        t,
+                    );
                     update_player_stats(
                         &mut insights.players,
                         &pri_to_player,
@@ -855,7 +865,10 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                     }
                 }
                 ("TAGame.Car_TA:ReplicatedDemolishExtended", Attribute::DemolishExtended(demo)) => {
-                    let attacker_id = player_car.get(&demo.attacker.actor.0).cloned();
+                    let attacker_id = pri_to_player
+                        .get(&demo.attacker_pri.actor.0)
+                        .cloned()
+                        .or_else(|| player_car.get(&demo.attacker.actor.0).cloned());
                     let victim_id = player_car.get(&demo.victim.actor.0).cloned();
                     insights.events.push(ReplayEvent::Demo {
                         t,
@@ -869,6 +882,26 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
                             }
                             .into(),
                         ),
+                    });
+                }
+                ("TAGame.Car_TA:ReplicatedDemolish", Attribute::Demolish(demo)) => {
+                    insights.events.push(ReplayEvent::Demo {
+                        t,
+                        attacker_id: player_car.get(&demo.attacker.0).cloned(),
+                        victim_id: player_car.get(&demo.victim.0).cloned(),
+                        label: Some("Demo".into()),
+                    });
+                }
+                (
+                    "TAGame.Car_TA:ReplicatedDemolish_CustomFX"
+                    | "TAGame.Car_TA:ReplicatedDemolishGoalExplosion",
+                    Attribute::DemolishFx(demo),
+                ) => {
+                    insights.events.push(ReplayEvent::Demo {
+                        t,
+                        attacker_id: player_car.get(&demo.attacker.0).cloned(),
+                        victim_id: player_car.get(&demo.victim.0).cloned(),
+                        label: Some("Demo".into()),
                     });
                 }
                 ("TAGame.Car_TA:TeamPaint", Attribute::TeamPaint(paint)) => {
@@ -928,6 +961,7 @@ fn extract_network_insights(replay: &Replay, metadata: &ReplayMetadata) -> Netwo
     }
 
     attribute_stat_events(&mut insights.events, &counter_events, &pri_to_player);
+    reconcile_demo_events(&mut insights.events, &counter_events, &pri_to_player);
     insights.actor_name_to_player = player_car
         .iter()
         .filter_map(|(actor_id, player_id)| {
@@ -975,6 +1009,7 @@ fn attribute_stat_events(
     let mut matched = vec![false; events.len()];
     let mut attributed_counters = counter_events
         .iter()
+        .filter(|counter| counter.kind != StatKind::Demo)
         .filter_map(|counter| {
             pri_to_player
                 .get(&counter.pri_actor_id)
@@ -1026,6 +1061,7 @@ fn stat_kind(event: &ReplayEvent) -> Option<StatKind> {
     match event {
         ReplayEvent::Shot { .. } => Some(StatKind::Shot),
         ReplayEvent::Save { .. } => Some(StatKind::Save),
+        ReplayEvent::Demo { .. } => Some(StatKind::Demo),
         _ => None,
     }
 }
@@ -1053,6 +1089,94 @@ fn stat_event_for_kind(kind: StatKind, t: f32, player_id: Option<String>) -> Rep
             player_id,
             label: Some("Save".into()),
         },
+        StatKind::Demo => ReplayEvent::Demo {
+            t,
+            attacker_id: player_id,
+            victim_id: None,
+            label: Some("Demo".into()),
+        },
+    }
+}
+
+fn reconcile_demo_events(
+    events: &mut Vec<ReplayEvent>,
+    counter_events: &[CounterEvent],
+    pri_to_player: &HashMap<i32, String>,
+) {
+    let mut credited_demos = counter_events
+        .iter()
+        .filter(|counter| counter.kind == StatKind::Demo)
+        .filter_map(|counter| {
+            pri_to_player
+                .get(&counter.pri_actor_id)
+                .cloned()
+                .map(|player_id| (*counter, player_id))
+        })
+        .collect::<Vec<_>>();
+    if credited_demos.is_empty() {
+        return;
+    }
+    credited_demos.sort_by(|(left, _), (right, _)| {
+        left.t
+            .total_cmp(&right.t)
+            .then_with(|| left.pri_actor_id.cmp(&right.pri_actor_id))
+    });
+
+    let mut raw_demos = events
+        .iter()
+        .filter_map(|event| match event {
+            ReplayEvent::Demo {
+                t,
+                attacker_id,
+                victim_id,
+                label,
+            } => Some((*t, attacker_id.clone(), victim_id.clone(), label.clone())),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    raw_demos.sort_by(|left, right| left.0.total_cmp(&right.0));
+    let mut matched = vec![false; raw_demos.len()];
+    events.retain(|event| !matches!(event, ReplayEvent::Demo { .. }));
+
+    for (counter, player_id) in credited_demos {
+        let best_match = raw_demos
+            .iter()
+            .enumerate()
+            .filter_map(|(index, (raw_t, raw_attacker, _, _))| {
+                if matched[index]
+                    || raw_attacker
+                        .as_ref()
+                        .is_some_and(|attacker| attacker != &player_id)
+                {
+                    return None;
+                }
+                let distance = (*raw_t - counter.t).abs();
+                (distance <= DEMO_EVENT_MATCH_WINDOW_SECONDS).then_some((index, distance, *raw_t))
+            })
+            .min_by(|left, right| {
+                left.1
+                    .total_cmp(&right.1)
+                    .then_with(|| left.2.total_cmp(&right.2))
+                    .then_with(|| left.0.cmp(&right.0))
+            });
+
+        if let Some((index, _, _)) = best_match {
+            matched[index] = true;
+            let (t, _, victim_id, label) = &raw_demos[index];
+            events.push(ReplayEvent::Demo {
+                t: *t,
+                attacker_id: Some(player_id),
+                victim_id: victim_id.clone(),
+                label: label.clone().or_else(|| Some("Demo".into())),
+            });
+        } else {
+            events.push(ReplayEvent::Demo {
+                t: counter.t,
+                attacker_id: Some(player_id),
+                victim_id: None,
+                label: Some("Demo".into()),
+            });
+        }
     }
 }
 
@@ -1083,7 +1207,7 @@ fn deduplicate_highlight_saves(events: Vec<ReplayEvent>) -> Vec<ReplayEvent> {
 }
 
 fn clean_demo_events(events: Vec<ReplayEvent>) -> Vec<ReplayEvent> {
-    let mut kept_demo_pairs: Vec<(f32, String, String)> = Vec::new();
+    let mut kept_demo_pairs: Vec<(f32, String, Option<String>)> = Vec::new();
 
     events
         .into_iter()
@@ -1091,14 +1215,14 @@ fn clean_demo_events(events: Vec<ReplayEvent>) -> Vec<ReplayEvent> {
             let ReplayEvent::Demo {
                 t,
                 attacker_id: Some(attacker_id),
-                victim_id: Some(victim_id),
+                victim_id,
                 ..
             } = event
             else {
                 return !matches!(event, ReplayEvent::Demo { .. });
             };
 
-            if attacker_id == victim_id {
+            if victim_id.as_ref() == Some(attacker_id) {
                 return false;
             }
             if kept_demo_pairs.iter().any(|(kept_t, kept_attacker, kept_victim)| {
@@ -1678,6 +1802,42 @@ mod tests {
         assert_eq!(events.len(), 2);
         assert!(matches!(events[0], ReplayEvent::Demo { .. }));
         assert!(matches!(events[1], ReplayEvent::Shot { .. }));
+    }
+
+    #[test]
+    fn demo_counters_limit_duplicate_network_events_and_preserve_victims() {
+        let mut events = vec![
+            ReplayEvent::Demo {
+                t: 10.0,
+                attacker_id: Some("attacker".into()),
+                victim_id: Some("victim".into()),
+                label: Some("Demo".into()),
+            },
+            ReplayEvent::Demo {
+                t: 13.0,
+                attacker_id: Some("attacker".into()),
+                victim_id: Some("victim".into()),
+                label: Some("Demo".into()),
+            },
+        ];
+        let counters = [CounterEvent {
+            t: 10.1,
+            pri_actor_id: 7,
+            kind: StatKind::Demo,
+        }];
+        let players = HashMap::from([(7, "attacker".to_string())]);
+
+        reconcile_demo_events(&mut events, &counters, &players);
+
+        assert_eq!(events.len(), 1);
+        assert!(matches!(
+            &events[0],
+            ReplayEvent::Demo {
+                attacker_id: Some(attacker_id),
+                victim_id: Some(victim_id),
+                ..
+            } if attacker_id == "attacker" && victim_id == "victim"
+        ));
     }
 
     #[test]
