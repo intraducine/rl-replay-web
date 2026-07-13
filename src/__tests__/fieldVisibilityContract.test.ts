@@ -31,7 +31,8 @@ describe("field visibility contract", () => {
     const placement = readFileSync(resolve(process.cwd(), "src/viewer/carPlacement.ts"), "utf8");
     expect(placement).toContain("CAR_VISUAL_GROUND_OFFSET_Y = -34");
     expect(car).toContain("carRenderPosition(frame.position)");
-    expect(scene).toContain("setCarRenderPosition(group.position, frame.position)");
-    expect(scene).toContain("setCarRenderPosition(SHADOW_RENDER_POSITION, frame.position)");
+    expect(scene).toContain("setCarRenderPosition(PRESENTATION_TARGET_POSITION, frame.position)");
+    expect(scene).toContain("object.position.lerp(targetPosition");
+    expect(scene).toContain("SHADOW_RENDER_POSITION.copy(car.position)");
   });
 });

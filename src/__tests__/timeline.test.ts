@@ -38,6 +38,10 @@ const timeline: ReplayTimeline = {
   ]
 };
 
+function distance(a: [number, number, number], b: [number, number, number]) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
 describe("sampleTimeline", () => {
   it("samples player camera state as the latest replay camera update", () => {
     const cameraTimeline: ReplayTimeline = {
@@ -201,6 +205,40 @@ describe("sampleTimeline", () => {
       expect(current.cars.p1.position[0] - previous.cars.p1.position[0]).toBeCloseTo(expectedStep, 4);
       previous = current;
     }
+  });
+
+  it("smooths alternating held poses from the bundled replay instead of hopping on network updates", () => {
+    // Extracted from cd2c5d33-422a-4d11-b6ca-9d827c5d26fe at 20.011–20.145s.
+    const carPositions = [
+      [-1490.24, 4300.47, 51.47],
+      [-1490.24, 4300.47, 51.47],
+      [-1536.05, 4368.36, 30.96],
+      [-1536.05, 4368.36, 30.96],
+      [-1586.14, 4416.49, 16.65]
+    ] as const;
+    const ballPositions = [
+      [832.69, 4536.48, 93.08],
+      [903.79, 4563.59, 93.88],
+      [939.32, 4577.13, 94.01],
+      [992.58, 4597.44, 93.85],
+      [1098.66, 4637.85, 93.3]
+    ] as const;
+    const replayExcerpt: ReplayTimeline = {
+      ...timeline,
+      frames: carPositions.map((position, index) => ({
+        t: index / 30,
+        ball: { position: [...ballPositions[index]], rotation: [0, 0, 0, 1] },
+        cars: { p1: { position: [...position], rotation: [0, 0, 0, 1] } }
+      }))
+    };
+
+    const samples = Array.from({ length: 9 }, (_, index) => sampleTimeline(replayExcerpt, index / 60));
+    const carSteps = samples.slice(1).map((sample, index) => distance(sample.cars.p1.position, samples[index].cars.p1.position));
+    const ballSteps = samples.slice(1).map((sample, index) => distance(sample.ball!.position, samples[index].ball!.position));
+
+    expect(carSteps.every((step) => step > 1)).toBe(true);
+    expect(Math.max(...carSteps) / Math.min(...carSteps)).toBeLessThan(1.5);
+    expect(ballSteps.every((step) => step > 1)).toBe(true);
   });
 
   it("uses endpoint velocities to smooth position interpolation when available", () => {

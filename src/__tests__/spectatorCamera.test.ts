@@ -34,6 +34,15 @@ describe("cameraRigForMode", () => {
     expect(sceneRootSource).not.toContain("const cameraMode = useViewerStore((state) => state.cameraMode)");
   });
 
+  it("isolates the WebGL scene from playback HUD rerenders", () => {
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+
+    expect(sceneRootSource).toContain('import { forwardRef, memo, useEffect');
+    expect(sceneRootSource).toContain("const PLAYBACK_UI_COMMIT_FPS = 15");
+    expect(sceneRootSource).toContain("function SceneRootComponent");
+    expect(sceneRootSource).toContain("export const SceneRoot = memo(SceneRootComponent)");
+  });
+
   it("places player car cam behind the selected car heading when ball cam is off", () => {
     const rig = cameraRigForMode(
       "player",

@@ -9,8 +9,12 @@ describe("playback clock contract", () => {
 
     expect(replayViewerSource).not.toContain("requestAnimationFrame(tick)");
     expect(sceneRootSource).toContain("lastPublishedPlaybackTime");
-    expect(sceneRootSource).toContain("PLAYBACK_UI_COMMIT_FPS = 30");
+    expect(sceneRootSource).toContain("PLAYBACK_UI_COMMIT_FPS = 15");
     expect(sceneRootSource).toContain("1 / PLAYBACK_UI_COMMIT_FPS");
+    expect(sceneRootSource).toContain("export const SceneRoot = memo(SceneRootComponent)");
+    expect(sceneRootSource).toContain("object.position.lerp(targetPosition, presentationSmoothingAlpha");
+    expect(sceneRootSource).toContain("object.quaternion.slerp(");
+    expect(sceneRootSource).toContain("snap || teleport");
     expect(sceneRootSource).not.toContain("Math.abs(state.currentTime - playbackTime.current) > 0.35");
   });
 });

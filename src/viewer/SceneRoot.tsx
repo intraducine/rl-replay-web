@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { forwardRef, useEffect, useMemo, useRef, type ForwardedRef } from "react";
+import { forwardRef, memo, useEffect, useMemo, useRef, type ForwardedRef } from "react";
 import * as THREE from "three";
 import { useShallow } from "zustand/shallow";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -35,15 +35,22 @@ import { setCarAlphaBoostActive, setCarSupersonicTrailVisible } from "./carAlpha
 import { setCarRenderPosition } from "./carPlacement";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 
-const PLAYBACK_UI_COMMIT_FPS = 30;
+const PLAYBACK_UI_COMMIT_FPS = 15;
 const PLAYBACK_UI_COMMIT_INTERVAL_SECONDS = 1 / PLAYBACK_UI_COMMIT_FPS;
 const EXTERNAL_SEEK_EPSILON_SECONDS = 0.05;
 const PROJECTED_SHADOW_Y = 12;
 const PROJECTED_SHADOW_BASE_OPACITY = 0.28;
+const CAR_PRESENTATION_RESPONSE_RATE = 40;
+const BALL_PRESENTATION_RESPONSE_RATE = 44;
+const ROTATION_PRESENTATION_RESPONSE_RATE = 38;
+const CAR_PRESENTATION_SNAP_DISTANCE = 900;
+const BALL_PRESENTATION_SNAP_DISTANCE = 1800;
 const SHADOW_LIGHT_DIRECTION = new Vector3(2600, 6200, 3400).normalize();
 const SHADOW_QUATERNION = new THREE.Quaternion();
 const SHADOW_EULER = new THREE.Euler();
 const SHADOW_RENDER_POSITION = new Vector3();
+const PRESENTATION_TARGET_POSITION = new Vector3();
+const PRESENTATION_TARGET_QUATERNION = new THREE.Quaternion();
 type AlphaBoostFlameWindow = {
   emitterStartTime: number;
   sampleTime: number;
@@ -64,7 +71,7 @@ const ROCKET_LEAGUE_RENDERER_PARAMETERS: RocketLeagueRendererParameters = {
   powerPreference: "high-performance"
 };
 
-export function SceneRoot({ timeline }: { timeline: ReplayTimeline }) {
+function SceneRootComponent({ timeline }: { timeline: ReplayTimeline }) {
   const { coordinateOptions, selectedPlayerId, cameraMode } = useViewerStore(
     useShallow((state) => ({
       coordinateOptions: state.coordinateOptions,
@@ -108,6 +115,8 @@ export function SceneRoot({ timeline }: { timeline: ReplayTimeline }) {
     </Canvas>
   );
 }
+
+export const SceneRoot = memo(SceneRootComponent);
 
 function FirstPersonFreeCameraControls({ enabled }: { enabled: boolean }) {
   const { camera, gl } = useThree();
@@ -343,7 +352,7 @@ function ReplayObjects({
     }
 
     const sample = sampleTimeline(timeline, playbackTime.current);
-    updateBall(ballRef.current, sample);
+    updateBall(ballRef.current, sample, delta, state.speed, externalSeek);
     updateCars(
       carRefs.current,
       projectedShadowRefs.current,
@@ -351,7 +360,10 @@ function ReplayObjects({
       timeline,
       playbackTime.current,
       state.boostRenderingEnabled,
-      alphaBoostFlameWindowCache.current
+      alphaBoostFlameWindowCache.current,
+      delta,
+      state.speed,
+      externalSeek
     );
 
     if (state.cameraMode === "free") {
@@ -512,15 +524,26 @@ function drawSoftEllipse(context: CanvasRenderingContext2D, x: number, y: number
   context.restore();
 }
 
-function updateBall(ball: Group | null, sample: SampledReplayState) {
+function updateBall(ball: Group | null, sample: SampledReplayState, deltaSeconds: number, playbackSpeed: number, snap: boolean) {
   if (!ball) return;
   if (!sample.ball) {
     ball.visible = false;
     return;
   }
+  const wasVisible = ball.visible;
   ball.visible = true;
-  ball.position.fromArray(sample.ball.position);
-  ball.quaternion.fromArray(sample.ball.rotation);
+  PRESENTATION_TARGET_POSITION.fromArray(sample.ball.position);
+  PRESENTATION_TARGET_QUATERNION.fromArray(sample.ball.rotation);
+  applyPresentationTransform(
+    ball,
+    PRESENTATION_TARGET_POSITION,
+    PRESENTATION_TARGET_QUATERNION,
+    deltaSeconds,
+    playbackSpeed,
+    snap || !wasVisible,
+    BALL_PRESENTATION_RESPONSE_RATE,
+    BALL_PRESENTATION_SNAP_DISTANCE
+  );
 }
 
 function updateCars(
@@ -530,7 +553,10 @@ function updateCars(
   timeline: ReplayTimeline,
   time: number,
   boostRenderingEnabled: boolean,
-  alphaBoostFlameWindowCache: AlphaBoostFlameWindowCache
+  alphaBoostFlameWindowCache: AlphaBoostFlameWindowCache,
+  deltaSeconds: number,
+  playbackSpeed: number,
+  snap: boolean
 ) {
   for (const [id, group] of cars) {
     const frame = sample.cars[id];
@@ -543,9 +569,20 @@ function updateCars(
       if (shadow) shadow.visible = false;
       continue;
     }
+    const wasVisible = group.visible;
     group.visible = true;
-    setCarRenderPosition(group.position, frame.position);
-    group.quaternion.fromArray(frame.rotation);
+    setCarRenderPosition(PRESENTATION_TARGET_POSITION, frame.position);
+    PRESENTATION_TARGET_QUATERNION.fromArray(frame.rotation);
+    applyPresentationTransform(
+      group,
+      PRESENTATION_TARGET_POSITION,
+      PRESENTATION_TARGET_QUATERNION,
+      deltaSeconds,
+      playbackSpeed,
+      snap || !wasVisible,
+      CAR_PRESENTATION_RESPONSE_RATE,
+      CAR_PRESENTATION_SNAP_DISTANCE
+    );
     const boostSegment = boostRenderingEnabled ? carBoostSegmentAt(timeline, id, time) : undefined;
     const boosting = boostSegment !== undefined;
     let flameDistanceWindow: number | undefined;
@@ -564,8 +601,36 @@ function updateCars(
 
     setCarAlphaBoostActive(group, boosting, frame, boostRenderingEnabled, time, flameDistanceWindow, flameSpawnAges, alphaBoostEmitterAge);
     setCarSupersonicTrailVisible(group, boostRenderingEnabled && Boolean(frame.supersonic) && !boosting);
-    if (shadow) updateProjectedCarShadow(shadow, frame);
+    if (shadow) updateProjectedCarShadow(shadow, group);
   }
+}
+
+function applyPresentationTransform(
+  object: Group,
+  targetPosition: Vector3,
+  targetQuaternion: THREE.Quaternion,
+  deltaSeconds: number,
+  playbackSpeed: number,
+  snap: boolean,
+  positionResponseRate: number,
+  snapDistance: number
+) {
+  const teleport = object.position.distanceToSquared(targetPosition) > snapDistance * snapDistance;
+  if (snap || teleport) {
+    object.position.copy(targetPosition);
+    object.quaternion.copy(targetQuaternion);
+    return;
+  }
+
+  object.position.lerp(targetPosition, presentationSmoothingAlpha(deltaSeconds, playbackSpeed, positionResponseRate));
+  object.quaternion.slerp(
+    targetQuaternion,
+    presentationSmoothingAlpha(deltaSeconds, playbackSpeed, ROTATION_PRESENTATION_RESPONSE_RATE)
+  );
+}
+
+export function presentationSmoothingAlpha(deltaSeconds: number, playbackSpeed: number, responseRate: number): number {
+  return cameraSmoothingAlpha(deltaSeconds, responseRate * Math.max(1, playbackSpeed));
 }
 
 function alphaBoostFlameWindowForCar(
@@ -605,8 +670,8 @@ function alphaBoostFlameWindowSampleTime(time: number, emitterStartTime: number)
   return emitterStartTime + Math.floor(emitterAge / step) * step;
 }
 
-function updateProjectedCarShadow(shadow: Mesh, frame: SampledReplayState["cars"][string]) {
-  const renderPosition = setCarRenderPosition(SHADOW_RENDER_POSITION, frame.position);
+function updateProjectedCarShadow(shadow: Mesh, car: Group) {
+  const renderPosition = SHADOW_RENDER_POSITION.copy(car.position);
   const height = Math.max(0, renderPosition.y - PROJECTED_SHADOW_Y);
   const lightOffsetX = -(height * SHADOW_LIGHT_DIRECTION.x) / Math.max(0.001, SHADOW_LIGHT_DIRECTION.y);
   const lightOffsetZ = -(height * SHADOW_LIGHT_DIRECTION.z) / Math.max(0.001, SHADOW_LIGHT_DIRECTION.y);
@@ -615,7 +680,7 @@ function updateProjectedCarShadow(shadow: Mesh, frame: SampledReplayState["cars"
 
   shadow.visible = true;
   shadow.position.set(renderPosition.x + lightOffsetX, PROJECTED_SHADOW_Y, renderPosition.z + lightOffsetZ);
-  SHADOW_QUATERNION.fromArray(frame.rotation);
+  SHADOW_QUATERNION.copy(car.quaternion);
   SHADOW_EULER.setFromQuaternion(SHADOW_QUATERNION, "YXZ");
   shadow.rotation.set(0, SHADOW_EULER.y, 0);
   shadow.scale.set(liftScale, liftScale, 1);
