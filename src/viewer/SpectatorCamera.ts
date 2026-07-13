@@ -41,6 +41,8 @@ const DEFAULT_CAMERA_SETTINGS = {
   transition: 1.5
 };
 const PLAYER_CAMERA_LOOK_AHEAD = 80;
+const PLAYER_CAMERA_MIN_ORBIT_RADIUS = 135;
+const PLAYER_CAMERA_SAFE_FOV_FRACTION = 0.48;
 const BALL_CAMERA_DISTANCE = 1320;
 const BALL_CAMERA_HEIGHT = 720;
 const BALL_CAMERA_LOOK_AHEAD_SECONDS = 0.08;
@@ -61,6 +63,15 @@ const TMP_BALL_POSITION = new Vector3();
 const TMP_CAMERA_DIRECTION = new Vector3();
 const TMP_CAMERA_POSITION = new Vector3();
 const TMP_CAMERA_TARGET = new Vector3();
+const TMP_CURRENT_CAMERA_OFFSET = new Vector3();
+const TMP_DESIRED_CAMERA_OFFSET = new Vector3();
+const TMP_CAMERA_TO_CAR = new Vector3();
+const TMP_CAMERA_TO_TARGET = new Vector3();
+const TMP_CURRENT_VIEW_DIRECTION = new Vector3();
+const TMP_DESIRED_VIEW_DIRECTION = new Vector3();
+const TMP_SAFE_VIEW_DIRECTION = new Vector3();
+const TMP_SAFE_VIEW_ROTATION = new Quaternion();
+const TMP_SAFE_VIEW_DELTA_ROTATION = new Quaternion();
 const TMP_BALL_TRAVEL = new Vector3();
 const TMP_NEAREST_BALL_POSITION = new Vector3();
 const TMP_NEAREST_CAR_POSITION = new Vector3();
@@ -289,6 +300,107 @@ export function setCameraLookAt(
 
 export function cameraSmoothingAlpha(deltaSeconds: number, responseRate: number): number {
   return 1 - Math.exp(-Math.max(0, deltaSeconds) * responseRate);
+}
+
+export function smoothPlayerCameraOrbit(
+  currentPosition: Vector3,
+  desiredPosition: Vector3,
+  carPosition: Vector3,
+  alpha: number,
+  output = currentPosition,
+  maxYawStepRadians = Number.POSITIVE_INFINITY
+): Vector3 {
+  const currentOffset = TMP_CURRENT_CAMERA_OFFSET.copy(currentPosition).sub(carPosition);
+  const desiredOffset = TMP_DESIRED_CAMERA_OFFSET.copy(desiredPosition).sub(carPosition);
+  const desiredRadius = Math.max(PLAYER_CAMERA_MIN_ORBIT_RADIUS, Math.hypot(desiredOffset.x, desiredOffset.z));
+  const rawCurrentRadius = Math.hypot(currentOffset.x, currentOffset.z);
+  const currentRadius = MathUtils.clamp(
+    rawCurrentRadius,
+    PLAYER_CAMERA_MIN_ORBIT_RADIUS,
+    Math.max(PLAYER_CAMERA_MIN_ORBIT_RADIUS, desiredRadius * 1.75)
+  );
+  const currentYaw =
+    rawCurrentRadius > 0.001 ? Math.atan2(currentOffset.z, currentOffset.x) : Math.atan2(desiredOffset.z, desiredOffset.x);
+  const desiredYaw = Math.atan2(desiredOffset.z, desiredOffset.x);
+  const clampedAlpha = MathUtils.clamp(alpha, 0, 1);
+  const yawDelta = MathUtils.euclideanModulo(desiredYaw - currentYaw + Math.PI, Math.PI * 2) - Math.PI;
+  const maxYawStep = Math.max(0, maxYawStepRadians);
+  const yawStep = MathUtils.clamp(yawDelta * clampedAlpha, -maxYawStep, maxYawStep);
+  const yaw = currentYaw + yawStep;
+  const radius = MathUtils.lerp(currentRadius, desiredRadius, clampedAlpha);
+  const currentHeight = MathUtils.clamp(
+    currentOffset.y,
+    desiredOffset.y - desiredRadius,
+    desiredOffset.y + desiredRadius
+  );
+  const height = MathUtils.lerp(currentHeight, desiredOffset.y, clampedAlpha);
+
+  return output.set(carPosition.x + Math.cos(yaw) * radius, carPosition.y + height, carPosition.z + Math.sin(yaw) * radius);
+}
+
+export function smoothPlayerCameraTarget(
+  cameraPosition: Vector3,
+  currentViewDirection: Vector3,
+  desiredTarget: Vector3,
+  alpha: number,
+  maxAngularStepRadians: number,
+  output = desiredTarget
+): Vector3 {
+  const currentDirection = TMP_CURRENT_VIEW_DIRECTION.copy(currentViewDirection);
+  const desiredDirection = TMP_DESIRED_VIEW_DIRECTION.copy(desiredTarget).sub(cameraPosition);
+  const targetDistance = desiredDirection.length();
+  if (currentDirection.lengthSq() < 0.000001 || !(targetDistance > 0.001)) return output.copy(desiredTarget);
+
+  currentDirection.normalize();
+  desiredDirection.multiplyScalar(1 / targetDistance);
+  const angle = currentDirection.angleTo(desiredDirection);
+  if (angle < 0.000001) return output.copy(desiredTarget);
+
+  const maxStep = Math.max(0, maxAngularStepRadians);
+  const rotationFraction = Math.min(MathUtils.clamp(alpha, 0, 1), maxStep / angle);
+  TMP_SAFE_VIEW_DELTA_ROTATION.setFromUnitVectors(currentDirection, desiredDirection);
+  TMP_SAFE_VIEW_ROTATION.identity().slerp(TMP_SAFE_VIEW_DELTA_ROTATION, rotationFraction);
+  TMP_SAFE_VIEW_DIRECTION.copy(currentDirection).applyQuaternion(TMP_SAFE_VIEW_ROTATION).normalize();
+  return output.copy(cameraPosition).addScaledVector(TMP_SAFE_VIEW_DIRECTION, targetDistance);
+}
+
+export function playerCameraMaxAngularStep(
+  deltaSeconds: number,
+  settings?: ReplayCameraSettings,
+  ballCamTransitioning = false
+): number {
+  const degreesPerSecond = ballCamTransitioning
+    ? MathUtils.clamp(210 + (settings?.transition ?? DEFAULT_CAMERA_SETTINGS.transition) * 50, 240, 330)
+    : MathUtils.clamp(180 + (settings?.swivel ?? DEFAULT_CAMERA_SETTINGS.swivel) * 15, 220, 360);
+  return MathUtils.degToRad(degreesPerSecond) * Math.max(0, deltaSeconds);
+}
+
+export function constrainPlayerCameraTarget(
+  cameraPosition: Vector3,
+  desiredTarget: Vector3,
+  carPosition: Vector3,
+  verticalFovDegrees: number,
+  aspect: number,
+  output = desiredTarget
+): Vector3 {
+  const cameraToCar = TMP_CAMERA_TO_CAR.copy(carPosition).sub(cameraPosition);
+  const cameraToTarget = TMP_CAMERA_TO_TARGET.copy(desiredTarget).sub(cameraPosition);
+  const carDistance = cameraToCar.length();
+  const targetDistance = cameraToTarget.length();
+  if (!(carDistance > 0.001) || !(targetDistance > 0.001)) return output.copy(carPosition);
+
+  cameraToCar.multiplyScalar(1 / carDistance);
+  cameraToTarget.multiplyScalar(1 / targetDistance);
+  const verticalHalfFov = MathUtils.degToRad(MathUtils.clamp(verticalFovDegrees, 20, 170) * 0.5);
+  const horizontalHalfFov = Math.atan(Math.tan(verticalHalfFov) * Math.max(0.1, aspect));
+  const safeAngle = Math.min(verticalHalfFov, horizontalHalfFov) * PLAYER_CAMERA_SAFE_FOV_FRACTION;
+  const carAngle = cameraToCar.angleTo(cameraToTarget);
+  if (carAngle <= safeAngle) return output.copy(desiredTarget);
+
+  TMP_SAFE_VIEW_DELTA_ROTATION.setFromUnitVectors(cameraToCar, cameraToTarget);
+  TMP_SAFE_VIEW_ROTATION.identity().slerp(TMP_SAFE_VIEW_DELTA_ROTATION, safeAngle / carAngle);
+  TMP_SAFE_VIEW_DIRECTION.copy(cameraToCar).applyQuaternion(TMP_SAFE_VIEW_ROTATION).normalize();
+  return output.copy(cameraPosition).addScaledVector(TMP_SAFE_VIEW_DIRECTION, Math.max(carDistance, targetDistance));
 }
 
 export function ballCamTransitionDuration(settings?: ReplayCameraSettings): number {

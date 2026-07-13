@@ -21,11 +21,15 @@ import { RocketLeagueLighting } from "./RocketLeagueLighting";
 import {
   ballCamTransitionDuration,
   cameraRigForMode,
+  constrainPlayerCameraTarget,
   replayCameraResponseRates,
   cameraSmoothingAlpha,
   directorTargetPlayerId,
   freeCameraKeyboardDisplacement,
   freeCameraMoveIntentForCode,
+  playerCameraMaxAngularStep,
+  smoothPlayerCameraOrbit,
+  smoothPlayerCameraTarget,
   type FreeCameraMoveIntent
 } from "./SpectatorCamera";
 import { StandardArena } from "./StandardArena";
@@ -315,10 +319,18 @@ function ReplayObjects({
   const tmpTarget = useMemo(() => new Vector3(), []);
   const tmpDesired = useMemo(() => new Vector3(), []);
   const tmpUp = useMemo(() => new Vector3(), []);
+  const tmpSampledCameraCarPosition = useMemo(() => new Vector3(), []);
+  const tmpRenderedCameraCarPosition = useMemo(() => new Vector3(), []);
+  const tmpCameraAnchorDelta = useMemo(() => new Vector3(), []);
+  const tmpCurrentCameraViewDirection = useMemo(() => new Vector3(), []);
+  const tmpDesiredSafeCameraTarget = useMemo(() => new Vector3(), []);
+  const tmpSafeCameraTarget = useMemo(() => new Vector3(), []);
   const smoothedTarget = useRef(new Vector3());
   const smoothedUp = useRef(new Vector3(0, 1, 0));
   const cameraInitialized = useRef(false);
   const previousBallCam = useRef<boolean | undefined>(undefined);
+  const previousCameraAnchor = useRef(new Vector3());
+  const previousCameraAnchorPlayerId = useRef<string | undefined>(undefined);
   const ballCamTransitionRemaining = useRef(0);
 
   useEffect(() => {
@@ -368,6 +380,7 @@ function ReplayObjects({
 
     if (state.cameraMode === "free") {
       previousBallCam.current = undefined;
+      previousCameraAnchorPlayerId.current = undefined;
       ballCamTransitionRemaining.current = 0;
       cameraInitialized.current = false;
       return;
@@ -375,6 +388,8 @@ function ReplayObjects({
 
     const cameraPlayerId =
       state.cameraMode === "director" ? directorTargetPlayerId(sample, timeline.events) ?? state.selectedPlayerId : state.selectedPlayerId;
+    const sampledCameraCar = cameraPlayerId ? sample.cars[cameraPlayerId] : undefined;
+    const renderedCameraCar = cameraPlayerId ? carRefs.current.get(cameraPlayerId) : undefined;
     const playerCameraState = samplePlayerCameraState(timeline, cameraPlayerId, sample.t);
     const rig = cameraRigForMode(
       state.cameraMode,
@@ -388,6 +403,14 @@ function ReplayObjects({
     tmpUp.fromArray(rig.up);
 
     const currentBallCam = rig.ballCam === true;
+    const hasRenderedPlayerAnchor =
+      state.cameraMode === "player" && sampledCameraCar !== undefined && renderedCameraCar?.visible === true;
+    if (hasRenderedPlayerAnchor) {
+      tmpSampledCameraCarPosition.fromArray(sampledCameraCar.position);
+      tmpRenderedCameraCarPosition.copy(renderedCameraCar.position);
+      tmpDesired.add(tmpRenderedCameraCarPosition).sub(tmpSampledCameraCarPosition);
+      if (!currentBallCam) tmpTarget.add(tmpRenderedCameraCarPosition).sub(tmpSampledCameraCarPosition);
+    }
     if (
       state.cameraMode === "player"
       && previousBallCam.current !== undefined
@@ -398,14 +421,42 @@ function ReplayObjects({
     if (externalSeek) ballCamTransitionRemaining.current = 0;
     const ballCamTransitioning = ballCamTransitionRemaining.current > 0;
     const responseRates = replayCameraResponseRates(state.cameraMode, playerCameraState?.settings, ballCamTransitioning);
+    const playerCameraAngularStep = playerCameraMaxAngularStep(
+      delta,
+      playerCameraState?.settings,
+      ballCamTransitioning
+    );
     const shouldSnap = !cameraInitialized.current || externalSeek;
+
+    if (hasRenderedPlayerAnchor) {
+      if (!shouldSnap && previousCameraAnchorPlayerId.current === cameraPlayerId) {
+        tmpCameraAnchorDelta.copy(tmpRenderedCameraCarPosition).sub(previousCameraAnchor.current);
+        camera.position.add(tmpCameraAnchorDelta);
+        if (!currentBallCam) smoothedTarget.current.add(tmpCameraAnchorDelta);
+      }
+      previousCameraAnchor.current.copy(tmpRenderedCameraCarPosition);
+      previousCameraAnchorPlayerId.current = cameraPlayerId;
+    } else {
+      previousCameraAnchorPlayerId.current = undefined;
+    }
 
     if (shouldSnap) {
       camera.position.copy(tmpDesired);
       smoothedTarget.current.copy(tmpTarget);
       smoothedUp.current.copy(tmpUp);
     } else {
-      camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, responseRates.position));
+      if (hasRenderedPlayerAnchor) {
+        smoothPlayerCameraOrbit(
+          camera.position,
+          tmpDesired,
+          tmpRenderedCameraCarPosition,
+          cameraSmoothingAlpha(delta, responseRates.position),
+          camera.position,
+          playerCameraAngularStep
+        );
+      } else {
+        camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, responseRates.position));
+      }
       smoothedTarget.current.lerp(tmpTarget, cameraSmoothingAlpha(delta, responseRates.target));
       smoothedUp.current.lerp(tmpUp, cameraSmoothingAlpha(delta, responseRates.up)).normalize();
     }
@@ -420,7 +471,46 @@ function ReplayObjects({
         camera.updateProjectionMatrix();
       }
     }
-    camera.lookAt(smoothedTarget.current);
+    if (
+      hasRenderedPlayerAnchor
+      && "fov" in camera
+      && typeof camera.fov === "number"
+      && "aspect" in camera
+      && typeof camera.aspect === "number"
+    ) {
+      constrainPlayerCameraTarget(
+        camera.position,
+        smoothedTarget.current,
+        tmpRenderedCameraCarPosition,
+        camera.fov,
+        camera.aspect,
+        tmpDesiredSafeCameraTarget
+      );
+      if (shouldSnap) {
+        tmpSafeCameraTarget.copy(tmpDesiredSafeCameraTarget);
+      } else {
+        camera.getWorldDirection(tmpCurrentCameraViewDirection);
+        smoothPlayerCameraTarget(
+          camera.position,
+          tmpCurrentCameraViewDirection,
+          tmpDesiredSafeCameraTarget,
+          cameraSmoothingAlpha(delta, responseRates.target),
+          playerCameraAngularStep,
+          tmpSafeCameraTarget
+        );
+      }
+      constrainPlayerCameraTarget(
+        camera.position,
+        tmpSafeCameraTarget,
+        tmpRenderedCameraCarPosition,
+        camera.fov,
+        camera.aspect,
+        tmpSafeCameraTarget
+      );
+      camera.lookAt(tmpSafeCameraTarget);
+    } else {
+      camera.lookAt(smoothedTarget.current);
+    }
     ballCamTransitionRemaining.current = Math.max(0, ballCamTransitionRemaining.current - delta);
     cameraInitialized.current = true;
     previousBallCam.current = currentBallCam;

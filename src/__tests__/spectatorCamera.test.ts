@@ -1,17 +1,21 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PerspectiveCamera, Vector3 } from "three";
+import { MathUtils, PerspectiveCamera, Vector3 } from "three";
 import {
   ballCamTransitionDuration,
   cameraModeOptions,
   cameraRigForMode,
   cameraSmoothingAlpha,
+  constrainPlayerCameraTarget,
   directorTargetPlayerId,
   freeCameraKeyboardDisplacement,
   freeCameraMoveIntentForCode,
+  playerCameraMaxAngularStep,
   replayCameraResponseRates,
-  setCameraLookAt
+  setCameraLookAt,
+  smoothPlayerCameraOrbit,
+  smoothPlayerCameraTarget
 } from "../viewer/SpectatorCamera";
 
 describe("cameraRigForMode", () => {
@@ -289,6 +293,109 @@ describe("cameraRigForMode", () => {
     expect(halfFrameCamera.position.x).toBeCloseTo(fullFrameCamera.position.x);
   });
 
+  it("orbits around the car instead of crossing through it during an opposite ball-cam toggle", () => {
+    const carPosition = new Vector3(0, 0, 0);
+    const cameraPosition = new Vector3(-270, 100, 0);
+    const oppositeSide = new Vector3(270, 100, 0);
+
+    smoothPlayerCameraOrbit(cameraPosition, oppositeSide, carPosition, 0.5);
+
+    expect(Math.hypot(cameraPosition.x, cameraPosition.z)).toBeCloseTo(270);
+    expect(cameraPosition.distanceTo(carPosition)).toBeGreaterThan(270);
+    expect(Math.abs(cameraPosition.x)).toBeLessThan(0.001);
+    expect(Math.abs(cameraPosition.z)).toBeCloseTo(270);
+  });
+
+  it("caps the first orbit and aim frame so a ball-cam toggle cannot look like a teleport", () => {
+    const carPosition = new Vector3();
+    const cameraPosition = new Vector3(-270, 100, 0);
+    const desiredPosition = new Vector3(270, 100, 0);
+    const currentView = new Vector3(1, -0.2, 0).normalize();
+    const desiredTarget = new Vector3(-5000, 3000, 2000);
+    const smoothedTarget = new Vector3();
+    const maxStep = playerCameraMaxAngularStep(1 / 60, undefined, true);
+    const startYaw = Math.atan2(cameraPosition.z - carPosition.z, cameraPosition.x - carPosition.x);
+
+    smoothPlayerCameraOrbit(cameraPosition, desiredPosition, carPosition, 1, cameraPosition, maxStep);
+    smoothPlayerCameraTarget(cameraPosition, currentView, desiredTarget, 1, maxStep, smoothedTarget);
+
+    const nextYaw = Math.atan2(cameraPosition.z - carPosition.z, cameraPosition.x - carPosition.x);
+    const nextView = smoothedTarget.clone().sub(cameraPosition).normalize();
+    expect(Math.abs(nextYaw - startYaw)).toBeLessThanOrEqual(maxStep + 0.000001);
+    expect(currentView.angleTo(nextView)).toBeLessThanOrEqual(maxStep + 0.000001);
+    expect(MathUtils.radToDeg(maxStep)).toBeLessThan(5);
+  });
+
+  it("keeps the followed car inside a safe viewport area while tracking an extreme ball target", () => {
+    const camera = new PerspectiveCamera(110, 16 / 9, 1, 20_000);
+    const carPosition = new Vector3(0, 0, 0);
+    const desiredTarget = new Vector3(-5000, 4200, 3000);
+    const safeTarget = new Vector3();
+    camera.position.set(270, 100, 0);
+
+    constrainPlayerCameraTarget(camera.position, desiredTarget, carPosition, camera.fov, camera.aspect, safeTarget);
+    camera.lookAt(safeTarget);
+    camera.updateMatrixWorld();
+
+    const projectedCenter = carPosition.clone().project(camera);
+    expect(Math.abs(projectedCenter.x)).toBeLessThan(0.5);
+    expect(Math.abs(projectedCenter.y)).toBeLessThan(0.5);
+    expect(projectedCenter.z).toBeGreaterThan(-1);
+    expect(projectedCenter.z).toBeLessThan(1);
+
+    for (const x of [-70, 70]) {
+      for (const y of [-40, 40]) {
+        for (const z of [-55, 55]) {
+          const projectedCorner = new Vector3(x, y, z).project(camera);
+          expect(Math.abs(projectedCorner.x)).toBeLessThan(1);
+          expect(Math.abs(projectedCorner.y)).toBeLessThan(1);
+          expect(projectedCorner.z).toBeGreaterThan(-1);
+          expect(projectedCorner.z).toBeLessThan(1);
+        }
+      }
+    }
+  });
+
+  it("keeps a moving followed car framed throughout ball-cam on and off transitions", () => {
+    const camera = new PerspectiveCamera(110, 16 / 9, 1, 20_000);
+    const carPosition = new Vector3();
+    const desiredPosition = new Vector3(-270, 100, 0);
+    const rawTarget = new Vector3(80, 85, 0);
+    const smoothedTarget = rawTarget.clone();
+    const safeTarget = new Vector3();
+    const previousCarPosition = carPosition.clone();
+    const carTranslation = new Vector3();
+    camera.position.copy(desiredPosition);
+
+    for (let frame = 0; frame < 180; frame++) {
+      previousCarPosition.copy(carPosition);
+      carPosition.x += 38;
+      carTranslation.copy(carPosition).sub(previousCarPosition);
+      camera.position.add(carTranslation);
+      const ballCam = frame >= 45 && frame < 120;
+      const orbitAngle = ballCam ? Math.PI : 0;
+      desiredPosition.set(
+        carPosition.x - Math.cos(orbitAngle) * 270,
+        carPosition.y + 100,
+        carPosition.z - Math.sin(orbitAngle) * 270
+      );
+      rawTarget.copy(ballCam ? new Vector3(carPosition.x - 5000, 3400, 2600) : new Vector3(carPosition.x + 80, 85, 0));
+
+      smoothPlayerCameraOrbit(camera.position, desiredPosition, carPosition, cameraSmoothingAlpha(1 / 60, 10.5));
+      smoothedTarget.lerp(rawTarget, cameraSmoothingAlpha(1 / 60, 12));
+      constrainPlayerCameraTarget(camera.position, smoothedTarget, carPosition, camera.fov, camera.aspect, safeTarget);
+      camera.lookAt(safeTarget);
+      camera.updateMatrixWorld();
+
+      const projectedCar = carPosition.clone().project(camera);
+      expect(Math.hypot(camera.position.x - carPosition.x, camera.position.z - carPosition.z)).toBeGreaterThanOrEqual(269.9);
+      expect(Math.abs(projectedCar.x)).toBeLessThan(0.5);
+      expect(Math.abs(projectedCar.y)).toBeLessThan(0.5);
+      expect(projectedCar.z).toBeGreaterThan(-1);
+      expect(projectedCar.z).toBeLessThan(1);
+    }
+  });
+
   it("maps WASD/EQ keys to free camera movement intents", () => {
     expect(freeCameraMoveIntentForCode("KeyW")).toBe("forward");
     expect(freeCameraMoveIntentForCode("KeyA")).toBe("left");
@@ -360,7 +467,11 @@ describe("cameraRigForMode", () => {
     expect(sceneRootSource).not.toContain('state.cameraMode !== "director"');
     expect(sceneRootSource).toContain("camera.position.copy(tmpDesired)");
     expect(sceneRootSource).toContain("smoothedTarget.current.copy(tmpTarget)");
+    expect(sceneRootSource).toContain("smoothPlayerCameraOrbit(");
     expect(sceneRootSource).toContain("camera.position.lerp(tmpDesired, cameraSmoothingAlpha(delta, responseRates.position))");
+    expect(sceneRootSource).toContain("constrainPlayerCameraTarget(");
+    expect(sceneRootSource).toContain("tmpRenderedCameraCarPosition");
+    expect(sceneRootSource).toContain("camera.position.add(tmpCameraAnchorDelta)");
     expect(sceneRootSource).toContain("const shouldSnap = !cameraInitialized.current || externalSeek");
     expect(sceneRootSource).not.toContain("externalSeek || cameraChanged");
   });
