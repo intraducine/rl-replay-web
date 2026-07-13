@@ -1,5 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { forwardRef, memo, useEffect, useMemo, useRef, type ForwardedRef } from "react";
+import { Suspense } from "react";
 import * as THREE from "three";
 import { useShallow } from "zustand/shallow";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -114,7 +115,9 @@ function SceneRootComponent({ timeline }: { timeline: ReplayTimeline }) {
     >
       <RocketLeagueLighting />
       <StandardArena />
-      <BoostPads />
+      <Suspense fallback={null}>
+        <BoostPads timeline={normalized} />
+      </Suspense>
       <ReplayObjects timeline={normalized} initialSample={initialSample} selectedPlayerId={selectedPlayerId} cameraMode={cameraMode} />
       <FirstPersonFreeCameraControls enabled={cameraMode === "free"} />
       <RocketLeaguePostprocess />

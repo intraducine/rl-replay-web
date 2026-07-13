@@ -1,123 +1,267 @@
-import { useLayoutEffect, useMemo, useRef } from "react";
+import { useGLTF } from "@react-three/drei";
+import { useFrame, useLoader } from "@react-three/fiber";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { DDSLoader } from "three/examples/jsm/loaders/DDSLoader.js";
 import type { BoostPad } from "../replay/standardArenaBoostPads";
 import { standardArenaBoostPads } from "../replay/standardArenaBoostPads";
+import type { ReplayTimeline } from "../replay/types";
+import { useViewerStore } from "../state/viewerStore";
+import {
+  boostPadPlaybackStateAt,
+  boostPadScenePosition,
+  inferBoostPadPickups,
+  type BoostPadPickup
+} from "./boostPadPlayback";
+import { publicAsset } from "./publicAsset";
+import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 
-type InstanceTransform = {
-  position: THREE.Vector3;
-  rotation: THREE.Euler;
-  scale: THREE.Vector3;
+const BOOST_PAD_ASSET_ROOT = publicAsset("/rl-assets/champions-field-full/Pickup_Boost/StaticMesh3");
+const SMALL_PAD_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Small_02_SM.gltf`;
+const LARGE_PAD_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Large.gltf`;
+const LARGE_GLOW_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Large_Glow.gltf`;
+const LARGE_SCROLL_ASSET = `${BOOST_PAD_ASSET_ROOT}/BoostPad_Scroll_SM.gltf`;
+const BOOST_PAD_TEXTURE_ROOT = publicAsset("/rl-assets/champions-field-full/Pickup_Boost_Textures/Texture2D");
+const SMALL_PAD_TEXTURE = `${BOOST_PAD_TEXTURE_ROOT}/BoostPad_Small_D.dds`;
+const LARGE_PAD_TEXTURE = `${BOOST_PAD_TEXTURE_ROOT}/BoostPad_Large_D.dds`;
+const PAD_MODEL_SCALE = 100;
+
+type BoostPadGeometries = {
+  smallBase: THREE.BufferGeometry;
+  smallEnergy: THREE.BufferGeometry;
+  largeBase: THREE.BufferGeometry;
+  largeDisc: THREE.BufferGeometry;
+  largeColumn: THREE.BufferGeometry;
+  largeScroll: THREE.BufferGeometry;
 };
 
-const smallPads = standardArenaBoostPads.filter((pad) => pad.type === "small");
-const largePads = standardArenaBoostPads.filter((pad) => pad.type === "large");
+type BoostPadMaterials = {
+  smallBase: THREE.MeshStandardMaterial;
+  smallActive: THREE.MeshStandardMaterial;
+  largeBase: THREE.MeshStandardMaterial;
+  inset: THREE.MeshStandardMaterial;
+  energy: THREE.MeshBasicMaterial;
+  energyCore: THREE.MeshBasicMaterial;
+};
 
-export function BoostPads() {
-  const geometries = useMemo(
-    () => ({
-      smallBase: new THREE.CylinderGeometry(1, 1, 8, 16),
-      smallRing: new THREE.TorusGeometry(34, 3, 8, 32),
-      smallGlow: new THREE.CylinderGeometry(1, 1, 30, 24, 1, true),
-      smallCenter: new THREE.CircleGeometry(18, 24),
-      largeBase: new THREE.CylinderGeometry(1, 1, 14, 32),
-      largeOuterRing: new THREE.TorusGeometry(64, 7, 10, 48),
-      largeInnerRing: new THREE.TorusGeometry(42, 3, 8, 40),
-      largeGlow: new THREE.CylinderGeometry(1, 1, 92, 32, 1, true),
-      largeOrb: new THREE.SphereGeometry(42, 32, 20),
-      largePost: new THREE.CylinderGeometry(6, 6, 52, 10)
-    }),
-    []
-  );
-  const materials = useMemo(
-    () => ({
-      smallBase: new THREE.MeshStandardMaterial({ color: "#2a261f", roughness: 0.62, metalness: 0.08 }),
-      smallRing: new THREE.MeshBasicMaterial({ color: "#ffc45d", transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, toneMapped: false }),
-      smallGlow: new THREE.MeshBasicMaterial({ color: "#ffb340", transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }),
-      smallCenter: new THREE.MeshBasicMaterial({ color: "#fff2ac", transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, toneMapped: false }),
-      largeBase: new THREE.MeshStandardMaterial({ color: "#2a2418", roughness: 0.52, metalness: 0.12 }),
-      largeOuterRing: new THREE.MeshBasicMaterial({ color: "#ffad32", transparent: true, opacity: 0.94, blending: THREE.AdditiveBlending, toneMapped: false }),
-      largeInnerRing: new THREE.MeshBasicMaterial({ color: "#fff0a1", transparent: true, opacity: 0.86, blending: THREE.AdditiveBlending, toneMapped: false }),
-      largeGlow: new THREE.MeshBasicMaterial({ color: "#ffb52d", transparent: true, opacity: 0.18, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }),
-      largeOrb: new THREE.MeshBasicMaterial({ color: "#ffc247", transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, toneMapped: false }),
-      largePost: new THREE.MeshStandardMaterial({ color: "#c9812c", roughness: 0.35, metalness: 0.2 })
-    }),
-    []
-  );
+export function BoostPads({ timeline }: { timeline: ReplayTimeline }) {
+  const geometries = useBoostPadGeometries();
+  const materials = useBoostPadMaterials();
+  const pickupsByPad = useMemo(() => inferBoostPadPickups(timeline), [timeline]);
+  const currentTime = useViewerStore((state) => state.currentTime);
 
   return (
-    <group>
-      <InstancedPart geometry={geometries.smallBase} material={materials.smallBase} instances={smallInstances(smallPads, [0, 0, 0], [0, 0, 0], [46, 1, 41])} />
-      <InstancedPart geometry={geometries.smallRing} material={materials.smallRing} instances={smallInstances(smallPads, [0, 7, 0], [-Math.PI / 2, 0, 0], [1, 0.9, 1])} />
-      <InstancedPart geometry={geometries.smallGlow} material={materials.smallGlow} instances={smallInstances(smallPads, [0, 22, 0], [0, 0, 0], [28, 1, 25])} />
-      <InstancedPart geometry={geometries.smallCenter} material={materials.smallCenter} instances={smallInstances(smallPads, [0, 9, 0], [-Math.PI / 2, 0, 0], [1, 0.9, 1])} />
-
-      <InstancedPart geometry={geometries.largeBase} material={materials.largeBase} instances={largeInstances(largePads, [0, 5, 0], [0, 0, 0], [84, 1, 75])} />
-      <InstancedPart geometry={geometries.largeOuterRing} material={materials.largeOuterRing} instances={largeInstances(largePads, [0, 15, 0], [-Math.PI / 2, 0, 0], [1, 0.9, 1])} />
-      <InstancedPart geometry={geometries.largeInnerRing} material={materials.largeInnerRing} instances={largeInstances(largePads, [0, 18, 0], [-Math.PI / 2, 0, 0], [1, 0.9, 1])} />
-      <InstancedPart geometry={geometries.largeGlow} material={materials.largeGlow} instances={largeInstances(largePads, [0, 62, 0], [0, 0, 0], [55, 1, 49])} />
-      <InstancedPart geometry={geometries.largeOrb} material={materials.largeOrb} instances={largeInstances(largePads, [0, 58, 0])} />
-      <InstancedPart geometry={geometries.largePost} material={materials.largePost} instances={largePostInstances(largePads)} />
+    <group name="rocket-league-boost-pads">
+      {standardArenaBoostPads.map((pad) => (
+        <BoostPadActor
+          key={pad.id}
+          pad={pad}
+          currentTime={currentTime}
+          pickups={pickupsByPad.get(pad.id)}
+          geometries={geometries}
+          materials={materials}
+        />
+      ))}
     </group>
   );
 }
 
-function InstancedPart({
-  geometry,
-  material,
-  instances
+function BoostPadActor({
+  pad,
+  currentTime,
+  pickups,
+  geometries,
+  materials
 }: {
-  geometry: THREE.BufferGeometry;
-  material: THREE.Material;
-  instances: InstanceTransform[];
+  pad: BoostPad;
+  currentTime: number;
+  pickups: BoostPadPickup[] | undefined;
+  geometries: BoostPadGeometries;
+  materials: BoostPadMaterials;
 }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const energyGroup = useRef<THREE.Group>(null);
+  const floatingEnergy = useRef<THREE.Group>(null);
+  const light = useRef<THREE.PointLight>(null);
+  const displayedEnergy = useRef(1);
+  const playbackState = boostPadPlaybackStateAt(pad, pickups, currentTime);
+  const targetEnergy = useRef(playbackState.energy);
+  targetEnergy.current = playbackState.energy;
 
   useLayoutEffect(() => {
-    const mesh = ref.current;
-    if (!mesh) return;
+    energyGroup.current?.traverse((object) => object.layers.enable(ROCKET_LEAGUE_BLOOM_LAYER));
+  }, []);
 
-    instances.forEach((instance, index) => {
-      dummy.position.copy(instance.position);
-      dummy.rotation.copy(instance.rotation);
-      dummy.scale.copy(instance.scale);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(index, dummy.matrix);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-  }, [dummy, instances]);
+  useFrame(({ clock }, delta) => {
+    const group = energyGroup.current;
+    if (!group) return;
 
-  return <instancedMesh ref={ref} args={[geometry, material, instances.length]} />;
-}
+    displayedEnergy.current = THREE.MathUtils.damp(displayedEnergy.current, targetEnergy.current, 24, delta);
+    const energy = displayedEnergy.current;
+    group.visible = energy > 0.002;
+    group.scale.setScalar(Math.max(energy, 0.001));
 
-function smallInstances(pads: BoostPad[], offset: [number, number, number], rotation: [number, number, number] = [0, 0, 0], scale: [number, number, number] = [1, 1, 1]) {
-  return padInstances(pads, 3, offset, rotation, scale);
-}
-
-function largeInstances(pads: BoostPad[], offset: [number, number, number], rotation: [number, number, number] = [0, 0, 0], scale: [number, number, number] = [1, 1, 1]) {
-  return padInstances(pads, 0, offset, rotation, scale);
-}
-
-function largePostInstances(pads: BoostPad[]) {
-  return [
-    ...largeInstances(pads, [-34, 34, 0]),
-    ...largeInstances(pads, [34, 34, 0])
-  ];
-}
-
-function padInstances(
-  pads: BoostPad[],
-  heightOffset: number,
-  offset: [number, number, number],
-  rotation: [number, number, number],
-  scale: [number, number, number]
-): InstanceTransform[] {
-  return pads.map((pad) => {
-    const [x, y, z] = pad.position;
-    return {
-      position: new THREE.Vector3(x + offset[0], z + heightOffset + offset[1], -y + offset[2]),
-      rotation: new THREE.Euler(rotation[0], rotation[1], rotation[2]),
-      scale: new THREE.Vector3(scale[0], scale[1], scale[2])
-    };
+    if (floatingEnergy.current) {
+      floatingEnergy.current.rotation.y = clock.elapsedTime * (pad.type === "large" ? 1.45 : 0.8);
+      floatingEnergy.current.position.y = pad.type === "large" ? 0.05 + Math.sin(clock.elapsedTime * 3.2 + pad.id) * 0.035 : 0;
+    }
+    if (light.current) light.current.intensity = 54 * energy;
   });
+
+  const position = boostPadScenePosition(pad);
+  return (
+    <group name={`boost-pad-${pad.type}-${pad.id}`} position={position} scale={PAD_MODEL_SCALE}>
+      {pad.type === "small" ? (
+        <>
+          <mesh geometry={geometries.smallBase} material={materials.smallBase} receiveShadow />
+          <group ref={energyGroup}>
+            <mesh geometry={geometries.smallEnergy} material={materials.smallActive} renderOrder={3} />
+          </group>
+        </>
+      ) : (
+        <>
+          <mesh geometry={geometries.largeBase} material={materials.largeBase} receiveShadow />
+          <group ref={energyGroup}>
+            <mesh geometry={geometries.largeScroll} material={materials.inset} renderOrder={2} />
+            <mesh geometry={geometries.largeDisc} material={materials.energy} renderOrder={3} />
+            <group ref={floatingEnergy}>
+              <mesh geometry={geometries.largeColumn} material={materials.energyCore} renderOrder={4} />
+            </group>
+            <pointLight ref={light} color="#ffb12f" intensity={54} distance={4.2} decay={2} position={[0, 0.48, 0]} />
+          </group>
+        </>
+      )}
+    </group>
+  );
 }
+
+function useBoostPadGeometries(): BoostPadGeometries {
+  const smallPad = useGLTF(SMALL_PAD_ASSET);
+  const largePad = useGLTF(LARGE_PAD_ASSET);
+  const largeGlow = useGLTF(LARGE_GLOW_ASSET);
+  const largeScroll = useGLTF(LARGE_SCROLL_ASSET);
+
+  return useMemo(() => {
+    const small = geometriesByHeight(smallPad.scene);
+    const largeGlowParts = geometriesByHeight(largeGlow.scene);
+    return {
+      smallBase: requiredGeometry(small[0], SMALL_PAD_ASSET),
+      smallEnergy: requiredGeometry(small[small.length - 1], SMALL_PAD_ASSET),
+      largeBase: requiredGeometry(geometriesByHeight(largePad.scene)[0], LARGE_PAD_ASSET),
+      largeDisc: requiredGeometry(largeGlowParts[0], LARGE_GLOW_ASSET),
+      largeColumn: requiredGeometry(largeGlowParts[largeGlowParts.length - 1], LARGE_GLOW_ASSET),
+      largeScroll: requiredGeometry(geometriesByHeight(largeScroll.scene)[0], LARGE_SCROLL_ASSET)
+    };
+  }, [largeGlow.scene, largePad.scene, largeScroll.scene, smallPad.scene]);
+}
+
+function useBoostPadMaterials(): BoostPadMaterials {
+  const smallTexture = useLoader(DDSLoader, SMALL_PAD_TEXTURE);
+  const largeTexture = useLoader(DDSLoader, LARGE_PAD_TEXTURE);
+  useLayoutEffect(() => {
+    configurePadTexture(smallTexture);
+    configurePadTexture(largeTexture);
+  }, [largeTexture, smallTexture]);
+
+  const materials = useMemo<BoostPadMaterials>(
+    () => ({
+      smallBase: new THREE.MeshStandardMaterial({
+        name: "boost-pad-small-plate",
+        color: "#5b4524",
+        emissive: "#6a3b08",
+        emissiveIntensity: 0.32,
+        roughness: 0.58,
+        metalness: 0.24
+      }),
+      smallActive: new THREE.MeshStandardMaterial({
+        name: "boost-pad-small-pickup",
+        map: smallTexture,
+        emissiveMap: smallTexture,
+        color: "#ffd77a",
+        emissive: "#ff8a00",
+        emissiveIntensity: 1.7,
+        roughness: 0.4,
+        metalness: 0.16,
+        toneMapped: false
+      }),
+      largeBase: new THREE.MeshStandardMaterial({
+        name: "boost-pad-large-plate",
+        map: largeTexture,
+        color: "#c8bda4",
+        emissive: "#55320b",
+        emissiveIntensity: 0.24,
+        roughness: 0.5,
+        metalness: 0.3
+      }),
+      inset: new THREE.MeshStandardMaterial({
+        name: "boost-pad-energy-inset",
+        color: "#ffb12f",
+        emissive: "#ff8a00",
+        emissiveIntensity: 4.2,
+        roughness: 0.34,
+        metalness: 0.18,
+        toneMapped: false
+      }),
+      energy: new THREE.MeshBasicMaterial({
+        name: "boost-pad-amber-energy",
+        color: "#ffad2f",
+        transparent: true,
+        opacity: 0.86,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
+      }),
+      energyCore: new THREE.MeshBasicMaterial({
+        name: "boost-pad-white-hot-core",
+        color: "#ffe9a0",
+        transparent: true,
+        opacity: 0.9,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false
+      })
+    }),
+    [largeTexture, smallTexture]
+  );
+
+  useEffect(
+    () => () => {
+      Object.values(materials).forEach((material) => material.dispose());
+    },
+    [materials]
+  );
+  return materials;
+}
+
+function configurePadTexture(texture: THREE.Texture) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = false;
+  texture.anisotropy = 16;
+  texture.needsUpdate = true;
+}
+
+function geometriesByHeight(scene: THREE.Object3D): THREE.BufferGeometry[] {
+  const geometries: THREE.BufferGeometry[] = [];
+  scene.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.geometry.computeBoundingBox();
+    geometries.push(object.geometry);
+  });
+  return geometries.sort((left, right) => geometryMaximumHeight(left) - geometryMaximumHeight(right));
+}
+
+function geometryMaximumHeight(geometry: THREE.BufferGeometry): number {
+  geometry.computeBoundingBox();
+  return geometry.boundingBox?.max.y ?? 0;
+}
+
+function requiredGeometry(geometry: THREE.BufferGeometry | undefined, asset: string): THREE.BufferGeometry {
+  if (!geometry) throw new Error(`Boost pad mesh is missing geometry: ${asset}`);
+  return geometry;
+}
+
+useGLTF.preload(SMALL_PAD_ASSET);
+useGLTF.preload(LARGE_PAD_ASSET);
+useGLTF.preload(LARGE_GLOW_ASSET);
+useGLTF.preload(LARGE_SCROLL_ASSET);
