@@ -15,7 +15,10 @@ describe("landing page copy and favicon", () => {
     expect(source).not.toContain("Last parsed replay");
     expect(source).toContain('title="Last opened replay"');
     expect(source).not.toContain('title="Parsing"');
-    expect(source).toContain('title="Opening replay"');
+    expect(source).not.toContain('title="Opening replay"');
+    expect(source).toContain('progressStage={openingSource === "file"');
+    expect(source).toContain('className="sample-progress"');
+    expect(source).toContain("Stored only in this browser and deletable anytime");
   });
 
   it("uses plain progress and error messages while opening replays", () => {

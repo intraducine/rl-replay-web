@@ -9,7 +9,7 @@ import { TooltipBubble } from "../ui/Tooltip";
 
 type PendingConfirmation = { kind: "clear" } | { kind: "delete"; record: StoredReplayRecord };
 
-export function ReplayLibraryPage({ onOpenReplay, onUpload }: { onOpenReplay: () => void; onUpload: () => void }) {
+export function ReplayLibraryPage({ onOpenReplay, onUpload }: { onOpenReplay: (id: string) => void; onUpload: () => void }) {
   const [records, setRecords] = useState<StoredReplayRecord[]>([]);
   const [usageBytes, setUsageBytes] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,7 @@ export function ReplayLibraryPage({ onOpenReplay, onUpload }: { onOpenReplay: ()
       const nextTimeline = await loadReplay(id);
       if (!nextTimeline) throw new Error("This saved replay is no longer available.");
       setTimeline(nextTimeline);
-      onOpenReplay();
+      onOpenReplay(nextTimeline.metadata.id);
     } catch (openError) {
       setError(openError instanceof Error ? openError.message : "Replay could not be opened.");
     } finally {

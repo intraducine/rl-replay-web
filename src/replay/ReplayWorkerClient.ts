@@ -1,4 +1,5 @@
 import type { ReplayInspection, ReplayMetadata, ReplayTimeline } from "./types";
+import { createId } from "../utils/createId";
 
 export type WorkerRequest =
   | { id: string; type: "parse-metadata"; fileBuffer: ArrayBuffer; fileName?: string }
@@ -57,7 +58,7 @@ export class ReplayWorkerClient {
       throw new Error("Select a Rocket League .replay file.");
     }
 
-    const id = crypto.randomUUID();
+    const id = createId();
     const fileBuffer = await file.arrayBuffer();
 
     const promise = new Promise<T>((resolve, reject) => {

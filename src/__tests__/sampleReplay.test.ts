@@ -13,6 +13,6 @@ describe("sample replay", () => {
     const uploadPageSource = readFileSync(resolve(process.cwd(), "src/pages/UploadPage.tsx"), "utf8");
 
     expect(uploadPageSource).toContain("loadSampleReplay");
-    expect(uploadPageSource).toContain("Open sample replay");
+    expect(uploadPageSource).toContain("Try sample replay");
   });
 });

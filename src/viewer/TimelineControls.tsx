@@ -1,5 +1,5 @@
 import { FastForward, Pause, Play, Rewind, SkipBack, SkipForward } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReplayEvent } from "../replay/types";
 import { useShallow } from "zustand/shallow";
 import { useViewerStore } from "../state/viewerStore";
@@ -14,6 +14,7 @@ export type TimelineStatus = {
   cameraLabel: string;
   playerName?: string;
   boostRenderingEnabled: boolean;
+  freeCameraAvailable?: boolean;
 };
 
 export function TimelineControls({
@@ -41,8 +42,22 @@ export function TimelineControls({
   const remainingTime = Math.max(0, duration - currentTime);
   const eventMarkers = useMemo(() => replayEventMarkers(events, duration, playerNameById), [events, duration, playerNameById]);
   const [hoveredEventKey, setHoveredEventKey] = useState<string>();
+  const [activeEventKey, setActiveEventKey] = useState<string>();
+  const eventButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const hoveredEvent = eventMarkers.find((event) => event.key === hoveredEventKey);
   useTimelineKeyboardShortcuts();
+
+  useEffect(() => {
+    if (!eventMarkers.some((event) => event.key === activeEventKey)) setActiveEventKey(eventMarkers[0]?.key);
+  }, [activeEventKey, eventMarkers]);
+
+  const focusEventAt = (index: number) => {
+    const event = eventMarkers[Math.max(0, Math.min(eventMarkers.length - 1, index))];
+    if (!event) return;
+    setActiveEventKey(event.key);
+    setHoveredEventKey(event.key);
+    eventButtonRefs.current.get(event.key)?.focus();
+  };
 
   return (
     <div className="timeline-controls" aria-label="Replay playback controls">
@@ -66,7 +81,7 @@ export function TimelineControls({
           </label>
           <div
             className={`event-track${hoveredEvent ? " has-hover" : ""}`}
-            aria-label="Replay event markers"
+            aria-label="Replay event markers. Use left and right arrow keys to move between events."
             onMouseLeave={() => setHoveredEventKey(undefined)}
           >
             <span className="event-track-progress" style={{ width: `${percent}%` }} />
@@ -77,14 +92,45 @@ export function TimelineControls({
                 className={`event-marker event-${event.type} event-edge-${event.edge}`}
                 style={{ left: event.left }}
                 aria-label={`Jump to ${event.details} at ${formatTime(event.t)}`}
+                tabIndex={activeEventKey === event.key ? 0 : -1}
+                ref={(button) => {
+                  if (button) eventButtonRefs.current.set(event.key, button);
+                  else eventButtonRefs.current.delete(event.key);
+                }}
                 onMouseEnter={() => setHoveredEventKey(event.key)}
-                onFocus={() => setHoveredEventKey(event.key)}
+                onFocus={() => {
+                  setActiveEventKey(event.key);
+                  setHoveredEventKey(event.key);
+                }}
+                onKeyDown={(keyEvent) => {
+                  const index = eventMarkers.findIndex((marker) => marker.key === event.key);
+                  if (keyEvent.key === "ArrowLeft" || keyEvent.key === "ArrowUp") {
+                    keyEvent.preventDefault();
+                    keyEvent.stopPropagation();
+                    focusEventAt(index - 1);
+                  } else if (keyEvent.key === "ArrowRight" || keyEvent.key === "ArrowDown") {
+                    keyEvent.preventDefault();
+                    keyEvent.stopPropagation();
+                    focusEventAt(index + 1);
+                  } else if (keyEvent.key === "Home") {
+                    keyEvent.preventDefault();
+                    keyEvent.stopPropagation();
+                    focusEventAt(0);
+                  } else if (keyEvent.key === "End") {
+                    keyEvent.preventDefault();
+                    keyEvent.stopPropagation();
+                    focusEventAt(eventMarkers.length - 1);
+                  }
+                }}
                 onBlur={(focusEvent) => {
                   if (!focusEvent.currentTarget.parentElement?.contains(focusEvent.relatedTarget as Node | null)) {
                     setHoveredEventKey(undefined);
                   }
                 }}
-                onClick={() => setCurrentTime(event.t)}
+                onClick={() => {
+                  setActiveEventKey(event.key);
+                  setCurrentTime(event.t);
+                }}
               >
                 <span className="event-marker-tooltip" aria-hidden="true">
                   <strong>{event.typeLabel}</strong>
@@ -143,7 +189,8 @@ export function TimelineControls({
 
       <div className="sr-only" aria-label="Replay playback status">
         {status ? `${status.cameraLabel} camera. ${status.playerName ?? "No player selected"}. Boost rendering ${status.boostRenderingEnabled ? "on" : "off"}.` : null}
-        <kbd>Space</kbd> Play/Pause. <kbd>WASD</kbd> Move. <kbd>Q/E</kbd> Down/Up. <kbd>Mouse drag</kbd> Look.
+        <kbd>Space</kbd> Play/Pause.
+        {status?.freeCameraAvailable ? <><kbd>WASD</kbd> Move. <kbd>Q/E</kbd> Down/Up. <kbd>Mouse drag</kbd> Look.</> : null}
       </div>
     </div>
   );

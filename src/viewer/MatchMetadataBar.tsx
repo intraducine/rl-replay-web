@@ -1,8 +1,10 @@
+import { useId, useState } from "react";
 import type { ReplayTimeline } from "../replay/types";
-import { TooltipBubble } from "../ui/Tooltip";
 import { formatTime } from "./TimelineControls";
 
 export function MatchMetadataBar({ timeline }: { timeline: ReplayTimeline }) {
+  const [activeIndex, setActiveIndex] = useState<number>();
+  const explanationId = useId();
   const metadata = timeline.metadata;
   const replayTitle = metadata.replayName ?? metadata.fileName;
   const items = [
@@ -18,14 +20,26 @@ export function MatchMetadataBar({ timeline }: { timeline: ReplayTimeline }) {
     metadata.date ? { value: metadata.date, title: "Replay save date", tooltip: "Saved · when this replay was recorded." } : undefined
   ].filter((item): item is { value: string; title: string; tooltip: string } => Boolean(item));
 
+  const activeItem = activeIndex === undefined ? undefined : items[activeIndex];
+
   return (
-    <div className="match-metadata-bar" aria-label="Replay details">
-      {items.map((item, index) => (
-        <span key={`${item.value}-${index}`} className="metadata-pill tooltip-target" title={item.title} aria-label={item.tooltip}>
-          {item.value}
-          <TooltipBubble>{item.tooltip}</TooltipBubble>
-        </span>
-      ))}
+    <div className="match-metadata">
+      <div className="match-metadata-bar" aria-label="Replay details">
+        {items.map((item, index) => (
+          <button
+            type="button"
+            key={`${item.value}-${index}`}
+            className="metadata-pill"
+            title={item.title}
+            aria-expanded={activeIndex === index}
+            aria-describedby={activeIndex === index ? explanationId : undefined}
+            onClick={() => setActiveIndex((current) => current === index ? undefined : index)}
+          >
+            {item.value}
+          </button>
+        ))}
+      </div>
+      {activeItem ? <p id={explanationId} className="metadata-explanation">{activeItem.tooltip}</p> : null}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import type { ReplayMetadata, ReplayTimeline, TimelineFrame } from "./types";
+import { createId } from "../utils/createId";
 
 export function createMockMetadata(fileName = "mock.replay"): ReplayMetadata {
   return {
-    id: crypto.randomUUID(),
+    id: createId(),
     fileName,
     replayName: fileName.replace(/\.replay$/i, ""),
     mapName: "DFH Stadium",

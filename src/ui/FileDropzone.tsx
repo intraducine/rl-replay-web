@@ -2,7 +2,17 @@ import { Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "./Button";
 
-export function FileDropzone({ onFile, disabled = false }: { onFile: (file: File) => void; disabled?: boolean }) {
+export function FileDropzone({
+  onFile,
+  disabled = false,
+  progressStage,
+  progress
+}: {
+  onFile: (file: File) => void;
+  disabled?: boolean;
+  progressStage?: string;
+  progress?: number;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -39,11 +49,17 @@ export function FileDropzone({ onFile, disabled = false }: { onFile: (file: File
       <Upload size={34} />
       <div>
         <h2>Select a replay file</h2>
-        <p>Choose or drag in a .replay file.</p>
+        <p>Choose or drag in a .replay file. It stays in this browser.</p>
       </div>
       <Button variant="primary" tooltip="Choose a .replay file from this device" disabled={disabled} onClick={() => inputRef.current?.click()}>
         {disabled ? "Opening replay…" : "Choose replay"}
       </Button>
+      {disabled && progressStage ? (
+        <div className="dropzone-progress" role="status" aria-live="polite">
+          <progress max={1} value={progress ?? 0.15} />
+          <span>{progressStage}</span>
+        </div>
+      ) : null}
     </div>
   );
 }

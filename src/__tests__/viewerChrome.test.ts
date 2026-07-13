@@ -71,9 +71,11 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".speed-select { position: relative; grid-column: 3; justify-self: end; display: grid; place-items: center; width: max-content; min-width: 72px; height: 56px;");
     expect(css).toContain(".seek-value { display: inline-block; width: auto; height: auto;");
     expect(css).toContain(".event-marker-tooltip");
-    expect(source).toContain('aria-label="Replay event markers"');
+    expect(source).toContain("Use left and right arrow keys to move between events");
     expect(css).toContain(".timeline-scrubber { position: relative; display: block; height: 42px;");
     expect(css).toContain(".event-track { position: absolute;");
+    expect(css).toContain("width: 24px; height: 24px");
+    expect(css).toContain(".event-track button::after");
     expect(css).toContain("top: 25px");
     expect(source).toContain('aria-label="Playback speed"');
     expect(source).toContain('className="speed-value" aria-hidden="true"');
@@ -134,7 +136,8 @@ describe("viewer chrome layout", () => {
     expect(css).toContain(".app:has(.viewer) .app-header");
     expect(css).toContain("backdrop-filter: blur(14px)");
     expect(css).toContain("border-radius: 12px");
-    expect(app).toContain('page !== "replay"');
+    expect(app).toContain('aria-current={page === "replay" ? "page" : undefined}');
+    expect(app).not.toContain('page !== "replay"');
   });
 
   it("keeps viewer chrome outlines hover-only while preserving keyboard focus", () => {
@@ -170,6 +173,8 @@ describe("viewer chrome layout", () => {
     expect(source).toContain('<kbd>Mouse</kbd> Look');
     expect(source).toContain('<kbd>Q / E</kbd> Down / up');
     expect(source).toContain('selectedPlayer && cameraMode !== "free"');
+    expect(source).toContain('cameraModeOptions.filter((option) => option.value !== "free")');
+    expect(source).toContain('cameraMode === "free" && !compactPointerLayout');
     expect(css).toContain(".free-cam-help");
   });
 

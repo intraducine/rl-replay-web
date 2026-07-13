@@ -62,7 +62,7 @@ describe("replay insights UI", () => {
     expect(container.textContent).toContain("4:30 played");
   });
 
-  it("labels compact match metadata pills with plain-language hover help", () => {
+  it("labels compact match metadata pills with tappable plain-language help", () => {
     const { container } = render(<MatchMetadataBar timeline={timeline} />);
 
     const metadataTitles = [...container.querySelectorAll(".match-metadata-bar > .metadata-pill")].map((node) => node.getAttribute("title"));
@@ -77,8 +77,13 @@ describe("replay insights UI", () => {
       "In-game time played",
       "Replay save date"
     ]);
-    expect(container.querySelectorAll(".metadata-pill .tooltip-bubble")).toHaveLength(8);
+    expect(container.querySelector(".metadata-explanation")).toBeNull();
+    const replayNamePill = container.querySelector(".metadata-pill") as HTMLButtonElement;
+    fireEvent.click(replayNamePill);
+    expect(replayNamePill.getAttribute("aria-expanded")).toBe("true");
     expect(container.textContent).toContain("the match file you are reviewing");
+    fireEvent.click(replayNamePill);
+    expect(container.querySelector(".metadata-explanation")).toBeNull();
   });
 
   it("renders live player stats without misleading score, paint, or static ping", () => {
@@ -244,7 +249,7 @@ describe("replay insights UI", () => {
     const playerNameById = new Map(timeline.metadata.players.map((player) => [player.id, player.name]));
     const { container } = render(<TimelineControls events={timeline.events} playerNameById={playerNameById} />);
 
-    expect(container.querySelector('.event-track[aria-label="Replay event markers"]')).not.toBeNull();
+    expect(container.querySelector('.event-track[aria-label*="Use left and right arrow keys"]')).not.toBeNull();
     expect(container.querySelector(".event-goal")).not.toBeNull();
     expect(container.querySelector(".event-save")).not.toBeNull();
     expect(container.querySelector(".event-demo")).not.toBeNull();
@@ -255,6 +260,18 @@ describe("replay insights UI", () => {
 
     fireEvent.mouseEnter(container.querySelector(".event-track .event-save") as Element);
     expect(container.querySelector(".event-hover-card")?.textContent).toBe("SaveKehvn");
+  });
+
+  it("exposes one event marker tab stop and supports arrow-key navigation", () => {
+    const { container } = render(<TimelineControls events={timeline.events} />);
+    const markers = [...container.querySelectorAll<HTMLButtonElement>(".event-marker")];
+
+    expect(markers.map((marker) => marker.tabIndex)).toEqual([0, -1, -1]);
+    markers[0].focus();
+    fireEvent.keyDown(markers[0], { key: "ArrowRight" });
+
+    expect(document.activeElement).toBe(markers[1]);
+    expect(markers.map((marker) => marker.tabIndex)).toEqual([-1, 0, -1]);
   });
 
   it("memoizes timeline event markers so playback progress updates less marker work", () => {

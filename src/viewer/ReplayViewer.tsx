@@ -7,6 +7,7 @@ import { samplePlayerBoostsAt, samplePlayerCameraState, timelineDuration } from 
 import type { ReplayTimeline } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { TooltipBubble } from "../ui/Tooltip";
+import { useMediaQuery } from "../ui/useMediaQuery";
 import { cameraModeOptions, type CameraMode } from "./SpectatorCamera";
 import { MatchMetadataBar } from "./MatchMetadataBar";
 import { PlayerList } from "./PlayerList";
@@ -29,6 +30,7 @@ const coordinateDebugOptions = [
 
 export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
   const [rosterOpen, setRosterOpen] = useState(false);
+  const compactPointerLayout = useMediaQuery("(pointer: coarse), (max-width: 760px)");
   const {
     setDuration,
     setCurrentTime,
@@ -73,6 +75,9 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
     return { playerOptions: options, playerIds: ids, playerById: players, playerNameById: names };
   }, [timeline.metadata.players]);
   const cameraLabel = cameraModeOptions.find((option) => option.value === cameraMode)?.label ?? cameraMode;
+  const availableCameraModeOptions = compactPointerLayout
+    ? cameraModeOptions.filter((option) => option.value !== "free")
+    : cameraModeOptions;
   const selectedPlayerName = selectedPlayerId ? playerNameById.get(selectedPlayerId) : undefined;
   const selectedPlayer = selectedPlayerId ? playerById.get(selectedPlayerId) : undefined;
   const boostByPlayer = samplePlayerBoostsAt(timeline, playerIds, currentTime);
@@ -94,6 +99,10 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
     }
   }, [timeline, setCurrentTime, setDuration, setSelectedPlayerId]);
 
+  useEffect(() => {
+    if (compactPointerLayout && cameraMode === "free") setCameraMode("director");
+  }, [cameraMode, compactPointerLayout, setCameraMode]);
+
   return (
     <main className="viewer" aria-label={`Replay viewer: ${timeline.metadata.replayName ?? timeline.metadata.fileName}`}>
       <section className="viewer-stage" aria-label="3D replay viewport">
@@ -112,7 +121,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
             aria-label="Camera mode"
             onChange={(event) => setCameraMode(event.currentTarget.value as CameraMode)}
           >
-            {cameraModeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            {availableCameraModeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </label>
         <label className="camera-segment player current">
@@ -162,7 +171,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         <PlayerList timeline={timeline} boostByPlayer={boostByPlayer} statsByPlayer={statsByPlayer} />
       </aside>
 
-      {cameraMode === "free" ? (
+      {cameraMode === "free" && !compactPointerLayout ? (
         <aside className="free-cam-help" aria-label="Free camera controls">
           <strong>Free camera</strong>
           <div>
@@ -230,7 +239,7 @@ export function ReplayViewer({ timeline }: { timeline: ReplayTimeline }) {
         <TimelineControls
           events={timeline.events}
           playerNameById={playerNameById}
-          status={{ cameraLabel, playerName: selectedPlayerName, boostRenderingEnabled }}
+          status={{ cameraLabel, playerName: selectedPlayerName, boostRenderingEnabled, freeCameraAvailable: !compactPointerLayout }}
         />
       </section>
     </main>
