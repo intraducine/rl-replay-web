@@ -12,7 +12,7 @@ import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPa
 import type { Group, Mesh } from "three";
 import { Vector3 } from "three";
 import { normalizeTimelineCoordinates } from "../replay/ReplayNormalizer";
-import { sampleCarDistanceAndSpawnPerUnitAgesWindow, samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
+import { samplePlayerCameraState, sampleTimeline, timelineDuration } from "../replay/ReplayTimeline";
 import type { ReplayPlayer, ReplayTimeline, SampledReplayState } from "../replay/types";
 import { useViewerStore } from "../state/viewerStore";
 import { Ball } from "./Ball";
@@ -36,9 +36,8 @@ import {
   type FreeCameraMoveIntent
 } from "./SpectatorCamera";
 import { StandardArena } from "./StandardArena";
-import { ALPHA_BOOST_CASCADE } from "./alphaBoostConfig";
 import { carBoostSegmentAt } from "./boostActivity";
-import { setCarAlphaBoostActive, setCarSupersonicTrailVisible } from "./carAlphaBoost";
+import { setCarBoostActive, setCarSupersonicTrailVisible } from "./carBoost";
 import { setCarRenderPosition } from "./carPlacement";
 import { ROCKET_LEAGUE_BLOOM_LAYER } from "./renderLayers";
 
@@ -58,13 +57,6 @@ const SHADOW_EULER = new THREE.Euler();
 const SHADOW_RENDER_POSITION = new Vector3();
 const PRESENTATION_TARGET_POSITION = new Vector3();
 const PRESENTATION_TARGET_QUATERNION = new THREE.Quaternion();
-type AlphaBoostFlameWindow = {
-  emitterStartTime: number;
-  sampleTime: number;
-  distance: number;
-  spawnAges: number[];
-};
-type AlphaBoostFlameWindowCache = Map<string, AlphaBoostFlameWindow>;
 const SAFE_INITIAL_CAMERA_POSITION: [number, number, number] = [0, 620, 1400];
 const FREE_CAMERA_LOOK_SENSITIVITY = 0.0022;
 const FREE_CAMERA_PITCH_LIMIT = Math.PI / 2 - 0.035;
@@ -326,7 +318,6 @@ function ReplayObjects({
   const playbackTime = useRef(initialSample.t);
   const lastPublishedPlaybackTime = useRef(initialSample.t);
   const lastPlaying = useRef(false);
-  const alphaBoostFlameWindowCache = useRef<AlphaBoostFlameWindowCache>(new Map());
   const duration = useMemo(() => timelineDuration(timeline), [timeline]);
   const players = useMemo(() => completePlayers(timeline.metadata.players, initialSample), [timeline.metadata.players, initialSample]);
   const tmpTarget = useMemo(() => new Vector3(), []);
@@ -345,10 +336,6 @@ function ReplayObjects({
   const previousCameraAnchor = useRef(new Vector3());
   const previousCameraAnchorPlayerId = useRef<string | undefined>(undefined);
   const ballCamTransitionRemaining = useRef(0);
-
-  useEffect(() => {
-    alphaBoostFlameWindowCache.current.clear();
-  }, [timeline]);
 
   useFrame((_, delta) => {
     const state = useViewerStore.getState();
@@ -385,7 +372,6 @@ function ReplayObjects({
       timeline,
       playbackTime.current,
       state.boostRenderingEnabled,
-      alphaBoostFlameWindowCache.current,
       delta,
       state.speed,
       externalSeek
@@ -657,7 +643,6 @@ function updateCars(
   timeline: ReplayTimeline,
   time: number,
   boostRenderingEnabled: boolean,
-  alphaBoostFlameWindowCache: AlphaBoostFlameWindowCache,
   deltaSeconds: number,
   playbackSpeed: number,
   snap: boolean
@@ -667,9 +652,8 @@ function updateCars(
     const shadow = shadows.get(id);
     if (!frame) {
       group.visible = false;
-      setCarAlphaBoostActive(group, false);
+      setCarBoostActive(group, false);
       setCarSupersonicTrailVisible(group, false);
-      alphaBoostFlameWindowCache.delete(id);
       if (shadow) shadow.visible = false;
       continue;
     }
@@ -687,23 +671,8 @@ function updateCars(
       CAR_PRESENTATION_RESPONSE_RATE,
       CAR_PRESENTATION_SNAP_DISTANCE
     );
-    const boostSegment = boostRenderingEnabled ? carBoostSegmentAt(timeline, id, time) : undefined;
-    const boosting = boostSegment !== undefined;
-    let flameDistanceWindow: number | undefined;
-    let flameSpawnAges: number[] | undefined;
-    let alphaBoostEmitterAge: number | undefined;
-
-    if (boosting) {
-      const flameEmitterStartTime = boostSegment.start;
-      alphaBoostEmitterAge = time - flameEmitterStartTime;
-      const flameWindow = alphaBoostFlameWindowForCar(alphaBoostFlameWindowCache, timeline, id, time, flameEmitterStartTime);
-      flameDistanceWindow = flameWindow.distance;
-      flameSpawnAges = flameWindow.spawnAges;
-    } else {
-      alphaBoostFlameWindowCache.delete(id);
-    }
-
-    setCarAlphaBoostActive(group, boosting, frame, boostRenderingEnabled, time, flameDistanceWindow, flameSpawnAges, alphaBoostEmitterAge);
+    const boosting = boostRenderingEnabled && carBoostSegmentAt(timeline, id, time) !== undefined;
+    setCarBoostActive(group, boosting, frame, boostRenderingEnabled, time);
     setCarSupersonicTrailVisible(group, boostRenderingEnabled && Boolean(frame.supersonic) && !boosting);
     if (shadow) updateProjectedCarShadow(shadow, group);
   }
@@ -735,43 +704,6 @@ function applyPresentationTransform(
 
 export function presentationSmoothingAlpha(deltaSeconds: number, playbackSpeed: number, responseRate: number): number {
   return cameraSmoothingAlpha(deltaSeconds, responseRate * Math.max(1, playbackSpeed));
-}
-
-function alphaBoostFlameWindowForCar(
-  cache: AlphaBoostFlameWindowCache,
-  timeline: ReplayTimeline,
-  carId: string,
-  time: number,
-  emitterStartTime: number
-) {
-  const sampleTime = alphaBoostFlameWindowSampleTime(time, emitterStartTime);
-  const cached = cache.get(carId);
-  if (cached && cached.emitterStartTime === emitterStartTime && cached.sampleTime === sampleTime) return cached;
-
-  const flameWindow = sampleCarDistanceAndSpawnPerUnitAgesWindow(
-    timeline,
-    carId,
-    sampleTime,
-    ALPHA_BOOST_CASCADE.flame.lifetimeSeconds,
-    ALPHA_BOOST_CASCADE.flame.spawnPerUnit,
-    ALPHA_BOOST_CASCADE.flame.runtimeParameters.spawnRate.averageScalar,
-    emitterStartTime
-  );
-  const cachedWindow = {
-    emitterStartTime,
-    sampleTime,
-    distance: flameWindow.distance,
-    spawnAges: flameWindow.spawnAges
-  };
-  cache.set(carId, cachedWindow);
-  return cachedWindow;
-}
-
-function alphaBoostFlameWindowSampleTime(time: number, emitterStartTime: number) {
-  const step = ALPHA_BOOST_CASCADE.updateStepSeconds;
-  if (!(step > 0)) return time;
-  const emitterAge = Math.max(0, time - emitterStartTime);
-  return emitterStartTime + Math.floor(emitterAge / step) * step;
 }
 
 function updateProjectedCarShadow(shadow: Mesh, car: Group) {

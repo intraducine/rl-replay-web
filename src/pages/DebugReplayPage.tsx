@@ -4,7 +4,7 @@ import { summarizeInspection } from "../replay/ReplayDebug";
 import type { ReplayInspection } from "../replay/types";
 import { FileDropzone } from "../ui/FileDropzone";
 import { Panel } from "../ui/Panel";
-import { AlphaBoostDebugScene } from "../viewer/AlphaBoostDebugScene";
+import { BoostDebugScene } from "../viewer/BoostDebugScene";
 import { BoostPadDebugScene } from "../viewer/BoostPadDebugScene";
 
 export function DebugReplayPage() {
@@ -37,7 +37,7 @@ export function DebugReplayPage() {
             className={visualQa === "alpha" ? "selected" : undefined}
             onClick={() => setVisualQa("alpha")}
           >
-            Alpha Boost
+            Car Boost
           </button>
           <button
             type="button"
@@ -49,7 +49,7 @@ export function DebugReplayPage() {
             Boost Pads
           </button>
         </div>
-        {visualQa === "alpha" ? <AlphaBoostDebugScene /> : <BoostPadDebugScene />}
+        {visualQa === "alpha" ? <BoostDebugScene /> : <BoostPadDebugScene />}
       </Panel>
       <FileDropzone onFile={inspect} />
       <Panel title="Inspector">

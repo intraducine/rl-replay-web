@@ -5,11 +5,11 @@ import * as THREE from "three";
 import type { Group } from "three";
 import type { CarFrame, ReplayPlayer } from "../replay/types";
 import { Car } from "./Car";
-import { setCarAlphaBoostActive } from "./carAlphaBoost";
+import { setCarBoostActive } from "./carBoost";
 
 const DEBUG_PLAYER: ReplayPlayer = {
-  id: "alpha-boost-debug-octane",
-  name: "Alpha Boost QA",
+  id: "generic-boost-debug-octane",
+  name: "Boost QA",
   team: 0
 };
 
@@ -19,14 +19,13 @@ const DEBUG_FRAME: CarFrame = {
   velocity: [2300, 0, 0],
   boost: 100
 };
-const DEBUG_FLAME_AGES = Array.from({ length: 144 }, (_, index) => ((index + 0.5) / 144));
 
 type DebugRuntimeWindow = Window & {
   advanceTime?: (ms: number) => void;
   render_game_to_text?: () => string;
 };
 
-export function AlphaBoostDebugScene() {
+export function BoostDebugScene() {
   useEffect(() => {
     const runtimeWindow = window as DebugRuntimeWindow;
     const previousRenderGameToText = runtimeWindow.render_game_to_text;
@@ -34,7 +33,7 @@ export function AlphaBoostDebugScene() {
 
     runtimeWindow.render_game_to_text = () =>
       JSON.stringify({
-        scene: "alpha-boost-qa",
+        scene: "generic-boost-qa",
         isolated: true,
         stadium: false,
         boostActive: true,
@@ -52,7 +51,7 @@ export function AlphaBoostDebugScene() {
   }, []);
 
   return (
-    <div className="alpha-boost-debug-scene" data-testid="alpha-boost-debug-scene">
+    <div className="boost-debug-scene" data-testid="boost-debug-scene">
       <Canvas
         dpr={1}
         gl={{ antialias: true, powerPreference: "high-performance" }}
@@ -78,16 +77,7 @@ function DebugOctaneBoost() {
 
   useFrame(({ clock }) => {
     if (!carRef.current) return;
-    setCarAlphaBoostActive(
-      carRef.current,
-      true,
-      DEBUG_FRAME,
-      true,
-      clock.elapsedTime,
-      2300,
-      DEBUG_FLAME_AGES,
-      clock.elapsedTime
-    );
+    setCarBoostActive(carRef.current, true, DEBUG_FRAME, true, clock.elapsedTime);
   });
 
   return <Car ref={carRef} frame={DEBUG_FRAME} player={DEBUG_PLAYER} selected={false} showNameplate={false} />;

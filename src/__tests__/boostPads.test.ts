@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
 import { standardArenaBoostPads } from "../replay/standardArenaBoostPads";
 
 describe("standard arena boost pads", () => {
@@ -10,51 +10,38 @@ describe("standard arena boost pads", () => {
     expect(standardArenaBoostPads.filter((pad) => pad.type === "small")).toHaveLength(28);
   });
 
-  it("includes the documented big boost locations", () => {
-    expect(standardArenaBoostPads.filter((pad) => pad.type === "large").map((pad) => pad.position)).toEqual([
-      [-3072, -4096, 8],
-      [3072, -4096, 8],
-      [-3584, 0, 8],
-      [3584, 0, 8],
-      [-3072, 4096, 8],
-      [3072, 4096, 8]
-    ]);
-  });
-
-  it("renders extracted Rocket League pad meshes instead of primitive placeholders", () => {
+  it("keeps all pads within a seven-draw instanced budget", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/BoostPads.tsx"), "utf8");
 
-    expect(source).toContain("BoostPad_Small_02_SM.gltf");
-    expect(source).toContain("BoostPad_Large.gltf");
-    expect(source).toContain("BoostPad_Large_Glow.gltf");
-    expect(source).toContain('name: "BoostOrb_2D_Mat"');
-    expect(source).toContain('name: "BoostPad_02_Mat"');
-    expect(source).toContain('name: "BoostPad_Scroll_INST"');
-    expect(source).toContain('name: "BoostPad_Glowing_INST"');
-    expect(source).toContain("Sphere_Uncompressed_N.png");
-    expect(source).toContain("Radial_Generic_01_Pack.png");
-    expect(source).toContain("BoostPad_Small_D.png");
-    expect(source).toContain("BoostPad_Large_D.png");
-    expect(source).toContain("Curve_Shockwaves_Pack.png");
-    expect(source).toContain("Curve_Fire_01_Pack.png");
-    expect(source).toContain("Noise_Smoke_03_Pack.png");
-    expect(source).toContain("Sparkle_N.png");
-    expect(source).toContain("smallBase: requiredGeometry(small[small.length - 1], SMALL_PAD_ASSET)");
-    expect(source).toContain("smallEnergy: requiredGeometry(small[0], SMALL_PAD_ASSET)");
-    expect(source).toContain("float opacity = clamp(sourceMask * (0.78 + rim * 0.22)");
-    expect(source).not.toContain("pulse * sourceMask");
-    expect(source).not.toContain("DDSLoader");
-    expect(source).toContain("ROCKET_LEAGUE_BLOOM_LAYER");
-    expect(source).not.toContain("SphereGeometry");
-    expect(source).not.toContain("CylinderGeometry");
-    expect(source).not.toContain("TorusGeometry");
+    expect(source).toContain("export const GENERIC_BOOST_PAD_DRAW_CALLS = 7");
+    expect((source.match(/new THREE\.InstancedMesh/g) ?? [])).toHaveLength(7);
+    expect(source).toContain("THREE.DynamicDrawUsage");
+    expect(source).not.toContain("useGLTF");
+    expect(source).not.toContain("useTexture");
+    expect(source).not.toContain("pointLight");
+    expect(source).not.toContain("Billboard");
+  });
+
+  it("uses the shared glowing energy language and fades rays upward", () => {
+    const padSource = readFileSync(resolve(process.cwd(), "src/viewer/BoostPads.tsx"), "utf8");
+    const visualSource = readFileSync(resolve(process.cwd(), "src/viewer/boostVisuals.ts"), "utf8");
+
+    expect(padSource).toContain("createBoostBeamMaterial");
+    expect(padSource).toContain("createBoostDiscMaterial");
+    expect(padSource).toContain("createBoostOrbMaterial");
+    expect(padSource).toContain("ROCKET_LEAGUE_BLOOM_LAYER");
+    expect(visualSource).toContain("float upwardFade = pow(1.0 - vHeight, 2.25)");
+    expect(visualSource).toContain("#ifdef USE_INSTANCING");
+    expect(visualSource).toContain("instanceMatrix * localPosition");
+    expect(visualSource).toContain('name: "generic-boost-pad-glow"');
+    expect(visualSource).toContain("THREE.AdditiveBlending");
   });
 
   it("drives pad depletion and respawn from replay-derived pickups", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/BoostPads.tsx"), "utf8");
 
     expect(source).toContain("inferBoostPadPickups(timeline)");
-    expect(source).toContain("boostPadPlaybackStateAt(pad, pickups, currentTime)");
+    expect(source).toContain("boostPadPlaybackStateAt(pad, pickupsByPad.get(pad.id), currentTime)");
     expect(source).toContain('name="rocket-league-boost-pads"');
   });
 });

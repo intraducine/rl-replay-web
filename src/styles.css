@@ -457,8 +457,8 @@ progress { width: 100%; height: 8px; accent-color: var(--cyan); }
 .debug-page { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(300px, .8fr); align-content: start; gap: 18px; overflow-y: auto; }
 .debug-page > * { width: 100%; }
 .debug-page > .panel:first-child { grid-row: 1 / span 2; }
-.alpha-boost-debug-scene { height: min(58vh, 520px); min-height: 360px; overflow: hidden; border: 1px solid var(--line); background: var(--ink); }
-@supports (height: 100dvh) { .alpha-boost-debug-scene { height: min(58dvh, 520px); } }
+.boost-debug-scene { height: min(58vh, 520px); min-height: 360px; overflow: hidden; border: 1px solid var(--line); background: var(--ink); }
+@supports (height: 100dvh) { .boost-debug-scene { height: min(58dvh, 520px); } }
 .debug-visual-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
 .debug-visual-tabs button { min-height: 36px; padding: 0 14px; border: 1px solid transparent; color: var(--muted); background: transparent; font-weight: 850; cursor: pointer; }
 .debug-visual-tabs button:hover { border-color: var(--line); color: var(--text); }
