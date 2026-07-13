@@ -44,9 +44,12 @@ describe("Champions Field material contract", () => {
   it("colors authored goals and trim by field side", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/ChampionsFieldStadium.tsx"), "utf8");
     expect(source).toContain("TEAM_COLORS");
-    expect(source).toContain('blueGoal: createTeamMaterial("blue", textures.wall)');
-    expect(source).toContain('orangeGoal: createTeamMaterial("orange", textures.wall)');
+    expect(source).toContain('blueGoal: createTeamMaterial("blue", textures.wallDetail)');
+    expect(source).toContain('orangeGoal: createTeamMaterial("orange", textures.wallDetail)');
+    expect(source).toContain('blueGoalNet: createTeamNetMaterial("blue")');
+    expect(source).toContain('orangeGoalNet: createTeamNetMaterial("orange")');
     expect(source).toContain("teamMaterialForMesh(mesh, materials.blueGoal, materials.orangeGoal)");
+    expect(source).toContain("teamMaterialForMesh(mesh, materials.blueGoalNet, materials.orangeGoalNet)");
     expect(source).toContain("MESH_WORLD_BOX.setFromObject(mesh)");
     expect(source).toContain("MESH_WORLD_CENTER.z >= 0 ? blue : orange");
   });

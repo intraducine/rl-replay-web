@@ -101,7 +101,7 @@ function SceneRootComponent({ timeline }: { timeline: ReplayTimeline }) {
   return (
     <Canvas
       shadows
-      dpr={1}
+      dpr={[1, 1.5]}
       gl={ROCKET_LEAGUE_RENDERER_PARAMETERS}
       onCreated={({ gl }) => {
         gl.outputColorSpace = THREE.SRGBColorSpace;
