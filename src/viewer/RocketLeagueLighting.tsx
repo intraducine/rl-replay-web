@@ -1,7 +1,7 @@
 import { Environment, Lightformer, Sky } from "@react-three/drei";
 
-export const FLOATING_ARENA_SKY_COLOR = "#a8d4e8";
-const FLOATING_ARENA_HAZE_COLOR = "#c5e1ec";
+export const FLOATING_ARENA_SKY_COLOR = "#78b9e8";
+const FLOATING_ARENA_HAZE_COLOR = "#b5d9ed";
 const SUN_POSITION: [number, number, number] = [7200, 9800, -6800];
 
 export function RocketLeagueLighting() {
@@ -12,14 +12,14 @@ export function RocketLeagueLighting() {
       <Sky
         distance={240_000}
         sunPosition={SUN_POSITION}
-        turbidity={5.2}
-        rayleigh={2.35}
+        turbidity={4.4}
+        rayleigh={2.8}
         mieCoefficient={0.004}
         mieDirectionalG={0.82}
       />
 
       <ambientLight intensity={0.34} color="#edf8ff" />
-      <hemisphereLight args={["#e8f8ff", "#33413c", 0.72]} />
+      <hemisphereLight args={["#d8efff", "#33413c", 0.72]} />
       <directionalLight
         position={SUN_POSITION}
         intensity={1.72}

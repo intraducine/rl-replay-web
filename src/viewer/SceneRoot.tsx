@@ -6,6 +6,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 import type { Group, Mesh } from "three";
 import { Vector3 } from "three";
@@ -102,7 +103,7 @@ function SceneRootComponent({ timeline }: { timeline: ReplayTimeline }) {
   return (
     <Canvas
       shadows
-      dpr={[1, 1.5]}
+      dpr={[1, 2]}
       gl={ROCKET_LEAGUE_RENDERER_PARAMETERS}
       onCreated={({ gl }) => {
         gl.outputColorSpace = THREE.SRGBColorSpace;
@@ -214,8 +215,11 @@ function isEditableEventTarget(target: EventTarget | null): boolean {
 
 function RocketLeaguePostprocess() {
   const { camera, gl, scene, size } = useThree();
-  const { bloomComposer, finalComposer } = useMemo(() => {
+  const { bloomComposer, finalComposer, smaaPass } = useMemo(() => {
+    const antialiasSamples = Math.min(4, gl.capabilities.maxSamples);
     const nextBloomComposer = new EffectComposer(gl);
+    nextBloomComposer.renderTarget1.samples = antialiasSamples;
+    nextBloomComposer.renderTarget2.samples = antialiasSamples;
     nextBloomComposer.renderToScreen = false;
     const bloomPass = new UnrealBloomPass(new THREE.Vector2(size.width, size.height), 0.62, 0.24, 0.52);
     bloomPass.threshold = 0.38;
@@ -238,11 +242,15 @@ function RocketLeaguePostprocess() {
     finalPass.needsSwap = true;
 
     const nextFinalComposer = new EffectComposer(gl);
+    nextFinalComposer.renderTarget1.samples = antialiasSamples;
+    nextFinalComposer.renderTarget2.samples = antialiasSamples;
+    const nextSmaaPass = new SMAAPass();
     nextFinalComposer.addPass(new RenderPass(scene, camera));
     nextFinalComposer.addPass(finalPass);
+    nextFinalComposer.addPass(nextSmaaPass);
     nextFinalComposer.addPass(new OutputPass());
 
-    return { bloomComposer: nextBloomComposer, finalComposer: nextFinalComposer };
+    return { bloomComposer: nextBloomComposer, finalComposer: nextFinalComposer, smaaPass: nextSmaaPass };
   }, [camera, gl, scene, size.height, size.width]);
 
   useEffect(() => {
@@ -254,10 +262,11 @@ function RocketLeaguePostprocess() {
 
   useEffect(
     () => () => {
+      smaaPass.dispose();
       bloomComposer.dispose();
       finalComposer.dispose();
     },
-    [bloomComposer, finalComposer]
+    [bloomComposer, finalComposer, smaaPass]
   );
 
   useFrame(() => {

@@ -116,9 +116,9 @@ describe("Rocket League Champions Field arena contract", () => {
   it("uses a bright atmospheric sky for the floating playable enclosure", () => {
     const source = readFileSync(resolve(process.cwd(), "src/viewer/RocketLeagueLighting.tsx"), "utf8");
 
-    expect(source).toContain('FLOATING_ARENA_SKY_COLOR = "#a8d4e8"');
+    expect(source).toContain('FLOATING_ARENA_SKY_COLOR = "#78b9e8"');
     expect(source).toContain("<Sky");
-    expect(source).toContain("rayleigh={2.35}");
+    expect(source).toContain("rayleigh={2.8}");
     expect(source).toContain('<fog attach="fog"');
     expect(source).toContain("environmentIntensity={0.48}");
     expect(source).not.toContain("SKYBOX_BLUE");
@@ -136,5 +136,7 @@ describe("Rocket League Champions Field arena contract", () => {
     expect(source).toContain("bumpMap: textures.wallDetail");
     expect(source).toContain("bumpMap: textures.trimDetail");
     expect(source).toContain("THREE.NoColorSpace");
+    expect(source).toContain("texture.anisotropy = 16");
+    expect(source).toContain("texture.minFilter = THREE.LinearMipmapLinearFilter");
   });
 });

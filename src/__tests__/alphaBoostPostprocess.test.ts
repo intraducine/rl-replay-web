@@ -19,4 +19,16 @@ describe("Rocket League postprocess contract", () => {
 
     expect(sceneRootSource).toContain("outputBufferType: THREE.HalfFloatType");
   });
+
+  it("antialiases the postprocessed scene so thin arena details remain stable in motion", () => {
+    const sceneRootSource = readFileSync(resolve(process.cwd(), "src/viewer/SceneRoot.tsx"), "utf8");
+
+    expect(sceneRootSource).toContain('import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js"');
+    expect(sceneRootSource).toContain("const antialiasSamples = Math.min(4, gl.capabilities.maxSamples)");
+    expect(sceneRootSource).toContain("nextBloomComposer.renderTarget1.samples = antialiasSamples");
+    expect(sceneRootSource).toContain("nextFinalComposer.renderTarget1.samples = antialiasSamples");
+    expect(sceneRootSource).toContain("nextFinalComposer.addPass(nextSmaaPass)");
+    expect(sceneRootSource).toContain("smaaPass.dispose()");
+    expect(sceneRootSource).toContain("dpr={[1, 2]}");
+  });
 });

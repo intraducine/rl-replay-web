@@ -78,7 +78,9 @@ function useArenaTextures(): ArenaTextures {
 function configureTexture(texture: THREE.Texture, clamp = false, colorSpace: THREE.ColorSpace = THREE.SRGBColorSpace) {
   texture.colorSpace = colorSpace;
   texture.flipY = false;
-  texture.anisotropy = 8;
+  texture.anisotropy = 16;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   texture.wrapS = clamp ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
   texture.wrapT = clamp ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
   texture.needsUpdate = true;
